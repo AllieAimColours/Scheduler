@@ -14,7 +14,7 @@ Booking/scheduling SaaS for hair stylists and therapists. Providers set up servi
 - **Validation**: Zod
 - **Forms**: React Hook Form
 - **Dates**: date-fns + date-fns-tz
-- **Deploy**: Vercel
+- **Deploy**: Vercel (hobby tier — no cron jobs)
 
 ## Project Structure
 
@@ -23,15 +23,16 @@ src/
   app/
     (auth)/          # login, signup, callback, onboarding
     (dashboard)/     # provider dashboard (authenticated, sidebar layout)
-    book/[slug]/     # public booking page (themed per-business)
-    api/             # route handlers (availability, bookings, stripe, cron)
+    book/[slug]/     # public booking page (themed per-business via template system)
+    api/             # route handlers (availability, bookings, stripe)
   components/
     ui/              # shadcn/ui (DO NOT edit manually — use `npx shadcn add`)
-    booking/         # booking flow components
-    calendar/        # calendar view components (Phase 2)
+    booking/         # themed booking components (template-wrapper, themed-card, etc.)
     dashboard/       # sidebar, stats, lists
+    settings/        # template picker
   lib/
     supabase/        # client.ts (browser), server.ts (SSR), admin.ts (service role)
+    templates/       # template system (definitions, fonts, context)
     calendar/        # google.ts, microsoft.ts, caldav.ts, sync.ts (Phase 4)
     availability.ts  # core slot calculation engine
     stripe.ts        # lazy-initialized Stripe client (getStripe())
@@ -43,15 +44,46 @@ supabase/
   functions/         # edge functions
 ```
 
+## Template/Vibe System
+
+6 templates that completely transform the booking page appearance:
+
+| Template | Vibe | Fonts |
+|----------|------|-------|
+| **Aura** | Ethereal, calm | Cormorant Garamond + Inter |
+| **Bloom** | Warm, feminine | Playfair Display + DM Sans |
+| **Edge** | Bold, dark | Space Grotesk + JetBrains Mono |
+| **Luxe** | Minimal, premium | Bodoni Moda + Outfit |
+| **Pop** | Colorful, energetic | Fredoka + Nunito |
+| **Studio** | Clean, professional | Plus Jakarta Sans |
+
+### How it works
+- **Definitions**: `src/lib/templates/index.ts` — TEMPLATES record with cssVars, classes, animations, decorations per template
+- **Fonts**: `src/lib/templates/fonts.ts` — 11 Google Fonts pre-instantiated, `getTemplateFonts()` helper
+- **Context**: `src/lib/templates/context.ts` — `TemplateProvider` + `useTemplate()` hook
+- **Animations**: `src/app/template-animations.css` — CSS @keyframes + @utility per template
+- **Injection**: `src/app/book/[slug]/layout.tsx` fetches provider → reads `branding.template` → injects CSS vars on wrapper div
+- **Themed components**: `ThemedCard`, `ThemedButton`, `ThemedTimeSlot` use `useTemplate()` to apply template-specific classes
+- **Decorations**: `src/components/booking/decorations.tsx` — floating orbs (Aura), grid (Edge), confetti (Pop), shimmer (Bloom)
+- **Default**: Providers without a template default to "studio"
+
+### Adding a new template
+1. Add to `TemplateId` union type and `TEMPLATE_IDS` array in `src/lib/templates/index.ts`
+2. Define the full `TemplateDefinition` object (cssVars, classes, animations, decorations)
+3. Add fonts in `src/lib/templates/fonts.ts`
+4. Add animations in `src/app/template-animations.css`
+5. Add decorations in `src/components/booking/decorations.tsx` if needed
+
 ## Key Patterns
 
-- **shadcn/ui v4 uses base-ui, NOT radix.** Buttons do NOT support `asChild`. For link-buttons use `buttonVariants()` on a `<Link>` element.
+- **shadcn/ui v4 uses base-ui, NOT radix.** Buttons do NOT support `asChild`. For link-buttons use `buttonVariants()` on an `<a>` or `<Link>` element.
 - **Supabase types**: Every table in `database.ts` MUST have `Relationships: []` or the Supabase client resolves Insert/Update types to `never`.
 - **Stripe**: Use `getStripe()` (lazy init) instead of a top-level `new Stripe()` to avoid build errors when env vars aren't set.
-- **Dynamic rendering**: Auth and dashboard layouts use `export const dynamic = "force-dynamic"` because they depend on Supabase auth.
-- **Server Actions** for provider CRUD (services, availability). **API routes** for public endpoints (availability slots, bookings, Stripe).
-- **RLS on every table**. Public booking pages use anon key with restrictive SELECT policies.
-- **Availability engine** (`src/lib/availability.ts`) is the core algorithm — handles rules, overrides, existing bookings, external busy times, and timezone conversion.
+- **Dynamic rendering**: Auth and dashboard layouts use `export const dynamic = "force-dynamic"`.
+- **Sidebar navigation**: Uses plain `<a>` tags (not Next.js `<Link>`) to avoid client-side hydration failures.
+- **Template CSS vars**: Applied via inline `style` on booking page wrapper div. Overrides shadcn's CSS variables automatically.
+- **Edge template dark mode**: Uses CSS variable scoping on the wrapper div, NOT the `.dark` class.
+- **No hardcoded colors in booking pages**: Use semantic tokens (`text-foreground`, `bg-card`, etc.) so templates work.
 
 ## Commands
 
@@ -67,6 +99,8 @@ npx shadcn add X     # Add a shadcn/ui component
 
 Migration at `supabase/migrations/00001_initial_schema.sql`. All tables have RLS, UUID PKs, created_at/updated_at timestamps.
 
+Provider branding stored as JSON: `{ template: "bloom", primary_color: "#hex" }`
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in:
@@ -75,11 +109,11 @@ Copy `.env.example` to `.env.local` and fill in:
 - Resend API key
 - App URL
 
-## Implementation Phases
+## Implementation Status
 
 - **Phase 1** (DONE): Auth, onboarding, services CRUD, availability, public booking, Stripe Connect, email confirmation
-- **Phase 2**: Dashboard analytics (top spenders, revenue), calendar week view, personal events, booking management
-- **Phase 3**: SMS + WhatsApp via Twilio, notification preferences, reminders cron
+- **Template System** (DONE): 6 templates, themed components, animations, decorations, template picker in settings
+- **Phase 2**: Dashboard analytics, calendar week view, personal events
+- **Phase 3**: SMS + WhatsApp via Twilio, notification preferences, reminders
 - **Phase 4**: Google/Outlook/Apple/Proton calendar two-way sync
-- **Phase 5**: Per-business branding customization, theme presets
 - **Phase 6**: Rescheduling, recurring appointments, waitlist, multi-provider

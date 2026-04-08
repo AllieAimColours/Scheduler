@@ -13,32 +13,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Settings, Palette, Globe } from "lucide-react";
+import { Settings, Palette, Globe, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
-
-const BRAND_COLORS = [
-  "#ec4899", "#f43f5e", "#f97316", "#eab308",
-  "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6",
-  "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
-];
+import { TemplatePicker } from "@/components/settings/template-picker";
+import { getTemplateId, type TemplateId } from "@/lib/templates/index";
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [saving, setSaving] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("studio");
   const [form, setForm] = useState({
     business_name: "",
     description: "",
     phone: "",
     website: "",
-    primary_color: "#6366f1",
   });
 
   useEffect(() => {
@@ -57,14 +46,14 @@ export default function SettingsPage() {
 
       if (data) {
         setProvider(data);
-        const branding = (data.branding as Record<string, string>) || {};
+        const branding = (data.branding as Record<string, any>) || {};
         setForm({
           business_name: data.business_name,
           description: data.description,
           phone: data.phone || "",
           website: data.website || "",
-          primary_color: branding.primary_color || "#6366f1",
         });
+        setSelectedTemplate(getTemplateId(branding));
       }
     }
     load();
@@ -83,8 +72,8 @@ export default function SettingsPage() {
         phone: form.phone || null,
         website: form.website || null,
         branding: {
-          ...(provider.branding as Record<string, string>),
-          primary_color: form.primary_color,
+          ...(provider.branding as Record<string, any>),
+          template: selectedTemplate,
         },
       })
       .eq("id", provider.id);
@@ -93,6 +82,18 @@ export default function SettingsPage() {
       toast.error("Failed to save settings");
     } else {
       toast.success("Settings saved!");
+      // Update local provider state
+      setProvider({
+        ...provider,
+        business_name: form.business_name,
+        description: form.description,
+        phone: form.phone || null,
+        website: form.website || null,
+        branding: {
+          ...(provider.branding as Record<string, any>),
+          template: selectedTemplate,
+        },
+      });
     }
     setSaving(false);
   }
@@ -102,13 +103,33 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your business profile and branding
+          Manage your business profile and booking page design
         </p>
       </div>
+
+      {/* Template Picker */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Booking Page Template
+          </CardTitle>
+          <CardDescription>
+            Choose a vibe that matches your brand. This transforms your entire
+            booking page — fonts, colors, animations, everything.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TemplatePicker
+            currentTemplate={selectedTemplate}
+            onSelect={setSelectedTemplate}
+          />
+        </CardContent>
+      </Card>
 
       {/* Business Info */}
       <Card>
@@ -160,42 +181,9 @@ export default function SettingsPage() {
               <Globe className="h-4 w-4 inline mr-1" />
               Your booking page:{" "}
               <span className="font-mono font-medium text-foreground">
-                scheduler.app/book/{provider.slug}
+                /book/{provider.slug}
               </span>
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Branding */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Branding
-          </CardTitle>
-          <CardDescription>
-            Customize how your booking page looks to clients
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Primary Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {BRAND_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setForm({ ...form, primary_color: c })}
-                  className={`w-10 h-10 rounded-full transition-all ${
-                    form.primary_color === c
-                      ? "ring-2 ring-offset-2 ring-primary scale-110"
-                      : ""
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
           </div>
         </CardContent>
       </Card>
