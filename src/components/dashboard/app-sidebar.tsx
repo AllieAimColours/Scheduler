@@ -27,7 +27,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -116,14 +115,17 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={isActive}
-                      className="rounded-lg transition-all duration-150"
+                    <Link
+                      href={item.href}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      }`}
                     >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </SidebarMenuButton>
+                    </Link>
                   </SidebarMenuItem>
                 );
               })}
@@ -135,9 +137,7 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
       <SidebarFooter className="p-3">
         <SidebarSeparator className="mb-3" />
         <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent transition-colors" />}
-          >
+          <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent transition-colors">
             <div className="flex w-full items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={provider.logo_url ?? undefined} />
