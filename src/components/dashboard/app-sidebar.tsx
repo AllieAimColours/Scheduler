@@ -34,14 +34,44 @@ const navItems = [
 ];
 
 interface AppSidebarProps {
-  provider: Provider;
+  provider: {
+    business_name: string;
+    logo_url: string | null;
+  };
   userEmail?: string;
+}
+
+function NavLink({
+  href,
+  isActive,
+  onClick,
+  children,
+}: {
+  href: string;
+  isActive: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        isActive
+          ? "bg-purple-50 text-purple-700 font-medium"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      }`}
+    >
+      {children}
+    </a>
+  );
 }
 
 export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -55,11 +85,11 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
     .slice(0, 2)
     .toUpperCase();
 
-  return (
-    <aside className="hidden md:flex w-64 flex-col border-r bg-white min-h-screen">
+  const renderNav = (onNavigate?: () => void) => (
+    <>
       {/* Header */}
       <div className="px-5 py-5 border-b">
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <a href="/dashboard" className="flex items-center gap-3" onClick={onNavigate}>
           {provider.logo_url ? (
             <img
               src={provider.logo_url}
@@ -77,29 +107,26 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
             </span>
             <span className="text-xs text-gray-500">Manage your business</span>
           </div>
-        </Link>
+        </a>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
           return (
-            <Link
+            <NavLink
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                isActive
-                  ? "bg-purple-50 text-purple-700 font-medium"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+              isActive={isActive}
+              onClick={onNavigate}
             >
               <item.icon className="h-4 w-4" />
               <span>{item.title}</span>
-            </Link>
+            </NavLink>
           );
         })}
       </nav>
@@ -107,7 +134,7 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
       {/* Footer */}
       <div className="border-t px-4 py-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-purple-500 text-white text-xs font-medium">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-purple-500 text-white text-xs font-medium shrink-0">
             {initials}
           </div>
           <div className="flex flex-col min-w-0">
@@ -115,7 +142,9 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
               {provider.business_name}
             </span>
             {userEmail && (
-              <span className="text-xs text-gray-500 truncate">{userEmail}</span>
+              <span className="text-xs text-gray-500 truncate">
+                {userEmail}
+              </span>
             )}
           </div>
         </div>
@@ -127,37 +156,47 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
           Log out
         </button>
       </div>
-    </aside>
+    </>
   );
-}
-
-export function MobileSidebarTrigger() {
-  const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-      {open && (
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-2 -ml-2 rounded-lg hover:bg-gray-100"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="text-sm font-semibold truncate">
+          {provider.business_name}
+        </span>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl">
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col">
             <button
-              onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded hover:bg-gray-100"
+              onClick={() => setMobileOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 z-10"
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
+            {renderNav(() => setMobileOpen(false))}
+          </aside>
         </div>
       )}
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 flex-col border-r bg-white min-h-screen shrink-0 sticky top-0 h-screen">
+        {renderNav()}
+      </aside>
     </>
   );
 }
