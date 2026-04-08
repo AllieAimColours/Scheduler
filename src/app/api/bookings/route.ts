@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get("action");
+
+  if (action === "service-info") {
+    const slug = searchParams.get("slug");
+    const serviceId = searchParams.get("serviceId");
+
+    if (!slug || !serviceId) {
+      return NextResponse.json({ error: "Missing params" }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    const { data: provider } = await supabase
+      .from("providers")
+      .select("id")
+      .eq("slug", slug)
+      .single();
+
+    if (!provider) {
+      return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+    }
+
+    const { data: service } = await supabase
+      .from("services")
+      .select("name, emoji, duration_minutes, price_cents, deposit_cents, color")
+      .eq("id", serviceId)
+      .eq("provider_id", provider.id)
+      .eq("is_active", true)
+      .single();
+
+    if (!service) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      service,
+      providerId: provider.id,
+    });
+  }
+
+  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}
