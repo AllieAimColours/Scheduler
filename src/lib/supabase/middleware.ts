@@ -34,18 +34,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Redirect unauthenticated users trying to access dashboard
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/calendar") ||
-    request.nextUrl.pathname.startsWith("/bookings") ||
-    request.nextUrl.pathname.startsWith("/services") ||
-    request.nextUrl.pathname.startsWith("/availability") ||
-    request.nextUrl.pathname.startsWith("/clients") ||
-    request.nextUrl.pathname.startsWith("/integrations") ||
-    request.nextUrl.pathname.startsWith("/payments") ||
-    request.nextUrl.pathname.startsWith("/settings")
-  ) {
+  const protectedPaths = ["/dashboard", "/calendar", "/bookings", "/services", "/availability", "/clients", "/integrations", "/payments", "/settings"];
+  const isProtected = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
+
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
