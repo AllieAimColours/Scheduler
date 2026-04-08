@@ -2,18 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Clock, DollarSign, Calendar } from "lucide-react";
 import Link from "next/link";
+import { ThemedCard } from "@/components/booking/themed-card";
+import { ThemedButton } from "@/components/booking/themed-button";
+import { ThemedTimeSlot } from "@/components/booking/themed-time-slot";
+import { useTemplate } from "@/lib/templates/context";
+import { getTemplate } from "@/lib/templates/index";
 
 interface TimeSlot {
   start: string;
@@ -49,6 +47,9 @@ export default function BookServicePage() {
   const router = useRouter();
   const slug = params.slug as string;
   const serviceId = params.serviceId as string;
+
+  const templateId = useTemplate();
+  const template = getTemplate(templateId);
 
   const [service, setService] = useState<ServiceInfo | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -141,219 +142,211 @@ export default function BookServicePage() {
 
   if (!service) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse opacity-60">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50">
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <Link
-          href={`/book/${slug}`}
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to services
-        </Link>
+    <div className="max-w-2xl mx-auto px-4 py-12">
+      <Link
+        href={`/book/${slug}`}
+        className="inline-flex items-center text-sm opacity-60 hover:opacity-100 mb-6 transition-opacity"
+      >
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        Back to services
+      </Link>
 
-        {/* Service Header */}
-        <Card className="mb-6 relative overflow-hidden">
-          <div
-            className="absolute top-0 left-0 w-full h-1"
-            style={{ backgroundColor: service.color }}
-          />
-          <CardContent className="flex items-center gap-4 py-5">
-            {service.emoji && (
-              <span className="text-3xl">{service.emoji}</span>
-            )}
-            <div>
-              <h1 className="text-xl font-bold">{service.name}</h1>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {service.duration_minutes} min
-                </span>
-                <span className="flex items-center gap-1 font-semibold text-foreground">
-                  <DollarSign className="h-4 w-4" />
-                  {formatPrice(service.price_cents)}
-                </span>
+      {/* Service Header */}
+      <ThemedCard className="mb-6 relative overflow-hidden">
+        <div
+          className="absolute top-0 left-0 w-full h-1"
+          style={{ backgroundColor: service.color }}
+        />
+        <div className="flex items-center gap-4 pt-2">
+          {service.emoji && (
+            <span className="text-3xl">{service.emoji}</span>
+          )}
+          <div>
+            <h1 className={`text-xl font-bold ${template.classes.heading}`}>
+              {service.name}
+            </h1>
+            <div className="flex items-center gap-4 text-sm opacity-60 mt-1">
+              <span className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                {service.duration_minutes} min
+              </span>
+              <span className="flex items-center gap-1 font-semibold opacity-100">
+                <DollarSign className="h-4 w-4" />
+                {formatPrice(service.price_cents)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </ThemedCard>
+
+      {/* Date Selection */}
+      <ThemedCard index={1} className="mb-6">
+        <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+          <Calendar className="h-5 w-5" />
+          <span className={template.classes.heading}>Select a Date</span>
+        </div>
+        <input
+          type="date"
+          min={minDate}
+          max={maxDateStr}
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setStep("time");
+          }}
+          className={`w-full ${template.classes.input}`}
+        />
+      </ThemedCard>
+
+      {/* Time Slots */}
+      {selectedDate && (
+        <ThemedCard index={2} className="mb-6">
+          <div className={`text-lg font-semibold mb-4 ${template.classes.heading}`}>
+            Available Times
+          </div>
+          {loadingSlots ? (
+            <div className="text-center py-6 opacity-60">
+              Loading available times...
+            </div>
+          ) : slots.length === 0 ? (
+            <div className="text-center py-6 opacity-60">
+              No available times for this date. Try another day.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {slots.map((slot) => (
+                <ThemedTimeSlot
+                  key={slot.start}
+                  isSelected={selectedSlot?.start === slot.start}
+                  onClick={() => {
+                    setSelectedSlot(slot);
+                    setStep("details");
+                  }}
+                >
+                  {formatTime(slot.start)}
+                </ThemedTimeSlot>
+              ))}
+            </div>
+          )}
+        </ThemedCard>
+      )}
+
+      {/* Booking Details Form */}
+      {selectedSlot && (
+        <ThemedCard index={3}>
+          <div className={`text-lg font-semibold mb-4 ${template.classes.heading}`}>
+            Your Details
+          </div>
+          <form onSubmit={handleBook} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client_name">Full Name</Label>
+              <input
+                id="client_name"
+                name="client_name"
+                placeholder="Jane Smith"
+                required
+                className={`w-full ${template.classes.input}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client_email">Email</Label>
+              <input
+                id="client_email"
+                name="client_email"
+                type="email"
+                placeholder="jane@example.com"
+                required
+                className={`w-full ${template.classes.input}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client_phone">Phone (optional)</Label>
+              <input
+                id="client_phone"
+                name="client_phone"
+                type="tel"
+                placeholder="+1 (555) 123-4567"
+                className={`w-full ${template.classes.input}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client_notes">
+                Notes for your provider (optional)
+              </Label>
+              <textarea
+                id="client_notes"
+                name="client_notes"
+                placeholder="Any special requests, reference photos you'll bring, etc."
+                rows={3}
+                className={`w-full ${template.classes.input}`}
+              />
+            </div>
+
+            <div className={template.classes.summaryBox}>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span>Date</span>
+                  <span className="font-medium">
+                    {new Date(selectedDate + "T00:00").toLocaleDateString(
+                      "en-US",
+                      {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Time</span>
+                  <span className="font-medium">
+                    {formatTime(selectedSlot.start)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Service</span>
+                  <span className="font-medium">{service.name}</span>
+                </div>
+                <div className={`flex justify-between font-semibold pt-2 border-t ${template.classes.heading}`}>
+                  <span>
+                    {service.deposit_cents > 0 ? "Deposit due now" : "Total"}
+                  </span>
+                  <span>
+                    {formatPrice(
+                      service.deposit_cents > 0
+                        ? service.deposit_cents
+                        : service.price_cents
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Date Selection */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Calendar className="h-5 w-5" />
-              Select a Date
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Input
-              type="date"
-              min={minDate}
-              max={maxDateStr}
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setStep("time");
-              }}
+            <ThemedButton
+              type="submit"
               className="w-full"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Time Slots */}
-        {selectedDate && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Available Times</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingSlots ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  Loading available times...
-                </div>
-              ) : slots.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  No available times for this date. Try another day.
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {slots.map((slot) => (
-                    <Button
-                      key={slot.start}
-                      variant={
-                        selectedSlot?.start === slot.start
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() => {
-                        setSelectedSlot(slot);
-                        setStep("details");
-                      }}
-                    >
-                      {formatTime(slot.start)}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Booking Details Form */}
-        {selectedSlot && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Your Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleBook} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client_name">Full Name</Label>
-                  <Input
-                    id="client_name"
-                    name="client_name"
-                    placeholder="Jane Smith"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client_email">Email</Label>
-                  <Input
-                    id="client_email"
-                    name="client_email"
-                    type="email"
-                    placeholder="jane@example.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client_phone">Phone (optional)</Label>
-                  <Input
-                    id="client_phone"
-                    name="client_phone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client_notes">
-                    Notes for your provider (optional)
-                  </Label>
-                  <Textarea
-                    id="client_notes"
-                    name="client_notes"
-                    placeholder="Any special requests, reference photos you'll bring, etc."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span>Date</span>
-                    <span className="font-medium">
-                      {new Date(selectedDate + "T00:00").toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Time</span>
-                    <span className="font-medium">
-                      {formatTime(selectedSlot.start)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Service</span>
-                    <span className="font-medium">{service.name}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold pt-2 border-t">
-                    <span>
-                      {service.deposit_cents > 0 ? "Deposit due now" : "Total"}
-                    </span>
-                    <span>
-                      {formatPrice(
-                        service.deposit_cents > 0
-                          ? service.deposit_cents
-                          : service.price_cents
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  disabled={submitting}
-                >
-                  {submitting
-                    ? "Processing..."
-                    : service.price_cents === 0
-                    ? "Confirm Booking"
-                    : `Book & Pay ${formatPrice(
-                        service.deposit_cents > 0
-                          ? service.deposit_cents
-                          : service.price_cents
-                      )}`}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              disabled={submitting}
+            >
+              {submitting
+                ? "Processing..."
+                : service.price_cents === 0
+                ? "Confirm Booking"
+                : `Book & Pay ${formatPrice(
+                    service.deposit_cents > 0
+                      ? service.deposit_cents
+                      : service.price_cents
+                  )}`}
+            </ThemedButton>
+          </form>
+        </ThemedCard>
+      )}
     </div>
   );
 }

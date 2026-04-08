@@ -1,0 +1,307 @@
+/* ==========================================================================
+   Template animation keyframes & utilities (Tailwind v4 @utility syntax)
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Aura
+   --------------------------------------------------------------------------- */
+@keyframes aura-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aura-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes aura-orb {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@utility animate-aura-fade-in {
+  animation: aura-fade-in 0.6s ease-out both;
+}
+
+@utility animate-aura-float {
+  animation: aura-float 6s infinite ease-in-out;
+}
+
+@utility animate-aura-orb {
+  animation: aura-orb 8s infinite ease-in-out;
+}
+
+/* ---------------------------------------------------------------------------
+   Bloom
+   --------------------------------------------------------------------------- */
+@keyframes bloom-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bloom-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes bloom-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@utility animate-bloom-fade-in {
+  animation: bloom-fade-in 0.5s ease-out both;
+}
+
+@utility animate-bloom-shimmer {
+  animation: bloom-shimmer 3s infinite linear;
+}
+
+@utility animate-bloom-bounce {
+  animation: bloom-bounce 0.3s ease-in-out;
+}
+
+/* ---------------------------------------------------------------------------
+   Edge
+   --------------------------------------------------------------------------- */
+@keyframes edge-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes edge-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 16px currentColor;
+  }
+}
+
+@keyframes edge-glitch {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(2px);
+  }
+  50% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(1px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@utility animate-edge-slide-in {
+  animation: edge-slide-in 0.4s ease-out both;
+}
+
+@utility animate-edge-glow-pulse {
+  animation: edge-glow-pulse 2s infinite ease-in-out;
+}
+
+@utility animate-edge-glitch {
+  animation: edge-glitch 0.1s ease-in-out;
+}
+
+/* ---------------------------------------------------------------------------
+   Luxe
+   --------------------------------------------------------------------------- */
+@keyframes luxe-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes luxe-line {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@utility animate-luxe-reveal {
+  animation: luxe-reveal 0.8s ease-out both;
+}
+
+@utility animate-luxe-line {
+  animation: luxe-line 0.6s ease-out both;
+}
+
+/* ---------------------------------------------------------------------------
+   Pop
+   --------------------------------------------------------------------------- */
+@keyframes pop-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pop-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes pop-confetti {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(120px) rotate(360deg);
+  }
+}
+
+@utility animate-pop-bounce-in {
+  animation: pop-bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@utility animate-pop-wiggle {
+  animation: pop-wiggle 0.3s ease-in-out;
+}
+
+@utility animate-pop-confetti {
+  animation: pop-confetti 1.2s ease-out both;
+}
+
+/* ---------------------------------------------------------------------------
+   Studio
+   --------------------------------------------------------------------------- */
+@keyframes studio-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes studio-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-studio-fade {
+  animation: studio-fade 0.3s ease both;
+}
+
+@utility animate-studio-slide-up {
+  animation: studio-slide-up 0.3s ease-out both;
+}
+
+/* ---------------------------------------------------------------------------
+   Stagger delay utilities
+   --------------------------------------------------------------------------- */
+@utility stagger-1 {
+  animation-delay: 0.05s;
+}
+
+@utility stagger-2 {
+  animation-delay: 0.1s;
+}
+
+@utility stagger-3 {
+  animation-delay: 0.15s;
+}
+
+@utility stagger-4 {
+  animation-delay: 0.2s;
+}
+
+@utility stagger-5 {
+  animation-delay: 0.25s;
+}
+
+@utility stagger-6 {
+  animation-delay: 0.3s;
+}
+
+@utility stagger-7 {
+  animation-delay: 0.35s;
+}
+
+@utility stagger-8 {
+  animation-delay: 0.4s;
+}
+
+@utility stagger-9 {
+  animation-delay: 0.45s;
+}
+
+@utility stagger-10 {
+  animation-delay: 0.5s;
+}
