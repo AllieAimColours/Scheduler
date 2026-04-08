@@ -53,7 +53,7 @@ export function BookingActions({
   return (
     <div className="space-y-4">
       <div>
-        <h4 className="text-sm font-medium text-muted-foreground mb-2">
+        <h4 className="text-sm font-medium text-gray-400 mb-2">
           Your Notes (private)
         </h4>
         <Textarea
@@ -61,10 +61,11 @@ export function BookingActions({
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Add internal notes about this appointment..."
           rows={3}
+          className="border-gray-200 bg-gray-50/50 focus:border-purple-400 focus:ring-purple-400/20 rounded-xl"
         />
         <Button
           size="sm"
-          className="mt-2"
+          className="mt-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
           onClick={saveNotes}
           disabled={saving}
         >
@@ -73,37 +74,41 @@ export function BookingActions({
       </div>
 
       {currentStatus !== "cancelled" && currentStatus !== "completed" && (
-        <div className="flex gap-2 pt-2">
-          {currentStatus === "confirmed" && (
+        <>
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+          <div className="flex gap-2 pt-1">
+            {currentStatus === "confirmed" && (
+              <Button
+                size="sm"
+                onClick={() => updateStatus("completed")}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-sm"
+              >
+                Mark Completed
+              </Button>
+            )}
+            {currentStatus === "confirmed" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => updateStatus("no_show")}
+                className="border-gray-200 hover:bg-gray-50"
+              >
+                No Show
+              </Button>
+            )}
             <Button
               size="sm"
-              variant="default"
-              onClick={() => updateStatus("completed")}
+              variant="destructive"
+              onClick={() => {
+                if (confirm("Cancel this booking?")) {
+                  updateStatus("cancelled");
+                }
+              }}
             >
-              Mark Completed
+              Cancel Booking
             </Button>
-          )}
-          {currentStatus === "confirmed" && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => updateStatus("no_show")}
-            >
-              No Show
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => {
-              if (confirm("Cancel this booking?")) {
-                updateStatus("cancelled");
-              }
-            }}
-          >
-            Cancel Booking
-          </Button>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

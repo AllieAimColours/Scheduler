@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, User } from "lucide-react";
+import { BookOpen, Clock, User, CalendarHeart } from "lucide-react";
 import Link from "next/link";
 
 function formatPrice(cents: number) {
@@ -18,11 +18,11 @@ function formatPrice(cents: number) {
 }
 
 const statusColors: Record<string, string> = {
-  confirmed: "bg-green-100 text-green-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
-  no_show: "bg-gray-100 text-gray-800",
+  confirmed: "bg-green-50 text-green-600",
+  pending: "bg-amber-50 text-amber-600",
+  completed: "bg-blue-50 text-blue-600",
+  cancelled: "bg-red-50 text-red-600",
+  no_show: "bg-gray-50 text-gray-600",
 };
 
 export default async function BookingsPage() {
@@ -49,19 +49,23 @@ export default async function BookingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Bookings</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Bookings
+        </h1>
+        <p className="text-gray-400">
           View and manage all your appointments
         </p>
       </div>
 
       {!bookings || bookings.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No bookings yet</h3>
-            <p className="text-muted-foreground">
-              Share your booking link to start receiving appointments
+        <Card className="rounded-2xl border-gray-100 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg mb-6">
+              <CalendarHeart className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Your schedule is wide open</h3>
+            <p className="text-gray-400 max-w-sm">
+              Share your booking link with clients and watch the appointments roll in!
             </p>
           </CardContent>
         </Card>
@@ -77,31 +81,38 @@ export default async function BookingsPage() {
 
             return (
               <Link key={booking.id} href={`/bookings/${booking.id}`}>
-                <Card className="hover:shadow-md transition-all cursor-pointer relative overflow-hidden">
+                <Card className="hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer relative overflow-hidden rounded-2xl border-gray-100 group">
                   {service && (
                     <div
-                      className="absolute left-0 top-0 w-1 h-full"
-                      style={{ backgroundColor: service.color }}
+                      className="absolute left-0 top-0 w-1.5 h-full rounded-l-2xl"
+                      style={{
+                        background: `linear-gradient(to bottom, ${service.color}, ${service.color}88)`,
+                      }}
                     />
                   )}
-                  <CardContent className="flex items-center justify-between py-4 pl-6">
+                  <CardContent className="flex items-center justify-between py-4 pl-7">
                     <div className="flex items-center gap-4">
                       {service?.emoji && (
-                        <span className="text-2xl">{service.emoji}</span>
+                        <div
+                          className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-xl shadow-sm"
+                          style={{ backgroundColor: `${service.color}15` }}
+                        >
+                          {service.emoji}
+                        </div>
                       )}
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-semibold text-gray-800">
                             {service?.name || "Unknown Service"}
                           </span>
                           <Badge
-                            className={statusColors[booking.status] || ""}
+                            className={`${statusColors[booking.status] || ""} rounded-full border-0 font-medium`}
                             variant="secondary"
                           >
                             {booking.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
                           <span className="flex items-center gap-1">
                             <User className="h-3.5 w-3.5" />
                             {booking.client_name}
@@ -128,10 +139,10 @@ export default async function BookingsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold">
+                      <span className="font-semibold text-gray-800">
                         {formatPrice(booking.payment_amount_cents)}
                       </span>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-gray-400">
                         {booking.payment_status}
                       </div>
                     </div>

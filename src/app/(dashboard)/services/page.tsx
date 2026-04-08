@@ -25,8 +25,10 @@ export default async function ServicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Services</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Services
+        </h1>
+        <p className="text-gray-400">
           Manage the treatments and services you offer to clients
         </p>
       </div>

@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users } from "lucide-react";
+import { Users, Heart } from "lucide-react";
 
 function formatPrice(cents: number) {
   return new Intl.NumberFormat("en-US", {
@@ -82,57 +83,74 @@ export default async function ClientsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Clients
+        </h1>
+        <p className="text-gray-400">
           Your client list, auto-built from bookings
         </p>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {clients.length} Client{clients.length !== 1 ? "s" : ""}
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            <span>Clients</span>
+            <Badge className="rounded-full bg-purple-50 text-purple-600 border-0 ml-1">
+              {clients.length}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {clients.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No clients yet. They&apos;ll appear here after their first booking.
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg mb-6">
+                <Heart className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Your future regulars are out there</h3>
+              <p className="text-gray-400 max-w-sm">
+                Clients will appear here automatically after their first booking. Share your link and watch the list grow!
+              </p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead className="text-right">Bookings</TableHead>
-                  <TableHead className="text-right">Total Spent</TableHead>
-                  <TableHead>Last Visit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.email}>
-                    <TableCell className="font-medium">
-                      {client.name}
-                    </TableCell>
-                    <TableCell>{client.email}</TableCell>
-                    <TableCell>{client.phone || "—"}</TableCell>
-                    <TableCell className="text-right">
-                      {client.bookingCount}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatPrice(client.totalSpent)}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(client.lastVisit).toLocaleDateString()}
-                    </TableCell>
+            <div className="rounded-xl overflow-hidden border border-gray-100">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                    <TableHead className="text-gray-400 font-medium">Name</TableHead>
+                    <TableHead className="text-gray-400 font-medium">Email</TableHead>
+                    <TableHead className="text-gray-400 font-medium">Phone</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">Bookings</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">Total Spent</TableHead>
+                    <TableHead className="text-gray-400 font-medium">Last Visit</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.email} className="hover:bg-purple-50/30 transition-colors">
+                      <TableCell className="font-medium text-gray-800">
+                        {client.name}
+                      </TableCell>
+                      <TableCell className="text-gray-600">{client.email}</TableCell>
+                      <TableCell className="text-gray-400">{client.phone || "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge className="rounded-full bg-blue-50 text-blue-600 border-0">
+                          {client.bookingCount}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-gray-800">
+                        {formatPrice(client.totalSpent)}
+                      </TableCell>
+                      <TableCell className="text-gray-400">
+                        {new Date(client.lastVisit).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

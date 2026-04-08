@@ -31,8 +31,10 @@ export default async function AvailabilityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Availability</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Availability
+        </h1>
+        <p className="text-gray-400">
           Set your weekly hours and block off specific dates
         </p>
       </div>
