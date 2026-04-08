@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTemplateId, getTemplate } from "@/lib/templates/index";
+import { getTemplateId, getTemplate, type TemplateId } from "@/lib/templates/index";
 import { getTemplateFonts } from "@/lib/templates/fonts";
 import { TemplateWrapper } from "@/components/booking/template-wrapper";
 
@@ -12,7 +12,7 @@ export default async function BookingLayout({
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }) {
-  let templateId = "studio" as const;
+  let templateId: TemplateId = "studio";
   let template = getTemplate(templateId);
   let fontClasses = "";
 
