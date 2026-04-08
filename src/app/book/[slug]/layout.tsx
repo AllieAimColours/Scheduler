@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notFound } from "next/navigation";
 import { getTemplateId, getTemplate } from "@/lib/templates/index";
 import { getTemplateFonts } from "@/lib/templates/fonts";
 import { TemplateWrapper } from "@/components/booking/template-wrapper";
@@ -13,23 +12,31 @@ export default async function BookingLayout({
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }) {
-  const { slug } = await params;
-  const supabase = createAdminClient();
+  let templateId = "studio" as const;
+  let template = getTemplate(templateId);
+  let fontClasses = "";
 
-  const { data: provider } = await supabase
-    .from("providers")
-    .select("branding")
-    .eq("slug", slug)
-    .single();
+  try {
+    const { slug } = await params;
+    const supabase = createAdminClient();
 
-  if (!provider) notFound();
+    const { data: provider } = await supabase
+      .from("providers")
+      .select("branding")
+      .eq("slug", slug)
+      .single();
 
-  const templateId = getTemplateId(
-    provider.branding as Record<string, any> | null
-  );
-  const template = getTemplate(templateId);
-  const fonts = getTemplateFonts(templateId);
-  const fontClasses = `${fonts.heading.variable} ${fonts.body.variable}`;
+    if (provider) {
+      templateId = getTemplateId(
+        provider.branding as Record<string, any> | null
+      );
+      template = getTemplate(templateId);
+      const fonts = getTemplateFonts(templateId);
+      fontClasses = `${fonts.heading.variable} ${fonts.body.variable}`;
+    }
+  } catch {
+    // Fall back to studio template if anything fails
+  }
 
   return (
     <TemplateWrapper
