@@ -1,15 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Clock } from "lucide-react";
 import { ServiceList } from "@/components/booking/service-list";
-
-function formatPrice(cents: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
 
 export default async function BookingPage({
   params,
@@ -72,11 +63,7 @@ export default async function BookingPage({
           Choose a service to book
         </h2>
 
-        <ServiceList
-          services={services ?? []}
-          slug={slug}
-          formatPrice={formatPrice}
-        />
+        <ServiceList services={services ?? []} slug={slug} />
       </div>
     </div>
   );

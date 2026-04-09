@@ -18,10 +18,16 @@ interface Service {
 interface ServiceListProps {
   services: Service[];
   slug: string;
-  formatPrice: (cents: number) => string;
 }
 
-export function ServiceList({ services, slug, formatPrice }: ServiceListProps) {
+function formatPrice(cents: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+}
+
+export function ServiceList({ services, slug }: ServiceListProps) {
   if (!services || services.length === 0) {
     return (
       <ThemedCard>
