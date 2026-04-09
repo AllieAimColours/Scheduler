@@ -118,7 +118,7 @@ export default function YourPageBuilder() {
       <div className="grid xl:grid-cols-[1fr_500px] gap-6">
         <BlockListEditor blocks={blocks} onChange={handleBlocksChange} provider={provider} />
         <div className="xl:sticky xl:top-6 xl:self-start">
-          <PreviewPane slug={provider.slug} dirty={dirty} />
+          <PreviewPane slug={provider.slug} template={template} blocks={blocks} />
         </div>
       </div>
     </div>

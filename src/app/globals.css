@@ -145,5 +145,11 @@
     font-family: var(--font-dashboard-display);
     font-feature-settings: "ss01", "ss02";
     letter-spacing: -0.02em;
+    font-style: normal;
   }
+}
+
+/* Global: no italics anywhere — user preference */
+em, i, blockquote, q, address, cite, dfn, var {
+  font-style: normal;
 }

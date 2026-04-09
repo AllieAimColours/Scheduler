@@ -1,11 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, Smartphone, Monitor, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ExternalLink, Smartphone, Monitor } from "lucide-react";
+import type { PageBlock } from "@/lib/page-builder/types";
+import type { TemplateId } from "@/lib/templates/index";
 
-export function PreviewPane({ slug, dirty }: { slug: string; dirty: boolean }) {
+interface Props {
+  slug: string;
+  template: TemplateId;
+  blocks: PageBlock[];
+}
+
+export function PreviewPane({ slug, template, blocks }: Props) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [iframeReady, setIframeReady] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Listen for the "ready" handshake from the iframe
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "preview-ready") {
+        setIframeReady(true);
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // Push updates to the iframe whenever template/blocks change
+  useEffect(() => {
+    if (!iframeReady || !iframeRef.current?.contentWindow) return;
+    iframeRef.current.contentWindow.postMessage(
+      { type: "preview-update", template, blocks },
+      "*"
+    );
+  }, [template, blocks, iframeReady]);
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white shadow-lg overflow-hidden">
@@ -13,11 +42,10 @@ export function PreviewPane({ slug, dirty }: { slug: string; dirty: boolean }) {
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="text-[11px] font-bold uppercase tracking-wider text-purple-600">Live preview</div>
-          {dirty && (
-            <div className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
-              Unsaved
-            </div>
-          )}
+          <div className="flex items-center gap-1 text-[10px] text-green-600">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Real-time
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -38,19 +66,13 @@ export function PreviewPane({ slug, dirty }: { slug: string; dirty: boolean }) {
           >
             <Smartphone className="h-3.5 w-3.5" />
           </button>
-          <button
-            onClick={() => setRefreshKey((k) => k + 1)}
-            className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md transition-colors"
-            aria-label="Refresh preview"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
           <a
             href={`/book/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md transition-colors"
-            aria-label="Open in new tab"
+            aria-label="Open published page"
+            title="Open the published version"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
@@ -64,19 +86,13 @@ export function PreviewPane({ slug, dirty }: { slug: string; dirty: boolean }) {
         }`}
       >
         <iframe
-          key={refreshKey}
-          src={`/book/${slug}`}
+          ref={iframeRef}
+          src="/page-preview"
           className="w-full border-0"
           style={{ height: "calc(100vh - 240px)", minHeight: "600px" }}
-          title="Booking page preview"
+          title="Live preview"
         />
       </div>
-
-      {dirty && (
-        <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 text-center">
-          Click <strong>Publish changes</strong> to update the live page
-        </div>
-      )}
     </div>
   );
 }

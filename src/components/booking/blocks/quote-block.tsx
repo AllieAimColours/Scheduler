@@ -30,7 +30,7 @@ export function QuoteBlockView({ block, index }: Props) {
           style={{ color: "var(--template-accent)" }}
         />
         <blockquote
-          className={cn(template.classes.heading, "text-2xl md:text-3xl leading-relaxed mb-8 italic")}
+          className={cn(template.classes.heading, "text-2xl md:text-3xl leading-relaxed mb-8")}
         >
           &ldquo;{quote}&rdquo;
         </blockquote>
