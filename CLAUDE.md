@@ -180,46 +180,62 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ### Planned Roadmap (full details in `~/.claude/plans/velvety-jingling-yeti.md`)
 
-The roadmap is 29 tasks total. Order is optimized so each session ships something visible (small wins mixed between large features).
+**Revised after honest critique 2026-04-09.** Two new principles:
+1. Real users (Allie's hairstylist + therapist) test and report bugs after Phase 1 — debugging happens between feature work
+2. Billing only after they've validated the product
 
-**🔥 Foundation (next 5 tasks — do these in order)**:
-- **Task 3**: Email confirmations — wire `sendBookingConfirmation()` into webhook
-- **Task 4**: Stripe refund processing
-- **Task 5** ⭐: Branded confirmation page + add-to-calendar + directions
-- **Task 6** ⭐: Open Graph + share preview + QR code generator
-- **Task 7** ⭐: Page customization layer (override fonts/colors on top of templates)
+**🔥 Phase 1 — Foundation (validate the loop)**
+- **Task 3**: Email confirmations
+- **Task 4**: Stripe refunds
+- **Task 5** ⭐: Branded confirmation page + calendar + directions
+- **Task 6** ⭐ **NEW**: PWA setup (installable, offline shell, app icon)
+- **Task 7** ⭐ **NEW**: Analytics (PostHog or Plausible)
+- **Task 8** ⭐: OG share preview + QR code generator
+- **Task 9** ⭐: Page customization layer (font/color overrides)
+- **CHECKPOINT**: Hand to Allie's hairstylist + therapist for end-to-end testing. Pause feature work and fix what they find.
 
-**🎯 Power features**:
-- Task 8: Smart reminders (re-booking nudges with escalating urgency)
-- Task 9: Pre-appointment reminders (24h/1h)
-- Task 10 ⭐: Pre/post-appointment care guides per service
-- Task 11: Intake forms per service
-- Task 12 ⭐: Service explainer videos
+**📅 Phase 2 — The calendar hero + power features**
+- **Task 10** 🔥 **PROMOTED**: Gorgeous color-coded calendar (week/day/month, drag-to-reschedule). The dashboard's most important screen.
+- **Task 11** ⭐ **PROMOTED**: SMS via Twilio (older clients prefer texts)
+- Task 12: Smart reminders (re-booking nudges)
+- Task 13: Pre-appointment reminders (24h/1h)
+- Task 14 ⭐: Pre/post-appointment care guides
+- Task 15: Intake forms per service
+- Task 16 ⭐: Service explainer videos
 
-**🏢 Team & client features**:
-- Task 13: Multi-staff support (salons/clinics with multiple practitioners)
-- Task 14: Client profiles with memory + provider notes
-- Task 15: Service add-ons (upsells, free-after-spend)
-- Task 16 ⭐: Live availability + social proof counters
+**🏢 Phase 3 — Team & client features**
+- Task 17: Multi-staff support
+- **Task 18** ⭐ **NEW**: Client accounts (login, "my bookings", saved preferences)
+- Task 19: Client profiles with memory + provider notes
+- Task 20: Service add-ons
+- Task 21 ⭐: Live availability + social proof counters
 
-**💰 Growth & retention**:
-- Task 17: Discounts, referrals, loyalty (combined)
-- Task 18 ⭐: Bring-a-friend group discount
-- Task 19 ⭐: Birthday discount auto-apply
-- Task 20: Waitlist with smart notifications
-- Task 21: Reviews (Google import + native ratings)
-- Task 22: Before/after portfolio
+**💰 Phase 4 — Growth & retention**
+- Task 22: Discounts, referrals, loyalty
+- Task 23 ⭐: Bring-a-friend group discount
+- Task 24 ⭐: Birthday discount auto-apply
+- Task 25: Waitlist with smart notifications
+- Task 26: Reviews (Google import + native)
+- Task 27: Before/after portfolio
 
-**✨ The full WOW polish layer**:
-- Task 23 ⭐: AI service recommender (natural language → service via Claude API)
-- Task 24 ⭐: Live chat bubble (Supabase Realtime, provider online/offline)
-- Task 25 ⭐: Print-ready flyer/poster generator
-- Task 26 ⭐: Multi-language support (auto-translation)
-- Task 27: Social feed / content hub (Instagram, TikTok widgets)
-- Task 28: Privacy policy & legal templates
+**💳 Phase 5 — Monetization (only after testers validate)**
+- **Task 28** 💰 **NEW**: Stripe billing for providers (subscriptions, trial)
+- Task 29: Provider pricing page + plan tiers
+- Task 30: Provider billing dashboard
+
+**✨ Phase 6 — Wow polish**
+- Task 31 ⭐: AI service recommender (Claude API)
+- Task 32: Privacy policy & legal templates
+- Task 33: Social feed / content hub
+
+**🛑 Cut/deferred** (from critique):
+- Live chat bubble — defer until paying users request it
+- Flyer/poster generator — defer
+- Multi-language — one language until PMF
+- Onboarding tour — folded into Task 18 (client accounts)
 
 **🚀 Future (huge — separate project)**:
-- Task 29: Multi-business / cross-vertical (hair + pet sitting via Workspace > Businesses architecture)
+- Task 34: Multi-business / cross-vertical (hair + pet sitting)
 
 ### Done This Session (2026-04-09)
 - Dashboard font overhaul (Plus Jakarta Sans body + Fraunces serif headings)
