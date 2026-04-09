@@ -80,13 +80,15 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
     };
 
     const supabase = createClient();
+    const policyJson = JSON.parse(JSON.stringify(newPolicy));
     const { error } = await supabase
       .from("providers")
-      .update({ cancellation_policy: JSON.parse(JSON.stringify(newPolicy)) })
+      .update({ cancellation_policy: policyJson })
       .eq("id", provider.id);
 
     if (error) {
-      toast.error("Failed to save cancellation policy");
+      console.error("Cancellation policy save error:", error);
+      toast.error(`Failed to save: ${error.message}`);
     } else {
       toast.success("Cancellation policy saved!");
       onUpdate({

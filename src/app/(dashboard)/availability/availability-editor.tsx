@@ -91,175 +91,203 @@ export function AvailabilityEditor({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Weekly Schedule */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-              <Clock className="h-4 w-4 text-white" />
+    <div className="space-y-8">
+      {/* Weekly Schedule — magazine style */}
+      <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500">
+        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-blue-200/30 to-indigo-200/30 blur-3xl pointer-events-none" />
+
+        <div className="relative p-8 md:p-10">
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-3">
+                <Clock className="h-3 w-3 text-blue-600" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Weekly hours</span>
+              </div>
+              <h2 className="font-display text-3xl md:text-4xl text-gray-800 mb-1">Your week, your way</h2>
+              <p className="text-sm text-gray-500">
+                {timezone.replace(/_/g, " ")}
+              </p>
             </div>
-            Weekly Hours
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            Set your regular working hours ({timezone.replace(/_/g, " ")})
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {DAYS.map((day, index) => (
-            <div
-              key={day}
-              className={`flex items-center gap-4 py-3 px-4 rounded-xl transition-all duration-200 ${
-                schedule[index].enabled
-                  ? "bg-gradient-to-r from-purple-50/80 to-pink-50/50 border border-purple-100/60"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <Button
-                type="button"
-                size="sm"
-                className={`w-28 transition-all ${
+          </div>
+
+          {/* Day rows */}
+          <div className="space-y-2">
+            {DAYS.map((day, index) => (
+              <div
+                key={day}
+                className={`group relative flex items-center gap-5 px-5 py-4 rounded-2xl transition-all duration-300 ${
                   schedule[index].enabled
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-sm"
-                    : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                    ? "bg-gradient-to-r from-purple-50/60 via-pink-50/40 to-transparent border border-purple-100/80"
+                    : "hover:bg-gray-50/80 border border-transparent"
                 }`}
-                variant={schedule[index].enabled ? "default" : "outline"}
-                onClick={() =>
-                  updateDay(index, { enabled: !schedule[index].enabled })
-                }
               >
-                {day.slice(0, 3)}
-                {schedule[index].enabled ? " ✓" : ""}
-              </Button>
+                {/* Active indicator dot */}
+                <div
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    schedule[index].enabled
+                      ? "bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/40"
+                      : "bg-gray-200"
+                  }`}
+                />
 
-              {schedule[index].enabled ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="time"
-                    value={schedule[index].start_time}
-                    onChange={(e) =>
-                      updateDay(index, { start_time: e.target.value })
-                    }
-                    className="w-32 border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+                {/* Day name */}
+                <button
+                  type="button"
+                  onClick={() => updateDay(index, { enabled: !schedule[index].enabled })}
+                  className={`w-32 text-left font-display text-xl transition-all ${
+                    schedule[index].enabled ? "text-gray-800" : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {day}
+                </button>
+
+                {/* Times or placeholder */}
+                {schedule[index].enabled ? (
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="relative flex-1 max-w-[140px]">
+                      <Input
+                        type="time"
+                        value={schedule[index].start_time}
+                        onChange={(e) => updateDay(index, { start_time: e.target.value })}
+                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl"
+                      />
+                    </div>
+                    <span className="text-gray-300 font-light text-lg">→</span>
+                    <div className="relative flex-1 max-w-[140px]">
+                      <Input
+                        type="time"
+                        value={schedule[index].end_time}
+                        onChange={(e) => updateDay(index, { end_time: e.target.value })}
+                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => updateDay(index, { enabled: true })}
+                    className="text-sm text-gray-400 italic flex-1 text-left hover:text-purple-500 transition-colors"
+                  >
+                    Tap to add hours
+                  </button>
+                )}
+
+                {/* Toggle */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={schedule[index].enabled}
+                  onClick={() => updateDay(index, { enabled: !schedule[index].enabled })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 shrink-0 ${
+                    schedule[index].enabled
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 shadow-md"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                      schedule[index].enabled ? "translate-x-6" : "translate-x-1"
+                    }`}
                   />
-                  <span className="text-gray-400 text-sm">to</span>
-                  <Input
-                    type="time"
-                    value={schedule[index].end_time}
-                    onChange={(e) =>
-                      updateDay(index, { end_time: e.target.value })
-                    }
-                    className="w-32 border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-                  />
-                </div>
-              ) : (
-                <span className="text-sm text-gray-400 italic">
-                  Not available
-                </span>
-              )}
-            </div>
-          ))}
+                </button>
+              </div>
+            ))}
+          </div>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mt-4" />
-
-          <div className="pt-4">
+          <div className="mt-8 flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              {schedule.filter((d) => d.enabled).length} of 7 days active
+            </p>
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 px-6"
             >
-              {saving ? "Saving..." : "Save Weekly Hours"}
+              {saving ? "Saving..." : "Save changes"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Date Overrides */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      {/* Date Overrides — magazine style */}
+      <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500">
+        <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-gradient-to-br from-amber-200/30 to-orange-200/30 blur-3xl pointer-events-none" />
+
+        <div className="relative p-8 md:p-10">
+          <div className="flex items-start justify-between mb-8">
             <div>
-              <CardTitle className="flex items-center gap-2.5 text-gray-800">
-                <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
-                  <CalendarOff className="h-4 w-4 text-white" />
-                </div>
-                Date Overrides
-              </CardTitle>
-              <CardDescription className="text-gray-400 mt-1">
-                Block off specific dates for vacations, holidays, or special
-                hours
-              </CardDescription>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 mb-3">
+                <CalendarOff className="h-3 w-3 text-amber-600" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Exceptions</span>
+              </div>
+              <h2 className="font-display text-3xl md:text-4xl text-gray-800 mb-1">Days off & extras</h2>
+              <p className="text-sm text-gray-500">
+                Vacations, holidays, or special hours
+              </p>
             </div>
             <Button
               size="sm"
               onClick={() => setOverrideDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Override
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add date
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+
           {overrides.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                <Sun className="h-6 w-6 text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="relative mb-6">
+                <div className="inline-flex p-5 rounded-3xl bg-gradient-to-br from-amber-100 to-orange-100">
+                  <Sun className="h-8 w-8 text-amber-500" />
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-amber-300/30 to-orange-300/30 blur-2xl -z-10" />
               </div>
+              <h3 className="font-display text-xl text-gray-700 mb-2">All clear</h3>
               <p className="text-sm text-gray-400 max-w-xs">
-                No date overrides yet. Add one to block a day off for vacation or set special hours.
+                No exceptions yet. Add one to block a vacation day or extend your hours for a special occasion.
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {overrides.map((override) => (
                 <div
                   key={override.id}
-                  className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50/80 border border-gray-100 hover:shadow-sm transition-all duration-200"
+                  className="group flex items-center justify-between gap-4 py-4 px-5 rounded-2xl bg-gradient-to-r from-gray-50/80 via-white to-white border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all duration-300"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
                     <Badge
-                      className={`rounded-full border-0 font-medium ${
+                      className={`rounded-full border-0 font-medium px-3 py-1 ${
                         override.is_blocked
-                          ? "bg-red-50 text-red-600"
-                          : "bg-green-50 text-green-600"
+                          ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-100"
+                          : "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-100"
                       }`}
                     >
-                      {override.is_blocked ? "Blocked" : "Open"}
+                      {override.is_blocked ? "Blocked" : "Extra hours"}
                     </Badge>
-                    <span className="font-medium text-gray-800">
-                      {new Date(override.date + "T00:00").toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday: "short",
-                          month: "short",
+                    <div className="min-w-0 flex-1">
+                      <div className="font-display text-lg text-gray-800 truncate">
+                        {new Date(override.date + "T00:00").toLocaleDateString("en-US", {
+                          weekday: "long",
+                          month: "long",
                           day: "numeric",
-                          year: "numeric",
-                        }
-                      )}
-                    </span>
-                    {override.start_time && override.end_time && (
-                      <span className="text-sm text-gray-400">
-                        {override.start_time.slice(0, 5)} -{" "}
-                        {override.end_time.slice(0, 5)}
-                      </span>
-                    )}
-                    {!override.start_time && (
-                      <span className="text-sm text-gray-400">
-                        All day
-                      </span>
-                    )}
-                    {override.reason && (
-                      <span className="text-sm text-gray-400 italic">
-                        — {override.reason}
-                      </span>
-                    )}
+                        })}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {override.start_time && override.end_time
+                          ? `${override.start_time.slice(0, 5)} – ${override.end_time.slice(0, 5)}`
+                          : "All day"}
+                        {override.reason && (
+                          <span className="ml-2 italic">· {override.reason}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => deleteOverride(override.id)}
-                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -267,8 +295,8 @@ export function AvailabilityEditor({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Override Dialog */}
       <Dialog open={overrideDialogOpen} onOpenChange={setOverrideDialogOpen}>
