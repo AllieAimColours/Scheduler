@@ -37,6 +37,7 @@ export function createDefaultBlock(type: BlockType): PageBlock {
         config: {
           title: "My work",
           images: [],
+          layout: "grid",
           columns: 3,
         },
       };

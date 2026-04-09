@@ -43,6 +43,8 @@ export interface AboutBlock extends BaseBlock {
 }
 
 // ───── Image Gallery ─────
+export type GalleryLayout = "grid" | "carousel" | "masonry" | "mosaic";
+
 export interface GalleryBlock extends BaseBlock {
   type: "gallery";
   config: {
@@ -51,6 +53,7 @@ export interface GalleryBlock extends BaseBlock {
       url: string;
       caption?: string;
     }>;
+    layout?: GalleryLayout;
     columns?: 2 | 3 | 4;
   };
 }
