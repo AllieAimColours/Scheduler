@@ -178,18 +178,40 @@ Copy `.env.example` to `.env.local` and fill in:
 - **Stripe refunds**: Cancellation calculates refund amount but **doesn't call Stripe API** — commented-out code in cancel route
 - **Cancellation policy save**: User reports save fails — likely migration `00002_cancellation_policies.sql` not run on Supabase yet (user is running it manually now)
 
-### Planned (Tasks 5-11 from plan file)
-- **Smart reminders**: Service-specific re-booking nudges with escalating urgency
-- **Appointment reminders**: "Your appointment is tomorrow" notifications
-- **Intake forms per service**: Custom pre-appointment questionnaires
-- **Client profiles with memory**: Provider notes, preferences, attendance tracking
-- **Before/After portfolio**: Swipeable comparison slider tied to bookings
-- **Social feed / content hub**: Instagram/TikTok feeds, articles (slots into Your Page as widgets)
-- **Waitlist with smart notifications**: Cancellation triggers waitlist alerts
-- **Client loyalty system**: Simple progress-bar rewards
-- **Privacy policy templates**: Legal coverage
-- **Calendar UI / sync**: Week/day view, Google/Outlook/Apple/Proton sync
-- **SMS/WhatsApp**: Twilio integration
+### Planned Roadmap (full task list in `~/.claude/plans/velvety-jingling-yeti.md`)
+
+**Near-term (Tasks 3-6)**:
+- **Email confirmations** (Task 3) — wire `sendBookingConfirmation()` into Stripe webhook
+- **Stripe refund processing** (Task 4) — uncomment + wire refunds in cancel route
+- **Smart reminders** (Task 5) — re-booking nudges with escalating urgency per service
+- **Intake forms per service** (Task 6) — custom questionnaires sent after booking
+
+**Mid-term (Tasks 7-12) — major features**:
+- **Team members / multi-staff** (Task 7) — salons/clinics with multiple practitioners; staff profiles, per-staff schedules, "Meet the team" widget
+- **Client profiles with memory** (Task 8) — provider notes, attendance tracking, insights
+- **Service add-ons** (Task 9) — upsells (hair mask, etc.), free-after-X-spend logic
+- **Self-hosted portfolio** (Task 10) — own-page gallery widget + before/after slider tied to completed bookings
+- **Reviews** (Task 11) — Google Reviews import (Places API daily sync) + native ratings; review widget; CTA for happy clients to leave Google reviews
+- **Discounts + referrals + loyalty** (Task 12) — promo codes, viral referral links with credits, progress-bar rewards
+
+**Later (Tasks 13-16)**:
+- **Social feed widgets** (Task 13) — Instagram/TikTok embed widgets for Your Page
+- **Waitlist with smart notifications** (Task 14)
+- **Pre-appointment reminders** (Task 15) — "your appointment is tomorrow"
+- **Privacy policy / legal templates** (Task 16)
+
+**Future (huge — do last)**:
+- **Multi-business / cross-vertical** (Task 17) — one user, multiple businesses (e.g. hair stylist who's also a Rover pet sitter). Workspace concept, business switcher, shared master calendar, pet profiles, walk/overnight booking types. **2-3 week project — only after everything else is solid.**
+
+### Done This Session (2026-04-09)
+- Dashboard font overhaul (Plus Jakarta Sans body + Fraunces serif headings)
+- Magazine-style Availability + Integrations pages
+- Themed services list (template-aware)
+- **Your Page widget builder** — Shopify-style page builder with 8 widgets (Hero, About, Gallery, Services, Quote, Link, Contact, Digital Product), drag-and-drop, live iframe preview, template bar
+- Migration 00003 + storage buckets (`page-assets`, `digital-products`)
+- Digital products with Stripe checkout, signed download links, expiration
+- Removed template picker + landing editor from Settings (moved to Your Page)
+- Fixed runtime errors throughout the booking flow
 
 ### Done This Session (2026-04-09)
 - Dashboard font overhaul (Plus Jakarta Sans body + Fraunces serif headings)
