@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { TemplatePicker } from "@/components/settings/template-picker";
 import { getTemplateId, type TemplateId } from "@/lib/templates/index";
+import { CancellationPolicyEditor } from "./cancellation-policy-editor";
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -139,6 +140,12 @@ export default function SettingsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Cancellation Policy */}
+      <CancellationPolicyEditor
+        provider={provider}
+        onUpdate={setProvider}
+      />
 
       {/* Business Info */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">

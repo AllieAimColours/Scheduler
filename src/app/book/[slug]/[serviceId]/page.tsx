@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Clock, DollarSign, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, DollarSign, Calendar, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { ThemedCard } from "@/components/booking/themed-card";
 import { ThemedButton } from "@/components/booking/themed-button";
@@ -25,6 +25,22 @@ interface ServiceInfo {
   price_cents: number;
   deposit_cents: number;
   color: string;
+}
+
+interface PolicyRule {
+  hours_before: number;
+  refund_percent: number;
+}
+
+interface CancellationPolicyInfo {
+  enabled: boolean;
+  rules: PolicyRule[];
+  policy_text: string;
+}
+
+interface DepositInfo {
+  deposit_cents: number;
+  source: "service" | "policy" | "none";
 }
 
 function formatPrice(cents: number) {
@@ -59,6 +75,8 @@ export default function BookServicePage() {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"date" | "time" | "details">("date");
   const [providerId, setProviderId] = useState("");
+  const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicyInfo | null>(null);
+  const [effectiveDeposit, setEffectiveDeposit] = useState<DepositInfo | null>(null);
 
   // Fetch service info
   useEffect(() => {
@@ -70,6 +88,12 @@ export default function BookServicePage() {
         const data = await res.json();
         setService(data.service);
         setProviderId(data.providerId);
+        if (data.cancellationPolicy) {
+          setCancellationPolicy(data.cancellationPolicy);
+        }
+        if (data.effectiveDeposit) {
+          setEffectiveDeposit(data.effectiveDeposit);
+        }
       }
     }
     fetchService();
@@ -316,11 +340,17 @@ export default function BookServicePage() {
                 </div>
                 <div className={`flex justify-between font-semibold pt-2 border-t ${template.classes.heading}`}>
                   <span>
-                    {service.deposit_cents > 0 ? "Deposit due now" : "Total"}
+                    {(effectiveDeposit && effectiveDeposit.deposit_cents > 0)
+                      ? "Deposit due now"
+                      : service.deposit_cents > 0
+                      ? "Deposit due now"
+                      : "Total"}
                   </span>
                   <span>
                     {formatPrice(
-                      service.deposit_cents > 0
+                      effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                        ? effectiveDeposit.deposit_cents
+                        : service.deposit_cents > 0
                         ? service.deposit_cents
                         : service.price_cents
                     )}
@@ -328,6 +358,46 @@ export default function BookServicePage() {
                 </div>
               </div>
             </div>
+
+            {/* Cancellation policy notice */}
+            {cancellationPolicy?.enabled && (
+              <div className="rounded-xl border border-gray-200/60 bg-gray-50/50 p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                  <ShieldCheck className="h-4 w-4 text-purple-400" />
+                  Cancellation Policy
+                </div>
+                {cancellationPolicy.policy_text ? (
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {cancellationPolicy.policy_text}
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {[...cancellationPolicy.rules]
+                      .sort((a, b) => b.hours_before - a.hours_before)
+                      .map((rule, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              rule.refund_percent === 100
+                                ? "bg-green-400"
+                                : rule.refund_percent > 0
+                                ? "bg-amber-400"
+                                : "bg-red-400"
+                            }`}
+                          />
+                          {rule.hours_before === 0
+                            ? "Same-day cancellation"
+                            : `${rule.hours_before}+ hrs before`}
+                          : {rule.refund_percent}% refund
+                        </div>
+                      ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400">
+                  By booking, you agree to this cancellation policy.
+                </p>
+              </div>
+            )}
 
             <ThemedButton
               type="submit"
@@ -339,7 +409,9 @@ export default function BookServicePage() {
                 : service.price_cents === 0
                 ? "Confirm Booking"
                 : `Book & Pay ${formatPrice(
-                    service.deposit_cents > 0
+                    effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                      ? effectiveDeposit.deposit_cents
+                      : service.deposit_cents > 0
                       ? service.deposit_cents
                       : service.price_cents
                   )}`}

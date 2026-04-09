@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseCancellationPolicy, getEffectiveDeposit } from "@/lib/cancellation";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const { data: provider } = await supabase
       .from("providers")
-      .select("id")
+      .select("id, cancellation_policy")
       .eq("slug", slug)
       .single();
 
@@ -37,9 +38,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }
 
+    const policy = parseCancellationPolicy(provider.cancellation_policy);
+    const depositCents = getEffectiveDeposit(service, policy);
+
     return NextResponse.json({
       service,
       providerId: provider.id,
+      cancellationPolicy: policy.enabled
+        ? { enabled: true, rules: policy.rules, policy_text: policy.policy_text }
+        : null,
+      effectiveDeposit: depositCents > 0
+        ? {
+            deposit_cents: depositCents,
+            source: service.deposit_cents > 0 ? "service" : "policy",
+          }
+        : null,
     });
   }
 

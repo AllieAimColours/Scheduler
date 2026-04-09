@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { z } from "zod";
+import { parseCancellationPolicy, getEffectiveDeposit } from "@/lib/cancellation";
 
 const checkoutSchema = z.object({
   providerId: z.string().uuid(),
@@ -64,8 +65,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const policy = parseCancellationPolicy(provider.cancellation_policy);
+    const effectiveDepositCents = getEffectiveDeposit(service, policy);
     const chargeAmount =
-      service.deposit_cents > 0 ? service.deposit_cents : service.price_cents;
+      effectiveDepositCents > 0 ? effectiveDepositCents : service.price_cents;
 
     // Free service: create booking directly
     if (chargeAmount === 0) {

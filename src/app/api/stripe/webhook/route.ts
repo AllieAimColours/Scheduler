@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generateCancellationToken } from "@/lib/cancellation";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();

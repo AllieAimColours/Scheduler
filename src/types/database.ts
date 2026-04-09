@@ -26,6 +26,7 @@ export interface Database {
           stripe_account_id: string | null;
           stripe_onboarding_complete: boolean;
           branding: Json;
+          cancellation_policy: Json;
           created_at: string;
           updated_at: string;
         };
@@ -45,6 +46,7 @@ export interface Database {
           stripe_account_id?: string | null;
           stripe_onboarding_complete?: boolean;
           branding?: Json;
+          cancellation_policy?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -64,6 +66,7 @@ export interface Database {
           stripe_account_id?: string | null;
           stripe_onboarding_complete?: boolean;
           branding?: Json;
+          cancellation_policy?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -204,6 +207,10 @@ export interface Database {
           calendar_provider: string | null;
           reminder_sent: boolean;
           timezone: string;
+          cancelled_at: string | null;
+          cancellation_reason: string;
+          refund_amount_cents: number;
+          cancellation_token: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -227,6 +234,10 @@ export interface Database {
           calendar_provider?: string | null;
           reminder_sent?: boolean;
           timezone: string;
+          cancelled_at?: string | null;
+          cancellation_reason?: string;
+          refund_amount_cents?: number;
+          cancellation_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -250,6 +261,10 @@ export interface Database {
           calendar_provider?: string | null;
           reminder_sent?: boolean;
           timezone?: string;
+          cancelled_at?: string | null;
+          cancellation_reason?: string;
+          refund_amount_cents?: number;
+          cancellation_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
