@@ -1,13 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { LandingHero } from "@/components/booking/landing-hero";
-
-interface BrandingHero {
-  hero_image_url?: string;
-  welcome_message?: string;
-  tagline?: string;
-  cta_label?: string;
-}
+import { BlockRenderer } from "@/components/booking/blocks/block-renderer";
+import { defaultStarterPage } from "@/lib/page-builder/defaults";
+import type { PageBlock } from "@/lib/page-builder/types";
+import type { DigitalProduct, Service } from "@/types/database";
 
 export default async function BookingPage({
   params,
@@ -36,31 +32,52 @@ export default async function BookingPage({
 
   if (!provider) notFound();
 
+  // Read page blocks from branding JSON, falling back to default starter
   const branding = (provider.branding as Record<string, unknown>) || {};
-  const hero: BrandingHero = {
-    hero_image_url: typeof branding.hero_image_url === "string" ? branding.hero_image_url : undefined,
-    welcome_message: typeof branding.welcome_message === "string" ? branding.welcome_message : undefined,
-    tagline: typeof branding.tagline === "string" ? branding.tagline : undefined,
-    cta_label: typeof branding.cta_label === "string" ? branding.cta_label : undefined,
-  };
+  const blocks: PageBlock[] = Array.isArray(branding.page_blocks)
+    ? (branding.page_blocks as PageBlock[])
+    : defaultStarterPage();
+
+  // Fetch services (used by services block)
+  const { data: services } = await supabase
+    .from("services")
+    .select("*")
+    .eq("provider_id", provider.id)
+    .eq("is_active", true)
+    .order("sort_order");
+
+  // Fetch active digital products (used by digital_product blocks)
+  const productIds: string[] = blocks
+    .filter((b) => b.type === "digital_product")
+    .map((b) => (b.config as { product_id?: string }).product_id)
+    .filter((id): id is string => Boolean(id));
+
+  let digitalProducts: DigitalProduct[] = [];
+  if (productIds.length > 0) {
+    const { data } = await supabase
+      .from("digital_products")
+      .select("*")
+      .in("id", productIds)
+      .eq("is_active", true);
+    digitalProducts = (data as unknown as DigitalProduct[]) || [];
+  }
 
   return (
-    <LandingHero
-      provider={{
-        business_name: provider.business_name,
-        description: provider.description,
-        logo_url: provider.logo_url,
-        phone: provider.phone,
-        email: provider.email,
-        website: provider.website,
-        slug: provider.slug,
-      }}
-      hero={{
-        image_url: hero.hero_image_url,
-        welcome_message: hero.welcome_message,
-        tagline: hero.tagline,
-        cta_label: hero.cta_label,
-      }}
-    />
+    <div className="py-8 md:py-12">
+      <BlockRenderer
+        blocks={blocks}
+        provider={{
+          business_name: provider.business_name,
+          description: provider.description,
+          logo_url: provider.logo_url,
+          phone: provider.phone,
+          email: provider.email,
+          website: provider.website,
+          slug: provider.slug,
+        }}
+        services={(services as unknown as Service[]) || []}
+        digitalProducts={digitalProducts}
+      />
+    </div>
   );
 }

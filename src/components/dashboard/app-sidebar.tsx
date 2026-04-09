@@ -16,13 +16,15 @@ import {
   Menu,
   X,
   Eye,
+  Wand2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Client View", href: "/preview", icon: Eye, accent: true },
+  { title: "Your Page", href: "/your-page", icon: Wand2, accent: true },
+  { title: "Client View", href: "/preview", icon: Eye },
   { title: "Calendar", href: "/calendar", icon: Calendar },
   { title: "Bookings", href: "/bookings", icon: BookOpen },
   { title: "Services", href: "/services", icon: LayoutList },
@@ -122,8 +124,8 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
                 <item.icon className={`h-4 w-4 ${isActive ? "text-white" : ""}`} />
                 <span>{item.title}</span>
                 {item.accent && !isActive && (
-                  <span className="ml-auto text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full font-bold">
-                    PREVIEW
+                  <span className="ml-auto text-[10px] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                    NEW
                   </span>
                 )}
               </a>

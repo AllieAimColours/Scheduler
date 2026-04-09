@@ -13,26 +13,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Settings, Globe, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
-import { TemplatePicker } from "@/components/settings/template-picker";
-import { getTemplateId, type TemplateId } from "@/lib/templates/index";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [saving, setSaving] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("studio");
   const [form, setForm] = useState({
     business_name: "",
     description: "",
     phone: "",
     website: "",
-    hero_image_url: "",
-    welcome_message: "",
-    tagline: "",
-    cta_label: "",
   });
 
   useEffect(() => {
@@ -51,18 +44,12 @@ export default function SettingsPage() {
 
       if (data) {
         setProvider(data);
-        const branding = (data.branding as Record<string, any>) || {};
         setForm({
           business_name: data.business_name,
           description: data.description,
           phone: data.phone || "",
           website: data.website || "",
-          hero_image_url: typeof branding.hero_image_url === "string" ? branding.hero_image_url : "",
-          welcome_message: typeof branding.welcome_message === "string" ? branding.welcome_message : "",
-          tagline: typeof branding.tagline === "string" ? branding.tagline : "",
-          cta_label: typeof branding.cta_label === "string" ? branding.cta_label : "",
         });
-        setSelectedTemplate(getTemplateId(branding));
       }
     }
     load();
@@ -80,36 +67,20 @@ export default function SettingsPage() {
         description: form.description,
         phone: form.phone || null,
         website: form.website || null,
-        branding: {
-          ...(provider.branding as Record<string, any>),
-          template: selectedTemplate,
-          hero_image_url: form.hero_image_url || undefined,
-          welcome_message: form.welcome_message || undefined,
-          tagline: form.tagline || undefined,
-          cta_label: form.cta_label || undefined,
-        },
       })
       .eq("id", provider.id);
 
     if (error) {
-      toast.error("Failed to save settings");
+      console.error("Settings save error:", error);
+      toast.error(`Failed to save: ${error.message}`);
     } else {
       toast.success("Settings saved!");
-      // Update local provider state
       setProvider({
         ...provider,
         business_name: form.business_name,
         description: form.description,
         phone: form.phone || null,
         website: form.website || null,
-        branding: {
-          ...(provider.branding as Record<string, any>),
-          template: selectedTemplate,
-          hero_image_url: form.hero_image_url || undefined,
-          welcome_message: form.welcome_message || undefined,
-          tagline: form.tagline || undefined,
-          cta_label: form.cta_label || undefined,
-        },
       });
     }
     setSaving(false);
@@ -130,101 +101,17 @@ export default function SettingsPage() {
         <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
           Settings
         </h1>
-        <p className="text-gray-400">
-          Manage your business profile and booking page design
+        <p className="text-gray-500 mt-1">
+          Your business info and policies. Looking for templates and the page builder?{" "}
+          <a href="/your-page" className="text-purple-600 font-medium hover:underline inline-flex items-center gap-1">
+            <Wand2 className="h-3.5 w-3.5" />
+            Open Your Page
+          </a>
         </p>
       </div>
 
-      {/* Template Picker */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            Booking Page Template
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            Choose a vibe that matches your brand. This transforms your entire
-            booking page — fonts, colors, animations, everything.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TemplatePicker
-            currentTemplate={selectedTemplate}
-            onSelect={setSelectedTemplate}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Landing Page Hero */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
-              <ImageIcon className="h-4 w-4 text-white" />
-            </div>
-            Landing Page
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            The first thing your clients see. Make it magical, personal, and on-brand.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Hero Image URL</Label>
-            <Input
-              value={form.hero_image_url}
-              onChange={(e) => setForm({ ...form, hero_image_url: e.target.value })}
-              placeholder="https://... (or leave empty to use logo)"
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-            <p className="text-xs text-gray-400">
-              Square image works best. Falls back to your logo if empty.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Tagline</Label>
-            <Input
-              value={form.tagline}
-              onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-              placeholder="e.g. Color Specialist · Est. 2018"
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-            <p className="text-xs text-gray-400">
-              Small text shown above your business name.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Welcome Message</Label>
-            <Textarea
-              value={form.welcome_message}
-              onChange={(e) => setForm({ ...form, welcome_message: e.target.value })}
-              placeholder="Tell clients what makes you special. (Falls back to your description.)"
-              rows={3}
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Call-to-Action Label</Label>
-            <Input
-              value={form.cta_label}
-              onChange={(e) => setForm({ ...form, cta_label: e.target.value })}
-              placeholder="Book an appointment"
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-            <p className="text-xs text-gray-400">
-              The button text. Default: &quot;Book an appointment&quot;
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Cancellation Policy */}
-      <CancellationPolicyEditor
-        provider={provider}
-        onUpdate={setProvider}
-      />
+      <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
 
       {/* Business Info */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
@@ -235,15 +122,16 @@ export default function SettingsPage() {
             </div>
             Business Information
           </CardTitle>
+          <CardDescription className="text-gray-400">
+            The core info clients will see throughout your booking flow
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label className="text-gray-800 font-medium">Business Name</Label>
             <Input
               value={form.business_name}
-              onChange={(e) =>
-                setForm({ ...form, business_name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, business_name: e.target.value })}
               className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
             />
           </div>
@@ -251,9 +139,7 @@ export default function SettingsPage() {
             <Label className="text-gray-800 font-medium">Description</Label>
             <Textarea
               value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
               className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
             />

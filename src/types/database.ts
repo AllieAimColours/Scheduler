@@ -435,6 +435,102 @@ export interface Database {
         };
         Relationships: [];
       };
+      digital_products: {
+        Row: {
+          id: string;
+          provider_id: string;
+          title: string;
+          description: string;
+          cover_image_url: string | null;
+          file_path: string | null;
+          preview_image_url: string | null;
+          price_cents: number;
+          currency: string;
+          is_active: boolean;
+          sales_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider_id: string;
+          title: string;
+          description?: string;
+          cover_image_url?: string | null;
+          file_path?: string | null;
+          preview_image_url?: string | null;
+          price_cents?: number;
+          currency?: string;
+          is_active?: boolean;
+          sales_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider_id?: string;
+          title?: string;
+          description?: string;
+          cover_image_url?: string | null;
+          file_path?: string | null;
+          preview_image_url?: string | null;
+          price_cents?: number;
+          currency?: string;
+          is_active?: boolean;
+          sales_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      digital_product_sales: {
+        Row: {
+          id: string;
+          product_id: string;
+          provider_id: string;
+          buyer_email: string;
+          buyer_name: string;
+          amount_cents: number;
+          currency: string;
+          stripe_payment_intent_id: string | null;
+          stripe_checkout_session_id: string | null;
+          download_token: string;
+          download_expires_at: string;
+          download_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          provider_id: string;
+          buyer_email: string;
+          buyer_name?: string;
+          amount_cents: number;
+          currency?: string;
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          download_token: string;
+          download_expires_at: string;
+          download_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          provider_id?: string;
+          buyer_email?: string;
+          buyer_name?: string;
+          amount_cents?: number;
+          currency?: string;
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          download_token?: string;
+          download_expires_at?: string;
+          download_count?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {};
     Functions: Record<string, never>;
@@ -451,3 +547,5 @@ export type AvailabilityOverride = Database["public"]["Tables"]["availability_ov
 export type PersonalEvent = Database["public"]["Tables"]["personal_events"]["Row"];
 export type CalendarConnection = Database["public"]["Tables"]["calendar_connections"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type DigitalProduct = Database["public"]["Tables"]["digital_products"]["Row"];
+export type DigitalProductSale = Database["public"]["Tables"]["digital_product_sales"]["Row"];

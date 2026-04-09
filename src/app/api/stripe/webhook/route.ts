@@ -27,6 +27,36 @@ export async function POST(request: NextRequest) {
     const session = event.data.object;
     const metadata = session.metadata;
 
+    // Digital product purchase
+    if (metadata?.type === "digital_product" && metadata.sale_id) {
+      const supabase = createAdminClient();
+      await supabase
+        .from("digital_product_sales")
+        .update({
+          stripe_payment_intent_id:
+            typeof session.payment_intent === "string" ? session.payment_intent : null,
+        })
+        .eq("id", metadata.sale_id);
+
+      // Bump sales count on the product
+      if (metadata.product_id) {
+        const { data: prod } = await supabase
+          .from("digital_products")
+          .select("sales_count")
+          .eq("id", metadata.product_id)
+          .single();
+        if (prod) {
+          await supabase
+            .from("digital_products")
+            .update({ sales_count: ((prod as { sales_count: number }).sales_count || 0) + 1 })
+            .eq("id", metadata.product_id);
+        }
+      }
+
+      // TODO: Send download email via Resend (Phase 3)
+      return NextResponse.json({ received: true });
+    }
+
     if (!metadata?.provider_id) {
       return NextResponse.json({ received: true });
     }
