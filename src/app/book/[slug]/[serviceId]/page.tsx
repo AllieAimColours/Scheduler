@@ -77,23 +77,33 @@ export default function BookServicePage() {
   const [providerId, setProviderId] = useState("");
   const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicyInfo | null>(null);
   const [effectiveDeposit, setEffectiveDeposit] = useState<DepositInfo | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Fetch service info
   useEffect(() => {
     async function fetchService() {
-      const res = await fetch(
-        `/api/bookings?action=service-info&slug=${slug}&serviceId=${serviceId}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setService(data.service);
-        setProviderId(data.providerId);
-        if (data.cancellationPolicy) {
-          setCancellationPolicy(data.cancellationPolicy);
+      try {
+        const res = await fetch(
+          `/api/bookings?action=service-info&slug=${slug}&serviceId=${serviceId}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setService(data.service);
+          setProviderId(data.providerId);
+          if (data.cancellationPolicy) {
+            setCancellationPolicy(data.cancellationPolicy);
+          }
+          if (data.effectiveDeposit) {
+            setEffectiveDeposit(data.effectiveDeposit);
+          }
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          setLoadError(errorData.error || `Failed to load service (${res.status})`);
+          console.error("Service fetch failed:", res.status, errorData);
         }
-        if (data.effectiveDeposit) {
-          setEffectiveDeposit(data.effectiveDeposit);
-        }
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Network error");
+        console.error("Service fetch error:", err);
       }
     }
     fetchService();
@@ -163,6 +173,24 @@ export default function BookServicePage() {
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 30);
   const maxDateStr = maxDate.toISOString().split("T")[0];
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <div className="text-2xl font-semibold mb-2">Couldn&apos;t load this service</div>
+          <p className="opacity-70 mb-4">{loadError}</p>
+          <Link
+            href={`/book/${slug}`}
+            className="inline-flex items-center text-sm underline opacity-70 hover:opacity-100"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to services
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!service) {
     return (
