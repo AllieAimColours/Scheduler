@@ -1,6 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { ServiceList } from "@/components/booking/service-list";
+import { LandingHero } from "@/components/booking/landing-hero";
+
+interface BrandingHero {
+  hero_image_url?: string;
+  welcome_message?: string;
+  tagline?: string;
+  cta_label?: string;
+}
 
 export default async function BookingPage({
   params,
@@ -29,42 +36,31 @@ export default async function BookingPage({
 
   if (!provider) notFound();
 
-  const { data: services } = await supabase
-    .from("services")
-    .select("*")
-    .eq("provider_id", provider.id)
-    .eq("is_active", true)
-    .order("sort_order");
+  const branding = (provider.branding as Record<string, unknown>) || {};
+  const hero: BrandingHero = {
+    hero_image_url: typeof branding.hero_image_url === "string" ? branding.hero_image_url : undefined,
+    welcome_message: typeof branding.welcome_message === "string" ? branding.welcome_message : undefined,
+    tagline: typeof branding.tagline === "string" ? branding.tagline : undefined,
+    cta_label: typeof branding.cta_label === "string" ? branding.cta_label : undefined,
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
-      {/* Business Header */}
-      <div className="text-center mb-10">
-        {provider.logo_url && (
-          <img
-            src={provider.logo_url}
-            alt={provider.business_name}
-            className="w-20 h-20 rounded-full mx-auto mb-4 object-cover"
-          />
-        )}
-        <h1 className="text-3xl font-bold tracking-tight">
-          {provider.business_name}
-        </h1>
-        {provider.description && (
-          <p className="mt-2 max-w-md mx-auto opacity-70">
-            {provider.description}
-          </p>
-        )}
-      </div>
-
-      {/* Services */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-center mb-6">
-          Choose a service to book
-        </h2>
-
-        <ServiceList services={services ?? []} slug={slug} />
-      </div>
-    </div>
+    <LandingHero
+      provider={{
+        business_name: provider.business_name,
+        description: provider.description,
+        logo_url: provider.logo_url,
+        phone: provider.phone,
+        email: provider.email,
+        website: provider.website,
+        slug: provider.slug,
+      }}
+      hero={{
+        image_url: hero.hero_image_url,
+        welcome_message: hero.welcome_message,
+        tagline: hero.tagline,
+        cta_label: hero.cta_label,
+      }}
+    />
   );
 }
