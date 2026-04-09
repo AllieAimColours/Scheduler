@@ -178,30 +178,48 @@ Copy `.env.example` to `.env.local` and fill in:
 - **Stripe refunds**: Cancellation calculates refund amount but **doesn't call Stripe API** — commented-out code in cancel route
 - **Cancellation policy save**: User reports save fails — likely migration `00002_cancellation_policies.sql` not run on Supabase yet (user is running it manually now)
 
-### Planned Roadmap (full task list in `~/.claude/plans/velvety-jingling-yeti.md`)
+### Planned Roadmap (full details in `~/.claude/plans/velvety-jingling-yeti.md`)
 
-**Near-term (Tasks 3-6)**:
-- **Email confirmations** (Task 3) — wire `sendBookingConfirmation()` into Stripe webhook
-- **Stripe refund processing** (Task 4) — uncomment + wire refunds in cancel route
-- **Smart reminders** (Task 5) — re-booking nudges with escalating urgency per service
-- **Intake forms per service** (Task 6) — custom questionnaires sent after booking
+The roadmap is 29 tasks total. Order is optimized so each session ships something visible (small wins mixed between large features).
 
-**Mid-term (Tasks 7-12) — major features**:
-- **Team members / multi-staff** (Task 7) — salons/clinics with multiple practitioners; staff profiles, per-staff schedules, "Meet the team" widget
-- **Client profiles with memory** (Task 8) — provider notes, attendance tracking, insights
-- **Service add-ons** (Task 9) — upsells (hair mask, etc.), free-after-X-spend logic
-- **Self-hosted portfolio** (Task 10) — own-page gallery widget + before/after slider tied to completed bookings
-- **Reviews** (Task 11) — Google Reviews import (Places API daily sync) + native ratings; review widget; CTA for happy clients to leave Google reviews
-- **Discounts + referrals + loyalty** (Task 12) — promo codes, viral referral links with credits, progress-bar rewards
+**🔥 Foundation (next 5 tasks — do these in order)**:
+- **Task 3**: Email confirmations — wire `sendBookingConfirmation()` into webhook
+- **Task 4**: Stripe refund processing
+- **Task 5** ⭐: Branded confirmation page + add-to-calendar + directions
+- **Task 6** ⭐: Open Graph + share preview + QR code generator
+- **Task 7** ⭐: Page customization layer (override fonts/colors on top of templates)
 
-**Later (Tasks 13-16)**:
-- **Social feed widgets** (Task 13) — Instagram/TikTok embed widgets for Your Page
-- **Waitlist with smart notifications** (Task 14)
-- **Pre-appointment reminders** (Task 15) — "your appointment is tomorrow"
-- **Privacy policy / legal templates** (Task 16)
+**🎯 Power features**:
+- Task 8: Smart reminders (re-booking nudges with escalating urgency)
+- Task 9: Pre-appointment reminders (24h/1h)
+- Task 10 ⭐: Pre/post-appointment care guides per service
+- Task 11: Intake forms per service
+- Task 12 ⭐: Service explainer videos
 
-**Future (huge — do last)**:
-- **Multi-business / cross-vertical** (Task 17) — one user, multiple businesses (e.g. hair stylist who's also a Rover pet sitter). Workspace concept, business switcher, shared master calendar, pet profiles, walk/overnight booking types. **2-3 week project — only after everything else is solid.**
+**🏢 Team & client features**:
+- Task 13: Multi-staff support (salons/clinics with multiple practitioners)
+- Task 14: Client profiles with memory + provider notes
+- Task 15: Service add-ons (upsells, free-after-spend)
+- Task 16 ⭐: Live availability + social proof counters
+
+**💰 Growth & retention**:
+- Task 17: Discounts, referrals, loyalty (combined)
+- Task 18 ⭐: Bring-a-friend group discount
+- Task 19 ⭐: Birthday discount auto-apply
+- Task 20: Waitlist with smart notifications
+- Task 21: Reviews (Google import + native ratings)
+- Task 22: Before/after portfolio
+
+**✨ The full WOW polish layer**:
+- Task 23 ⭐: AI service recommender (natural language → service via Claude API)
+- Task 24 ⭐: Live chat bubble (Supabase Realtime, provider online/offline)
+- Task 25 ⭐: Print-ready flyer/poster generator
+- Task 26 ⭐: Multi-language support (auto-translation)
+- Task 27: Social feed / content hub (Instagram, TikTok widgets)
+- Task 28: Privacy policy & legal templates
+
+**🚀 Future (huge — separate project)**:
+- Task 29: Multi-business / cross-vertical (hair + pet sitting via Workspace > Businesses architecture)
 
 ### Done This Session (2026-04-09)
 - Dashboard font overhaul (Plus Jakarta Sans body + Fraunces serif headings)
