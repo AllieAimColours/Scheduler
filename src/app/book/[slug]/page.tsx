@@ -17,13 +17,24 @@ export default async function BookingPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = createAdminClient();
 
-  const { data: provider } = await supabase
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (e) {
+    console.error("Admin client creation failed:", e instanceof Error ? e.message : e);
+    throw new Error("Database connection failed: " + (e instanceof Error ? e.message : "unknown"));
+  }
+
+  const { data: provider, error: providerError } = await supabase
     .from("providers")
     .select("*")
     .eq("slug", slug)
     .single();
+
+  if (providerError) {
+    console.error("Provider fetch error:", providerError.message, providerError.code);
+  }
 
   if (!provider) notFound();
 

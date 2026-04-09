@@ -20,11 +20,15 @@ export default async function BookingLayout({
     const { slug } = await params;
     const supabase = createAdminClient();
 
-    const { data: provider } = await supabase
+    const { data: provider, error } = await supabase
       .from("providers")
       .select("branding")
       .eq("slug", slug)
       .single();
+
+    if (error) {
+      console.error("Booking layout Supabase error:", error.message, error.code);
+    }
 
     if (provider) {
       templateId = getTemplateId(
@@ -34,7 +38,8 @@ export default async function BookingLayout({
       const fonts = getTemplateFonts(templateId);
       fontClasses = `${fonts.heading.variable} ${fonts.body.variable}`;
     }
-  } catch {
+  } catch (e) {
+    console.error("Booking layout error:", e instanceof Error ? e.message : e);
     // Fall back to studio template if anything fails
   }
 
