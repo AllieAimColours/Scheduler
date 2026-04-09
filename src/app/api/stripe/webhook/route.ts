@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateCancellationToken } from "@/lib/cancellation";
+import { sendBookingConfirmation } from "@/lib/resend";
+import { logNotification } from "@/lib/notifications";
+import type { Booking, Service, Provider } from "@/types/database";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
     const session = event.data.object;
     const metadata = session.metadata;
 
-    // Digital product purchase
+    // ─── Digital product purchase ───
     if (metadata?.type === "digital_product" && metadata.sale_id) {
       const supabase = createAdminClient();
       await supabase
@@ -53,46 +56,96 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // TODO: Send download email via Resend (Phase 3)
+      // TODO: Send download email via Resend
       return NextResponse.json({ received: true });
     }
 
+    // ─── Booking purchase ───
     if (!metadata?.provider_id) {
       return NextResponse.json({ received: true });
     }
 
     const supabase = createAdminClient();
+    const cancellationToken = generateCancellationToken();
 
-    // Create the booking
-    const { error } = await supabase.from("bookings").insert({
-      provider_id: metadata.provider_id,
-      service_id: metadata.service_id,
-      client_name: metadata.client_name,
-      client_email: metadata.client_email,
-      client_phone: metadata.client_phone || null,
-      starts_at: metadata.slot_start,
-      ends_at: metadata.slot_end,
-      status: "confirmed",
-      client_notes: metadata.client_notes || "",
-      payment_status: "paid",
-      payment_amount_cents: session.amount_total || 0,
-      stripe_checkout_session_id: session.id,
-      stripe_payment_intent_id:
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : null,
-      timezone: metadata.timezone,
-    });
+    // Create the booking and get the inserted row back so we have the id
+    const { data: bookingData, error: insertError } = await supabase
+      .from("bookings")
+      .insert({
+        provider_id: metadata.provider_id,
+        service_id: metadata.service_id,
+        client_name: metadata.client_name,
+        client_email: metadata.client_email,
+        client_phone: metadata.client_phone || null,
+        starts_at: metadata.slot_start,
+        ends_at: metadata.slot_end,
+        status: "confirmed",
+        client_notes: metadata.client_notes || "",
+        payment_status: "paid",
+        payment_amount_cents: session.amount_total || 0,
+        stripe_checkout_session_id: session.id,
+        stripe_payment_intent_id:
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : null,
+        timezone: metadata.timezone,
+        cancellation_token: cancellationToken,
+      })
+      .select()
+      .single();
 
-    if (error) {
-      console.error("Failed to create booking:", error);
+    if (insertError || !bookingData) {
+      console.error("Failed to create booking:", insertError);
       return NextResponse.json(
         { error: "Failed to create booking" },
         { status: 500 }
       );
     }
 
-    // TODO: Send confirmation notification (Phase 3)
+    const booking = bookingData as unknown as Booking;
+
+    // Fetch service + provider so we can build a useful confirmation email
+    const [serviceRes, providerRes] = await Promise.all([
+      supabase
+        .from("services")
+        .select("name, emoji, duration_minutes")
+        .eq("id", metadata.service_id)
+        .single(),
+      supabase
+        .from("providers")
+        .select("business_name, currency, slug")
+        .eq("id", metadata.provider_id)
+        .single(),
+    ]);
+
+    const service = serviceRes.data as unknown as Pick<Service, "name" | "emoji" | "duration_minutes"> | null;
+    const provider = providerRes.data as unknown as Pick<Provider, "business_name" | "currency" | "slug"> | null;
+
+    // Send the confirmation email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    const cancellationUrl = appUrl ? `${appUrl}/cancel/${cancellationToken}` : undefined;
+
+    const result = await sendBookingConfirmation({
+      to: booking.client_email,
+      clientName: booking.client_name,
+      serviceName: service?.name || "Appointment",
+      serviceEmoji: service?.emoji || "✨",
+      providerName: provider?.business_name || "Your provider",
+      dateTime: booking.starts_at,
+      duration: service?.duration_minutes || 60,
+      priceCents: booking.payment_amount_cents,
+      currency: provider?.currency || "USD",
+      cancellationUrl,
+    });
+
+    await logNotification(supabase, {
+      bookingId: booking.id,
+      channel: "email",
+      recipient: booking.client_email,
+      template: "booking_confirmation",
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.error,
+    });
   }
 
   return NextResponse.json({ received: true });

@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { z } from "zod";
-import { parseCancellationPolicy, getEffectiveDeposit } from "@/lib/cancellation";
+import {
+  parseCancellationPolicy,
+  getEffectiveDeposit,
+  generateCancellationToken,
+} from "@/lib/cancellation";
+import { sendBookingConfirmation } from "@/lib/resend";
+import { logNotification } from "@/lib/notifications";
+import type { Booking } from "@/types/database";
 
 const checkoutSchema = z.object({
   providerId: z.string().uuid(),
@@ -70,21 +77,62 @@ export async function POST(request: NextRequest) {
     const chargeAmount =
       effectiveDepositCents > 0 ? effectiveDepositCents : service.price_cents;
 
-    // Free service: create booking directly
+    // Free service: create booking directly + send confirmation
     if (chargeAmount === 0) {
-      await supabase.from("bookings").insert({
-        provider_id: data.providerId,
-        service_id: data.serviceId,
-        client_name: data.clientName,
-        client_email: data.clientEmail,
-        client_phone: data.clientPhone || null,
-        starts_at: data.slotStart,
-        ends_at: data.slotEnd,
-        status: "confirmed",
-        client_notes: data.clientNotes,
-        payment_status: "paid",
-        payment_amount_cents: 0,
-        timezone: data.timezone,
+      const cancellationToken = generateCancellationToken();
+
+      const { data: bookingData, error: insertError } = await supabase
+        .from("bookings")
+        .insert({
+          provider_id: data.providerId,
+          service_id: data.serviceId,
+          client_name: data.clientName,
+          client_email: data.clientEmail,
+          client_phone: data.clientPhone || null,
+          starts_at: data.slotStart,
+          ends_at: data.slotEnd,
+          status: "confirmed",
+          client_notes: data.clientNotes,
+          payment_status: "paid",
+          payment_amount_cents: 0,
+          timezone: data.timezone,
+          cancellation_token: cancellationToken,
+        })
+        .select()
+        .single();
+
+      if (insertError || !bookingData) {
+        console.error("Free booking insert failed:", insertError);
+        return NextResponse.json(
+          { error: "Failed to create booking" },
+          { status: 500 }
+        );
+      }
+
+      const booking = bookingData as unknown as Booking;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      const cancellationUrl = appUrl ? `${appUrl}/cancel/${cancellationToken}` : undefined;
+
+      const result = await sendBookingConfirmation({
+        to: booking.client_email,
+        clientName: booking.client_name,
+        serviceName: service.name,
+        serviceEmoji: service.emoji || "✨",
+        providerName: provider.business_name,
+        dateTime: booking.starts_at,
+        duration: service.duration_minutes,
+        priceCents: 0,
+        currency: provider.currency || "USD",
+        cancellationUrl,
+      });
+
+      await logNotification(supabase, {
+        bookingId: booking.id,
+        channel: "email",
+        recipient: booking.client_email,
+        template: "booking_confirmation",
+        status: result.ok ? "sent" : "failed",
+        errorMessage: result.error,
       });
 
       return NextResponse.json({ url: null }); // Signals direct confirmation
