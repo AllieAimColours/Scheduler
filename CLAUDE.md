@@ -85,6 +85,39 @@ supabase/
 - **Edge template dark mode**: Uses CSS variable scoping on the wrapper div, NOT the `.dark` class.
 - **No hardcoded colors in booking pages**: Use semantic tokens (`text-foreground`, `bg-card`, etc.) so templates work.
 
+## 🛡️ Operating Guardrails (the rules of engagement)
+
+**Read these before adding any new feature.** The full version lives in `~/.claude/plans/velvety-jingling-yeti.md` under "Operating Guardrails."
+
+### North star metric
+**Active providers** = providers logged in 3+ times in last 7 days AND have at least 1 service. Every feature decision gets weighed against: *"Will this move the north star?"* If the answer isn't yes, ask why you're building it.
+
+### Definition of shippable
+A task is **not done** until: build passes, deploy is green, manually clicked through on the deployed site (not just localhost), tested on real mobile (after PWA task), no console errors, empty/loading/error states all work, and Allie has personally used it once.
+
+### "Won't do" list (until at least Phase 5)
+Saying no protects the plan. Refuse to build any of these mid-session — add to a "v2 ideas" file and move on:
+- Time tracking, inventory, invoicing beyond Stripe, custom domains, our own video player, our own rich text editor, real-time collab on the page builder, mobile app (PWA covers this), webhook system, public API, Zapier, white-labeling.
+
+### Phase done = real-world success criteria
+Each phase has a concrete user-validation criterion in the plan file. Examples:
+- **Phase 1 done**: Allie's hairstylist personally completes a booking end-to-end on her phone, gets the email, cancels successfully, customizes her page in <5 minutes without help.
+- **Phase 2 done**: Calendar is the page she opens 3+ times per week. SMS reminder fires for a real upcoming appointment.
+
+### Tester smoke test script
+Send Allie's hairstylist + therapist a 20-step script as soon as Phase 1 Tasks 3-5 ship. Don't wait until all of Phase 1 is done. Get feedback in batches. Full script in plan file §6.
+
+### Risk register
+8 risks tracked with mitigations in the plan file §5. Highest watch items: testers ghosting, mobile UX surprises, calendar over-budget, email spam folder.
+
+### Pricing hypothesis (strawman for Phase 5)
+Free / $14 Starter / $29 Pro / $79 Salon. Real pricing comes from talking to real users — this is the starting point, not the answer.
+
+### Weekly tester cadence
+Friday Loom + 3 specific questions + take notes in `tester-feedback.md` + thank-yous every 2-3 weeks. Engaged testers stay engaged.
+
+---
+
 ## Debugging Deployment Errors
 
 **ALWAYS run `npm run build` first** when the deployed site shows errors. TypeScript build failures are the most common cause — not missing env vars. Don't send the user chasing environment variable issues until you've confirmed the build passes clean locally.
