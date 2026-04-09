@@ -8,10 +8,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-dashboard-sans);
+  --font-display: var(--font-dashboard-display);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-template-heading, var(--font-sans));
-  --font-body: var(--font-template-body, var(--font-sans));
+  --font-heading: var(--font-template-heading, var(--font-dashboard-display));
+  --font-body: var(--font-template-body, var(--font-dashboard-sans));
   --color-template-accent: var(--template-accent);
   --color-template-glow: var(--template-glow);
   --color-template-surface: var(--template-surface);
@@ -134,5 +135,15 @@
   }
   html {
     @apply font-sans;
+    font-size: 16px;
+  }
+}
+
+/* Dashboard typography — premium feel with elegant serif headings */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-dashboard-display);
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.02em;
   }
 }

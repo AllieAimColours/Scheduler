@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { allFontVariables } from "@/lib/templates/fonts";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Plus Jakarta Sans — premium, modern body font for the dashboard
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-dashboard-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+// Fraunces — elegant serif for dashboard headings (gives the premium magazine feel)
+const fraunces = Fraunces({
+  variable: "--font-dashboard-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -29,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${allFontVariables} h-full antialiased`}
+      className={`${jakarta.variable} ${fraunces.variable} ${geistMono.variable} ${allFontVariables} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>

@@ -74,7 +74,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight">
           {greeting},{" "}
           <span className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
             {firstName}
