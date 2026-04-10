@@ -26,6 +26,7 @@ export default function SettingsPage() {
     description: "",
     phone: "",
     website: "",
+    address: "",
   });
 
   useEffect(() => {
@@ -44,11 +45,13 @@ export default function SettingsPage() {
 
       if (data) {
         setProvider(data);
+        const branding = (data.branding as Record<string, unknown>) || {};
         setForm({
           business_name: data.business_name,
           description: data.description,
           phone: data.phone || "",
           website: data.website || "",
+          address: typeof branding.address === "string" ? branding.address : "",
         });
       }
     }
@@ -60,6 +63,10 @@ export default function SettingsPage() {
     setSaving(true);
 
     const supabase = createClient();
+    const newBranding = {
+      ...((provider.branding as Record<string, unknown>) || {}),
+      address: form.address || undefined,
+    };
     const { error } = await supabase
       .from("providers")
       .update({
@@ -67,6 +74,7 @@ export default function SettingsPage() {
         description: form.description,
         phone: form.phone || null,
         website: form.website || null,
+        branding: newBranding,
       })
       .eq("id", provider.id);
 
@@ -81,6 +89,7 @@ export default function SettingsPage() {
         description: form.description,
         phone: form.phone || null,
         website: form.website || null,
+        branding: newBranding,
       });
     }
     setSaving(false);
@@ -161,6 +170,18 @@ export default function SettingsPage() {
                 className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-800 font-medium">Address</Label>
+            <Input
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              placeholder="123 Main St, City, State"
+              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+            />
+            <p className="text-xs text-gray-400">
+              Shown on your booking page and in &quot;Get directions&quot; on the confirmation page
+            </p>
           </div>
 
           <div className="bg-gradient-to-r from-purple-50/80 to-pink-50/50 rounded-xl p-4 border border-purple-100/60">
