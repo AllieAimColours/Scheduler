@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates/index";
+import { FallingPeonies } from "@/components/marketing/falling-peonies";
 
 export default function HomePage() {
   return (
@@ -53,6 +54,9 @@ export default function HomePage() {
           <div className="absolute top-40 right-1/4 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse delay-1000" />
           <div className="absolute top-60 left-1/2 w-72 h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-2000" />
         </div>
+
+        {/* Falling peony petals */}
+        <FallingPeonies count={28} />
 
         <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-sm font-medium mb-8">

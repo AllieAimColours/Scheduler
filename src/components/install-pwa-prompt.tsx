@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -81,9 +81,11 @@ export function InstallPwaPrompt() {
         </button>
 
         <div className="relative flex items-start gap-3 pr-6">
-          <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shrink-0">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src="/icon.svg"
+            alt="Bloom"
+            className="w-11 h-11 rounded-xl shadow-lg shrink-0"
+          />
           <div className="flex-1 min-w-0">
             <h3 id="pwa-install-title" className="font-display text-base font-semibold text-gray-800">
               Install Bloom

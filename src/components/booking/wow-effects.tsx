@@ -303,8 +303,8 @@ export function AmbientParticlesEffect({
         }
 
         if (type === "petals") {
-          // Soft falling petals — rotate as they fall
-          const petalSize = 8 + Math.random() * 12;
+          // Soft falling peony petals — curved, asymmetric, drift as they fall
+          const petalSize = 14 + Math.random() * 18;
           return (
             <div
               key={i}
@@ -319,13 +319,28 @@ export function AmbientParticlesEffect({
             >
               <svg
                 width={petalSize}
-                height={petalSize * 1.4}
-                viewBox="0 0 20 28"
+                height={petalSize}
+                viewBox="0 0 40 40"
                 fill="none"
               >
+                {/* A curled peony petal — wider on one side, gently tapered */}
                 <path
-                  d="M10 0 C 14 8, 20 14, 10 28 C 0 14, 6 8, 10 0 Z"
+                  d="M20 4
+                     C 28 6, 34 14, 33 22
+                     C 32 30, 26 36, 20 36
+                     C 14 36, 8 30, 7 22
+                     C 6 14, 12 6, 20 4 Z"
                   fill={c}
+                />
+                {/* Inner highlight for depth */}
+                <path
+                  d="M20 8
+                     C 25 10, 28 16, 27 22
+                     C 26 28, 23 32, 20 32"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
                 />
               </svg>
             </div>
