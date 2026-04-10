@@ -12,6 +12,8 @@ import {
   type FontChoice,
   type CursorEffect,
   type AmbientParticles,
+  type ParticleColorMode,
+  type ClickBurstStyle,
 } from "@/lib/page-builder/overrides";
 
 interface Props {
@@ -53,8 +55,27 @@ const PARTICLE_OPTIONS: Array<{ id: AmbientParticles; label: string; preview: st
   { id: "none", label: "None", preview: "🚫" },
   { id: "stars", label: "Stars", preview: "⭐" },
   { id: "sparkles", label: "Sparkles", preview: "✨" },
-  { id: "fireflies", label: "Fireflies", preview: "🔥" },
+  { id: "fireflies", label: "Fireflies", preview: "🪲" },
   { id: "bubbles", label: "Bubbles", preview: "🫧" },
+  { id: "petals", label: "Petals", preview: "🌸" },
+  { id: "hearts", label: "Hearts", preview: "💖" },
+  { id: "snow", label: "Snow", preview: "❄️" },
+];
+
+const COLOR_MODE_OPTIONS: Array<{ id: ParticleColorMode; label: string; preview: string }> = [
+  { id: "theme", label: "Theme", preview: "🎨" },
+  { id: "rainbow", label: "Rainbow", preview: "🌈" },
+  { id: "pastel", label: "Pastel", preview: "🌷" },
+  { id: "custom", label: "Custom", preview: "✏️" },
+];
+
+const BURST_OPTIONS: Array<{ id: ClickBurstStyle; label: string; preview: string }> = [
+  { id: "none", label: "None", preview: "🚫" },
+  { id: "confetti", label: "Confetti", preview: "🎉" },
+  { id: "sparkles", label: "Sparkles", preview: "✨" },
+  { id: "hearts", label: "Hearts", preview: "💖" },
+  { id: "stars", label: "Stars", preview: "⭐" },
+  { id: "emoji", label: "Custom emoji", preview: "😎" },
 ];
 
 const COLOR_PRESETS = [
@@ -275,7 +296,86 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
             </Field>
           )}
 
-          <Field label="Confetti burst">
+          {/* Particle color mode — affects ALL particles, ambient + cursor + click burst */}
+          {(overrides.cursor_effect && overrides.cursor_effect !== "none" ||
+            overrides.ambient_particles && overrides.ambient_particles !== "none" ||
+            overrides.confetti_on_load ||
+            (overrides.click_burst && overrides.click_burst !== "none")) && (
+            <>
+              <Field label="Particle colors" hint="Applies to ambient, cursor, click burst, and confetti">
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_MODE_OPTIONS.map((opt) => {
+                    const active = (overrides.particle_color_mode || "theme") === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => set("particle_color_mode", opt.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-2",
+                          active
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                        )}
+                      >
+                        <span>{opt.preview}</span>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              {overrides.particle_color_mode === "custom" && (
+                <Field label="Custom particle color">
+                  <ColorPicker
+                    value={overrides.particle_custom_color}
+                    onChange={(v) => set("particle_custom_color", v)}
+                  />
+                </Field>
+              )}
+            </>
+          )}
+
+          {/* Click burst */}
+          <Field label="Click burst" hint="What bursts from where they click">
+            <div className="flex flex-wrap gap-2">
+              {BURST_OPTIONS.map((opt) => {
+                const active = (overrides.click_burst || "none") === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => set("click_burst", opt.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-2",
+                      active
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                    )}
+                  >
+                    <span>{opt.preview}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          {overrides.click_burst === "emoji" && (
+            <Field label="Click burst emoji">
+              <input
+                type="text"
+                value={overrides.click_burst_emoji || ""}
+                onChange={(e) => set("click_burst_emoji", e.target.value.slice(0, 2))}
+                placeholder="🌟"
+                maxLength={2}
+                className="w-20 px-3 py-2 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl focus:outline-none focus:border-purple-400"
+              />
+            </Field>
+          )}
+
+          <Field label="Confetti burst on page load">
             <div className="flex gap-2">
               {[
                 { id: false, label: "Off" },

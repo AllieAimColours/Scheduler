@@ -47,7 +47,9 @@ export type RadiusChoice = "default" | "sharp" | "soft" | "round" | "pill";
 export type DecorationsLevel = "default" | "off" | "subtle" | "normal" | "bold";
 export type AnimationSpeed = "default" | "still" | "gentle" | "playful";
 export type CursorEffect = "none" | "sparkle" | "glow" | "emoji";
-export type AmbientParticles = "none" | "stars" | "sparkles" | "fireflies" | "bubbles";
+export type AmbientParticles = "none" | "stars" | "sparkles" | "fireflies" | "bubbles" | "petals" | "hearts" | "snow";
+export type ParticleColorMode = "theme" | "rainbow" | "custom" | "pastel";
+export type ClickBurstStyle = "none" | "confetti" | "sparkles" | "hearts" | "stars" | "emoji";
 
 export interface PageOverrides {
   // Optional font overrides
@@ -70,7 +72,11 @@ export interface PageOverrides {
   cursor_intensity?: number; // 0-100, default 50
   ambient_particles?: AmbientParticles;
   ambient_intensity?: number; // 0-100, default 50
+  particle_color_mode?: ParticleColorMode; // theme/rainbow/custom/pastel
+  particle_custom_color?: string; // only used when particle_color_mode === "custom"
   confetti_on_load?: boolean;
+  click_burst?: ClickBurstStyle;
+  click_burst_emoji?: string; // only used when click_burst === "emoji"
 }
 
 const RADIUS_VALUES: Record<RadiusChoice, string | undefined> = {
@@ -144,6 +150,10 @@ export function parseOverrides(raw: unknown): PageOverrides {
     cursor_intensity: typeof o.cursor_intensity === "number" ? o.cursor_intensity : undefined,
     ambient_particles: typeof o.ambient_particles === "string" ? (o.ambient_particles as AmbientParticles) : undefined,
     ambient_intensity: typeof o.ambient_intensity === "number" ? o.ambient_intensity : undefined,
+    particle_color_mode: typeof o.particle_color_mode === "string" ? (o.particle_color_mode as ParticleColorMode) : undefined,
+    particle_custom_color: typeof o.particle_custom_color === "string" ? o.particle_custom_color : undefined,
     confetti_on_load: typeof o.confetti_on_load === "boolean" ? o.confetti_on_load : undefined,
+    click_burst: typeof o.click_burst === "string" ? (o.click_burst as ClickBurstStyle) : undefined,
+    click_burst_emoji: typeof o.click_burst_emoji === "string" ? o.click_burst_emoji : undefined,
   };
 }

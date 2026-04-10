@@ -7,7 +7,7 @@ import { TemplateProvider } from "@/lib/templates/context";
 import { Decorations } from "./decorations";
 import { cn } from "@/lib/utils";
 import { fontFamilyFor, type PageOverrides } from "@/lib/page-builder/overrides";
-import { CursorEffects, AmbientParticlesEffect, ConfettiBurst } from "./wow-effects";
+import { CursorEffects, AmbientParticlesEffect, ConfettiBurst, ClickBurst } from "./wow-effects";
 
 interface TemplateWrapperProps {
   templateId: TemplateId;
@@ -140,6 +140,8 @@ export function TemplateWrapper({
             emoji={overrides.cursor_emoji}
             accentColor={accentColor}
             intensity={overrides.cursor_intensity ?? 50}
+            colorMode={overrides.particle_color_mode}
+            customColor={overrides.particle_custom_color}
           />
         )}
         {overrides?.ambient_particles && overrides.ambient_particles !== "none" && (
@@ -147,10 +149,25 @@ export function TemplateWrapper({
             type={overrides.ambient_particles}
             accentColor={accentColor}
             intensity={overrides.ambient_intensity ?? 50}
+            colorMode={overrides.particle_color_mode}
+            customColor={overrides.particle_custom_color}
           />
         )}
         {overrides?.confetti_on_load && (
-          <ConfettiBurst accentColor={accentColor} />
+          <ConfettiBurst
+            accentColor={accentColor}
+            colorMode={overrides.particle_color_mode}
+            customColor={overrides.particle_custom_color}
+          />
+        )}
+        {overrides?.click_burst && overrides.click_burst !== "none" && (
+          <ClickBurst
+            style={overrides.click_burst}
+            emoji={overrides.click_burst_emoji}
+            accentColor={accentColor}
+            colorMode={overrides.particle_color_mode}
+            customColor={overrides.particle_custom_color}
+          />
         )}
 
         <div className="relative z-10">{children}</div>

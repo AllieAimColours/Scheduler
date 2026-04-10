@@ -1,7 +1,47 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { CursorEffect, AmbientParticles } from "@/lib/page-builder/overrides";
+import type {
+  CursorEffect,
+  AmbientParticles,
+  ParticleColorMode,
+  ClickBurstStyle,
+} from "@/lib/page-builder/overrides";
+
+// ─────────────────────────────────────────────────────────────
+//  Color helpers — make particles either themed, rainbow, or pastel
+// ─────────────────────────────────────────────────────────────
+
+const PASTEL_PALETTE = [
+  "#FFB5E8", // pink
+  "#B5DEFF", // blue
+  "#FFE5B4", // peach
+  "#C7CEEA", // lavender
+  "#B5EAD7", // mint
+  "#FFDAC1", // coral
+  "#E2F0CB", // sage
+  "#FFC8DD", // rose
+];
+
+function colorForIndex(
+  i: number,
+  mode: ParticleColorMode | undefined,
+  themeColor: string,
+  customColor?: string
+): string {
+  if (mode === "rainbow") {
+    // HSL rotation across the full hue wheel
+    const hue = (i * 37) % 360;
+    return `hsl(${hue}, 80%, 65%)`;
+  }
+  if (mode === "pastel") {
+    return PASTEL_PALETTE[i % PASTEL_PALETTE.length];
+  }
+  if (mode === "custom" && customColor) {
+    return customColor;
+  }
+  return themeColor;
+}
 
 // ─────────────────────────────────────────────────────────────
 //  1. Cursor Effects
@@ -11,7 +51,9 @@ interface CursorProps {
   effect: CursorEffect;
   emoji?: string;
   accentColor?: string;
-  intensity?: number; // 0-100, default 50
+  intensity?: number;
+  colorMode?: ParticleColorMode;
+  customColor?: string;
 }
 
 interface Particle {
@@ -19,21 +61,28 @@ interface Particle {
   x: number;
   y: number;
   born: number;
+  hue?: number;
 }
 
 let particleId = 0;
 
-export function CursorEffects({ effect, emoji, accentColor, intensity = 50 }: CursorProps) {
+export function CursorEffects({
+  effect,
+  emoji,
+  accentColor,
+  intensity = 50,
+  colorMode,
+  customColor,
+}: CursorProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
-  const frameRef = useRef<number>(0);
 
   const handleMove = useCallback(
     (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
 
       if (effect === "sparkle") {
-        const maxParticles = Math.round(5 + (intensity / 100) * 30); // 5 at 0% → 35 at 100%
+        const maxParticles = Math.round(5 + (intensity / 100) * 30);
         particleId++;
         setParticles((prev) => [
           ...prev.slice(-maxParticles),
@@ -41,7 +90,7 @@ export function CursorEffects({ effect, emoji, accentColor, intensity = 50 }: Cu
         ]);
       }
     },
-    [effect]
+    [effect, intensity]
   );
 
   // Clean up old sparkle particles
@@ -62,55 +111,55 @@ export function CursorEffects({ effect, emoji, accentColor, intensity = 50 }: Cu
 
   if (effect === "none") return null;
 
-  const color = accentColor || "var(--template-accent, #a855f7)";
+  const baseColor = accentColor || "var(--template-accent, #a855f7)";
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[9999]" aria-hidden="true">
-      {/* Glow cursor — soft radial gradient following the mouse */}
-      {effect === "glow" && (() => {
-        const glowSize = 128 + Math.round((intensity / 100) * 256); // 128px at 0% → 384px at 100%
-        const glowOpacity = 0.1 + (intensity / 100) * 0.4; // 0.1 → 0.5
-        return (
-          <div
-            className="fixed rounded-full blur-3xl transition-transform duration-75"
-            style={{
-              width: `${glowSize * 2}px`,
-              height: `${glowSize * 2}px`,
-              opacity: glowOpacity,
-              background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-              transform: `translate(${mousePos.x - glowSize}px, ${mousePos.y - glowSize}px)`,
-            }}
-          />
-        );
-      })()}
+      {effect === "glow" &&
+        (() => {
+          const glowSize = 128 + Math.round((intensity / 100) * 256);
+          const glowOpacity = 0.1 + (intensity / 100) * 0.4;
+          const c = colorMode === "custom" && customColor ? customColor : baseColor;
+          return (
+            <div
+              className="fixed rounded-full blur-3xl transition-transform duration-75"
+              style={{
+                width: `${glowSize * 2}px`,
+                height: `${glowSize * 2}px`,
+                opacity: glowOpacity,
+                background: `radial-gradient(circle, ${c} 0%, transparent 70%)`,
+                transform: `translate(${mousePos.x - glowSize}px, ${mousePos.y - glowSize}px)`,
+              }}
+            />
+          );
+        })()}
 
-      {/* Sparkle trail — tiny stars that fade out */}
       {effect === "sparkle" &&
-        particles.map((p) => {
-          const age = (Date.now() - p.born) / 800; // 0 → 1 over 800ms
+        particles.map((p, idx) => {
+          const age = (Date.now() - p.born) / 800;
+          const c = colorForIndex(p.id + idx, colorMode, baseColor, customColor);
           return (
             <div
               key={p.id}
               className="fixed"
               style={{
                 left: p.x - 6,
-                top: p.y - 6 - age * 30, // float upward
+                top: p.y - 6 - age * 30,
                 opacity: 1 - age,
                 transform: `scale(${1 - age * 0.5}) rotate(${age * 180}deg)`,
                 transition: "none",
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
                 <path
                   d="M6 0L7.3 4.7L12 6L7.3 7.3L6 12L4.7 7.3L0 6L4.7 4.7Z"
-                  fill={color}
+                  fill={c}
                 />
               </svg>
             </div>
           );
         })}
 
-      {/* Emoji cursor — emoji follows the mouse */}
       {effect === "emoji" && emoji && (
         <div
           className="fixed text-2xl transition-transform duration-75"
@@ -126,27 +175,38 @@ export function CursorEffects({ effect, emoji, accentColor, intensity = 50 }: Cu
 }
 
 // ─────────────────────────────────────────────────────────────
-//  2. Ambient Particles
+//  2. Ambient Particles — float behind content
 // ─────────────────────────────────────────────────────────────
 
 interface AmbientProps {
   type: AmbientParticles;
   accentColor?: string;
-  intensity?: number; // 0-100, default 50
+  intensity?: number;
+  colorMode?: ParticleColorMode;
+  customColor?: string;
 }
 
-export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: AmbientProps) {
+export function AmbientParticlesEffect({
+  type,
+  accentColor,
+  intensity = 50,
+  colorMode,
+  customColor,
+}: AmbientProps) {
   if (type === "none" || intensity === 0) return null;
 
-  const color = accentColor || "var(--template-accent, #a855f7)";
-  const scale = intensity / 50; // 0→0, 50→1, 100→2
+  const baseColor = accentColor || "var(--template-accent, #a855f7)";
+  const scale = intensity / 50;
   const baseCount =
     type === "stars" ? 15 :
     type === "sparkles" ? 20 :
     type === "fireflies" ? 10 :
-    type === "bubbles" ? 8 : 0;
+    type === "bubbles" ? 8 :
+    type === "petals" ? 12 :
+    type === "hearts" ? 10 :
+    type === "snow" ? 25 : 0;
   const count = Math.round(baseCount * scale);
-  const opacity = 0.15 + (intensity / 100) * 0.45; // 0.15 at 0% → 0.6 at 100%
+  const baseOpacity = 0.15 + (intensity / 100) * 0.55;
 
   return (
     <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
@@ -155,7 +215,8 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
         const top = Math.random() * 100;
         const delay = Math.random() * 8;
         const duration = 6 + Math.random() * 10;
-        const size = type === "bubbles" ? 8 + Math.random() * 20 : 3 + Math.random() * 6;
+        const size = 4 + Math.random() * 8;
+        const c = colorForIndex(i, colorMode, baseColor, customColor);
 
         if (type === "stars") {
           return (
@@ -169,11 +230,11 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
                 animationDuration: `${duration}s`,
               }}
             >
-              <svg width={size * 2} height={size * 2} viewBox="0 0 12 12" fill="none">
+              <svg width={size * 2.5} height={size * 2.5} viewBox="0 0 12 12" fill="none">
                 <path
                   d="M6 0L7.3 4.7L12 6L7.3 7.3L6 12L4.7 7.3L0 6L4.7 4.7Z"
-                  fill={color}
-                  opacity={opacity}
+                  fill={c}
+                  opacity={baseOpacity}
                 />
               </svg>
             </div>
@@ -190,8 +251,9 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
                 top: `${top}%`,
                 width: `${size}px`,
                 height: `${size}px`,
-                backgroundColor: color,
-                opacity: opacity,
+                backgroundColor: c,
+                opacity: baseOpacity,
+                boxShadow: `0 0 ${size * 2}px ${c}`,
                 animationDelay: `${delay}s`,
                 animationDuration: `${duration}s`,
               }}
@@ -200,6 +262,7 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
         }
 
         if (type === "fireflies") {
+          const fireflyColor = colorMode && colorMode !== "theme" ? c : "#fbbf24";
           return (
             <div
               key={i}
@@ -209,8 +272,9 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
                 top: `${top}%`,
                 width: `${size}px`,
                 height: `${size}px`,
-                backgroundColor: "#fbbf24",
-                boxShadow: `0 0 ${size * 3}px ${size}px rgba(251, 191, 36, ${opacity * 0.8})`,
+                backgroundColor: fireflyColor,
+                boxShadow: `0 0 ${size * 4}px ${size}px ${fireflyColor}`,
+                opacity: baseOpacity,
                 animationDelay: `${delay}s`,
                 animationDuration: `${duration}s`,
               }}
@@ -219,19 +283,101 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
         }
 
         if (type === "bubbles") {
+          const bubbleSize = 8 + Math.random() * 24;
           return (
             <div
               key={i}
               className="absolute rounded-full animate-ambient-rise"
               style={{
                 left: `${left}%`,
-                bottom: `-${size}px`,
-                width: `${size}px`,
-                height: `${size}px`,
-                border: `1px solid ${color}`,
-                opacity: opacity * 0.5,
+                bottom: `-${bubbleSize}px`,
+                width: `${bubbleSize}px`,
+                height: `${bubbleSize}px`,
+                border: `1.5px solid ${c}`,
+                opacity: baseOpacity * 0.7,
                 animationDelay: `${delay}s`,
                 animationDuration: `${duration}s`,
+              }}
+            />
+          );
+        }
+
+        if (type === "petals") {
+          // Soft falling petals — rotate as they fall
+          const petalSize = 8 + Math.random() * 12;
+          return (
+            <div
+              key={i}
+              className="absolute animate-ambient-fall"
+              style={{
+                left: `${left}%`,
+                top: `-${petalSize}px`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration + 6}s`,
+                opacity: baseOpacity,
+              }}
+            >
+              <svg
+                width={petalSize}
+                height={petalSize * 1.4}
+                viewBox="0 0 20 28"
+                fill="none"
+              >
+                <path
+                  d="M10 0 C 14 8, 20 14, 10 28 C 0 14, 6 8, 10 0 Z"
+                  fill={c}
+                />
+              </svg>
+            </div>
+          );
+        }
+
+        if (type === "hearts") {
+          const heartSize = 10 + Math.random() * 10;
+          return (
+            <div
+              key={i}
+              className="absolute animate-ambient-rise"
+              style={{
+                left: `${left}%`,
+                bottom: `-${heartSize}px`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration + 4}s`,
+                opacity: baseOpacity,
+              }}
+            >
+              <svg
+                width={heartSize}
+                height={heartSize}
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M12 21s-7-4.5-9.5-9C0.5 8 3 4 7 4c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4 4.5 8C19 16.5 12 21 12 21z"
+                  fill={c}
+                />
+              </svg>
+            </div>
+          );
+        }
+
+        if (type === "snow") {
+          const snowSize = 4 + Math.random() * 6;
+          const snowColor = colorMode && colorMode !== "theme" ? c : "#ffffff";
+          return (
+            <div
+              key={i}
+              className="absolute rounded-full animate-ambient-fall"
+              style={{
+                left: `${left}%`,
+                top: `-${snowSize}px`,
+                width: `${snowSize}px`,
+                height: `${snowSize}px`,
+                backgroundColor: snowColor,
+                boxShadow: `0 0 ${snowSize * 2}px ${snowColor}`,
+                opacity: baseOpacity,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration + 8}s`,
               }}
             />
           );
@@ -247,7 +393,15 @@ export function AmbientParticlesEffect({ type, accentColor, intensity = 50 }: Am
 //  3. Confetti burst on load
 // ─────────────────────────────────────────────────────────────
 
-export function ConfettiBurst({ accentColor }: { accentColor?: string }) {
+export function ConfettiBurst({
+  accentColor,
+  colorMode,
+  customColor,
+}: {
+  accentColor?: string;
+  colorMode?: ParticleColorMode;
+  customColor?: string;
+}) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -257,23 +411,15 @@ export function ConfettiBurst({ accentColor }: { accentColor?: string }) {
 
   if (!visible) return null;
 
-  const colors = [
-    accentColor || "var(--template-accent, #a855f7)",
-    "var(--primary, #ec4899)",
-    "var(--accent, #f59e0b)",
-    "#10b981",
-    "#3b82f6",
-  ];
-
   return (
     <div className="fixed inset-0 pointer-events-none z-[9999]" aria-hidden="true">
-      {Array.from({ length: 50 }).map((_, i) => {
+      {Array.from({ length: 60 }).map((_, i) => {
         const left = 30 + Math.random() * 40;
         const delay = Math.random() * 0.5;
         const size = 6 + Math.random() * 10;
-        const color = colors[i % colors.length];
+        const c = colorForIndex(i, colorMode, accentColor || "#a855f7", customColor);
         const rotation = Math.random() * 360;
-        const spread = (Math.random() - 0.5) * 60;
+        const spread = (Math.random() - 0.5) * 80;
         return (
           <div
             key={i}
@@ -283,13 +429,192 @@ export function ConfettiBurst({ accentColor }: { accentColor?: string }) {
               top: "30%",
               width: `${size}px`,
               height: `${size * 0.6}px`,
-              backgroundColor: color,
+              backgroundColor: c,
               animationDelay: `${delay}s`,
               transform: `rotate(${rotation}deg)`,
               ["--spread" as string]: `${spread}vw`,
             }}
           />
         );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  4. Click Burst — particles explode from where you click
+// ─────────────────────────────────────────────────────────────
+
+interface ClickBurstProps {
+  style: ClickBurstStyle;
+  emoji?: string;
+  accentColor?: string;
+  colorMode?: ParticleColorMode;
+  customColor?: string;
+}
+
+interface BurstInstance {
+  id: number;
+  x: number;
+  y: number;
+  born: number;
+}
+
+let burstId = 0;
+
+export function ClickBurst({
+  style,
+  emoji,
+  accentColor,
+  colorMode,
+  customColor,
+}: ClickBurstProps) {
+  const [bursts, setBursts] = useState<BurstInstance[]>([]);
+
+  useEffect(() => {
+    if (style === "none") return;
+
+    function handleClick(e: MouseEvent) {
+      // Skip if clicking on a button/link/input — they have their own behavior
+      const target = e.target as HTMLElement;
+      if (
+        target.closest("button") ||
+        target.closest("a") ||
+        target.closest("input") ||
+        target.closest("textarea") ||
+        target.closest("select")
+      ) {
+        // Still trigger the burst, but don't interfere
+      }
+      burstId++;
+      setBursts((prev) => [
+        ...prev.slice(-5),
+        { id: burstId, x: e.clientX, y: e.clientY, born: Date.now() },
+      ]);
+    }
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [style]);
+
+  // Clean up old bursts
+  useEffect(() => {
+    if (style === "none") return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setBursts((prev) => prev.filter((b) => now - b.born < 1500));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [style]);
+
+  if (style === "none") return null;
+
+  const baseColor = accentColor || "#a855f7";
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[9999]" aria-hidden="true">
+      {bursts.map((b) => {
+        const particleCount = 12;
+        return Array.from({ length: particleCount }).map((_, i) => {
+          const angle = (i / particleCount) * Math.PI * 2;
+          const distance = 60 + Math.random() * 40;
+          const dx = Math.cos(angle) * distance;
+          const dy = Math.sin(angle) * distance;
+          const c = colorForIndex(i + b.id, colorMode, baseColor, customColor);
+          const size = 8 + Math.random() * 8;
+          const age = (Date.now() - b.born) / 1500;
+
+          const sharedStyle: React.CSSProperties = {
+            position: "absolute",
+            left: b.x,
+            top: b.y,
+            transform: `translate(-50%, -50%) translate(${dx * Math.min(age * 2, 1)}px, ${
+              dy * Math.min(age * 2, 1) + age * age * 80
+            }px) scale(${1 - age})`,
+            opacity: 1 - age,
+            transition: "none",
+          };
+
+          if (style === "confetti") {
+            return (
+              <div
+                key={`${b.id}-${i}`}
+                className="rounded-sm"
+                style={{
+                  ...sharedStyle,
+                  width: `${size}px`,
+                  height: `${size * 0.6}px`,
+                  backgroundColor: c,
+                }}
+              />
+            );
+          }
+
+          if (style === "sparkles") {
+            return (
+              <svg
+                key={`${b.id}-${i}`}
+                width={size * 1.5}
+                height={size * 1.5}
+                viewBox="0 0 12 12"
+                style={sharedStyle}
+              >
+                <path
+                  d="M6 0L7.3 4.7L12 6L7.3 7.3L6 12L4.7 7.3L0 6L4.7 4.7Z"
+                  fill={c}
+                />
+              </svg>
+            );
+          }
+
+          if (style === "hearts") {
+            return (
+              <svg
+                key={`${b.id}-${i}`}
+                width={size * 1.5}
+                height={size * 1.5}
+                viewBox="0 0 24 24"
+                style={sharedStyle}
+              >
+                <path
+                  d="M12 21s-7-4.5-9.5-9C0.5 8 3 4 7 4c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4 4.5 8C19 16.5 12 21 12 21z"
+                  fill={c}
+                />
+              </svg>
+            );
+          }
+
+          if (style === "stars") {
+            return (
+              <div
+                key={`${b.id}-${i}`}
+                style={{
+                  ...sharedStyle,
+                  fontSize: `${size + 4}px`,
+                  color: c,
+                }}
+              >
+                ⭐
+              </div>
+            );
+          }
+
+          if (style === "emoji" && emoji) {
+            return (
+              <div
+                key={`${b.id}-${i}`}
+                style={{
+                  ...sharedStyle,
+                  fontSize: `${size + 8}px`,
+                }}
+              >
+                {emoji}
+              </div>
+            );
+          }
+
+          return null;
+        });
       })}
     </div>
   );
