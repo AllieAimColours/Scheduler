@@ -5,13 +5,15 @@
  *
  * Minimal "try the magic" rail anchored to the left side of the screen.
  * Only two controls: which particle effect is falling, and one color
- * toggle (pink vs pastel). Cursor sparkle and confetti click bursts are
+ * toggle (pink vs pastel). Cursor sparkle and heart click bursts are
  * always on so visitors discover them organically.
  *
  * Goal: show the magic without competing with the marketing copy.
  */
 
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AmbientParticlesEffect,
@@ -60,7 +62,7 @@ export function HeroPlayground() {
         colorMode={colorMode}
       />
       <ClickBurst
-        style="confetti"
+        style="hearts"
         accentColor={ACCENT}
         colorMode={colorMode}
       />
@@ -118,6 +120,26 @@ export function HeroPlayground() {
             );
           })}
         </div>
+
+        {/* Signup CTA */}
+        <Link
+          href="/signup"
+          className="group relative block rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 p-3 shadow-xl hover:shadow-pink-500/40 hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-pink-100 mb-1">
+              ✨ Want more?
+            </div>
+            <div className="text-[13px] font-bold text-white leading-tight mb-2">
+              Create an account to unlock everything you can do
+            </div>
+            <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
+              Get started free
+              <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+        </Link>
 
         <p className="text-[10px] text-gray-400 text-center px-1 leading-relaxed">
           Click anywhere<br />to see the burst

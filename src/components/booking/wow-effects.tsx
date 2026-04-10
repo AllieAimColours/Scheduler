@@ -9,6 +9,40 @@ import type {
 } from "@/lib/page-builder/overrides";
 
 // ─────────────────────────────────────────────────────────────
+//  useAnimationTick — drives 60fps re-renders while `active`.
+//  Only runs the rAF loop while needed; stops as soon as active is false.
+// ─────────────────────────────────────────────────────────────
+function useAnimationTick(active: boolean): number {
+  const [tick, setTick] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!active) {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+
+    function loop() {
+      setTick((t) => t + 1);
+      rafRef.current = requestAnimationFrame(loop);
+    }
+
+    rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [active]);
+
+  return tick;
+}
+
+// ─────────────────────────────────────────────────────────────
 //  Color helpers — make particles either themed, rainbow, or pastel
 // ─────────────────────────────────────────────────────────────
 
@@ -76,17 +110,29 @@ export function CursorEffects({
 }: CursorProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+  const lastSparkleRef = useRef<number>(0);
+
+  // Drive 60fps re-renders while there are sparkle particles in flight,
+  // so the floating-up animation looks smooth between mousemoves.
+  useAnimationTick(effect === "sparkle" && particles.length > 0);
 
   const handleMove = useCallback(
     (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
 
       if (effect === "sparkle") {
+        // Throttle sparkle spawn so a fast mouse doesn't dump 200 particles/sec.
+        // Higher intensity → more frequent spawns.
+        const now = Date.now();
+        const minIntervalMs = Math.max(8, 50 - intensity / 3);
+        if (now - lastSparkleRef.current < minIntervalMs) return;
+        lastSparkleRef.current = now;
+
         const maxParticles = Math.round(5 + (intensity / 100) * 30);
         particleId++;
         setParticles((prev) => [
           ...prev.slice(-maxParticles),
-          { id: particleId, x: e.clientX, y: e.clientY, born: Date.now() },
+          { id: particleId, x: e.clientX, y: e.clientY, born: now },
         ]);
       }
     },
@@ -122,13 +168,14 @@ export function CursorEffects({
           const c = colorMode === "custom" && customColor ? customColor : baseColor;
           return (
             <div
-              className="fixed rounded-full blur-3xl transition-transform duration-75"
+              className="fixed top-0 left-0 rounded-full blur-3xl"
               style={{
                 width: `${glowSize * 2}px`,
                 height: `${glowSize * 2}px`,
                 opacity: glowOpacity,
                 background: `radial-gradient(circle, ${c} 0%, transparent 70%)`,
-                transform: `translate(${mousePos.x - glowSize}px, ${mousePos.y - glowSize}px)`,
+                transform: `translate3d(${mousePos.x - glowSize}px, ${mousePos.y - glowSize}px, 0)`,
+                willChange: "transform",
               }}
             />
           );
@@ -138,18 +185,25 @@ export function CursorEffects({
         (() => {
           // Particle size scales with intensity: 8px at 0% → 32px at 100%
           const particleSize = 8 + Math.round((intensity / 100) * 24);
+          const now = Date.now();
           return particles.map((p, idx) => {
-            const age = (Date.now() - p.born) / 800;
+            const age = Math.min(1, (now - p.born) / 800);
             const c = colorForIndex(p.id + idx, colorMode, baseColor, customColor);
+            // GPU-accelerated transform: translate + scale + rotate in one
+            const tx = p.x - particleSize / 2;
+            const ty = p.y - particleSize / 2 - age * 30;
+            const scale = 1 - age * 0.5;
+            const rotation = age * 180;
             return (
               <div
                 key={p.id}
-                className="fixed"
+                className="fixed top-0 left-0"
                 style={{
-                  left: p.x - particleSize / 2,
-                  top: p.y - particleSize / 2 - age * 30,
+                  width: particleSize,
+                  height: particleSize,
                   opacity: 1 - age,
-                  transform: `scale(${1 - age * 0.5}) rotate(${age * 180}deg)`,
+                  transform: `translate3d(${tx}px, ${ty}px, 0) scale(${scale}) rotate(${rotation}deg)`,
+                  willChange: "transform, opacity",
                   transition: "none",
                 }}
               >
@@ -501,21 +555,13 @@ export function ClickBurst({
 }: ClickBurstProps) {
   const [bursts, setBursts] = useState<BurstInstance[]>([]);
 
+  // Drive 60fps re-renders while bursts are in flight
+  useAnimationTick(style !== "none" && bursts.length > 0);
+
   useEffect(() => {
     if (style === "none") return;
 
     function handleClick(e: MouseEvent) {
-      // Skip if clicking on a button/link/input — they have their own behavior
-      const target = e.target as HTMLElement;
-      if (
-        target.closest("button") ||
-        target.closest("a") ||
-        target.closest("input") ||
-        target.closest("textarea") ||
-        target.closest("select")
-      ) {
-        // Still trigger the burst, but don't interfere
-      }
       burstId++;
       setBursts((prev) => [
         ...prev.slice(-5),
@@ -541,27 +587,41 @@ export function ClickBurst({
 
   const baseColor = accentColor || "#a855f7";
 
+  // Capture "now" once per render so all particles in the same frame are
+  // computed against the same timestamp (no per-particle drift).
+  const renderTime = Date.now();
+
   return (
     <div className="fixed inset-0 pointer-events-none z-[9999]" aria-hidden="true">
       {bursts.map((b) => {
         const particleCount = 12;
         return Array.from({ length: particleCount }).map((_, i) => {
+          // Use deterministic pseudo-random per (b.id, i) so distance/size
+          // stay stable across re-renders for the same particle.
+          const seed = (b.id * 31 + i) * 9301;
+          const rand = ((seed % 233280) / 233280 + 1) % 1;
+          const rand2 = (((seed * 7) % 233280) / 233280 + 1) % 1;
+
           const angle = (i / particleCount) * Math.PI * 2;
-          const distance = 60 + Math.random() * 40;
+          const distance = 60 + rand * 40;
           const dx = Math.cos(angle) * distance;
           const dy = Math.sin(angle) * distance;
           const c = colorForIndex(i + b.id, colorMode, baseColor, customColor);
-          const size = 8 + Math.random() * 8;
-          const age = (Date.now() - b.born) / 1500;
+          const size = 8 + rand2 * 8;
+          const age = Math.min(1, (renderTime - b.born) / 1500);
+
+          // Smooth ease-out for the explosion + gravity for the falloff
+          const eased = 1 - Math.pow(1 - Math.min(age * 2, 1), 2);
+          const tx = b.x - size / 2 + dx * eased;
+          const ty = b.y - size / 2 + dy * eased + age * age * 80;
 
           const sharedStyle: React.CSSProperties = {
-            position: "absolute",
-            left: b.x,
-            top: b.y,
-            transform: `translate(-50%, -50%) translate(${dx * Math.min(age * 2, 1)}px, ${
-              dy * Math.min(age * 2, 1) + age * age * 80
-            }px) scale(${1 - age})`,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            transform: `translate3d(${tx}px, ${ty}px, 0) scale(${1 - age})`,
             opacity: 1 - age,
+            willChange: "transform, opacity",
             transition: "none",
           };
 
