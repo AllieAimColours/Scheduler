@@ -1,4 +1,4 @@
-import type { PageBlock, BlockType } from "./types";
+import type { PageBlock, BlockType, PageSection } from "./types";
 
 let counter = 0;
 function newId() {
@@ -100,4 +100,42 @@ export function defaultStarterPage(): PageBlock[] {
     createDefaultBlock("services"),
     createDefaultBlock("contact"),
   ];
+}
+
+/** Default starter sections for new providers. */
+export function defaultStarterSections(): PageSection[] {
+  return [
+    {
+      id: `s-${Date.now()}-1`,
+      layout: "single",
+      reveal: "fade",
+      columns: [[createDefaultBlock("hero")]],
+    },
+    {
+      id: `s-${Date.now()}-2`,
+      layout: "single",
+      reveal: "slide-up",
+      columns: [[createDefaultBlock("services")]],
+    },
+    {
+      id: `s-${Date.now()}-3`,
+      layout: "single",
+      reveal: "fade",
+      columns: [[createDefaultBlock("contact")]],
+    },
+  ];
+}
+
+let sectionCounter = 0;
+export function createDefaultSection(layout: PageSection["layout"] = "single"): PageSection {
+  sectionCounter++;
+  const colCount =
+    layout === "single" ? 1 :
+    layout === "three-col" ? 3 : 2;
+  return {
+    id: `s-${Date.now()}-${sectionCounter}`,
+    layout,
+    columns: Array.from({ length: colCount }, () => []),
+    reveal: "fade",
+  };
 }

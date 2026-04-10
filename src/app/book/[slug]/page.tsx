@@ -1,8 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { BlockRenderer } from "@/components/booking/blocks/block-renderer";
-import { defaultStarterPage } from "@/lib/page-builder/defaults";
-import type { PageBlock } from "@/lib/page-builder/types";
+import { SectionsRenderer } from "@/components/booking/blocks/section-renderer";
+import { defaultStarterSections } from "@/lib/page-builder/defaults";
+import {
+  isSectionsFormat,
+  migrateBlocksToSections,
+  type PageBlock,
+  type PageSection,
+} from "@/lib/page-builder/types";
 import type { DigitalProduct, Service } from "@/types/database";
 
 export default async function BookingPage({
@@ -32,11 +37,17 @@ export default async function BookingPage({
 
   if (!provider) notFound();
 
-  // Read page blocks from branding JSON, falling back to default starter
+  // Read page from branding JSON. Supports both old flat-blocks format
+  // and new sections format. Old format auto-migrates on read.
   const branding = (provider.branding as Record<string, unknown>) || {};
-  const blocks: PageBlock[] = Array.isArray(branding.page_blocks)
-    ? (branding.page_blocks as PageBlock[])
-    : defaultStarterPage();
+  let sections: PageSection[];
+  if (isSectionsFormat(branding.page_sections)) {
+    sections = branding.page_sections as PageSection[];
+  } else if (Array.isArray(branding.page_blocks)) {
+    sections = migrateBlocksToSections(branding.page_blocks as PageBlock[]);
+  } else {
+    sections = defaultStarterSections();
+  }
 
   // Fetch services (used by services block)
   const { data: services } = await supabase
@@ -46,8 +57,9 @@ export default async function BookingPage({
     .eq("is_active", true)
     .order("sort_order");
 
-  // Fetch active digital products (used by digital_product blocks)
-  const productIds: string[] = blocks
+  // Flatten all blocks across all sections to find digital product IDs
+  const allBlocks: PageBlock[] = sections.flatMap((s) => s.columns.flat());
+  const productIds: string[] = allBlocks
     .filter((b) => b.type === "digital_product")
     .map((b) => (b.config as { product_id?: string }).product_id)
     .filter((id): id is string => Boolean(id));
@@ -63,21 +75,19 @@ export default async function BookingPage({
   }
 
   return (
-    <div className="py-8 md:py-12">
-      <BlockRenderer
-        blocks={blocks}
-        provider={{
-          business_name: provider.business_name,
-          description: provider.description,
-          logo_url: provider.logo_url,
-          phone: provider.phone,
-          email: provider.email,
-          website: provider.website,
-          slug: provider.slug,
-        }}
-        services={(services as unknown as Service[]) || []}
-        digitalProducts={digitalProducts}
-      />
-    </div>
+    <SectionsRenderer
+      sections={sections}
+      provider={{
+        business_name: provider.business_name,
+        description: provider.description,
+        logo_url: provider.logo_url,
+        phone: provider.phone,
+        email: provider.email,
+        website: provider.website,
+        slug: provider.slug,
+      }}
+      services={(services as unknown as Service[]) || []}
+      digitalProducts={digitalProducts}
+    />
   );
 }

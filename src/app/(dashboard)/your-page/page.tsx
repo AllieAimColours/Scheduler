@@ -6,10 +6,15 @@ import { toast } from "sonner";
 import { LayoutGrid, Sliders } from "lucide-react";
 import type { Provider } from "@/types/database";
 import { getTemplateId, type TemplateId } from "@/lib/templates/index";
-import type { PageBlock } from "@/lib/page-builder/types";
-import { defaultStarterPage } from "@/lib/page-builder/defaults";
+import {
+  isSectionsFormat,
+  migrateBlocksToSections,
+  type PageBlock,
+  type PageSection,
+} from "@/lib/page-builder/types";
+import { defaultStarterSections } from "@/lib/page-builder/defaults";
 import { TemplateBar } from "@/components/your-page/template-bar";
-import { BlockListEditor } from "@/components/your-page/block-list-editor";
+import { SectionListEditor } from "@/components/your-page/section-list-editor";
 import { PreviewPane } from "@/components/your-page/preview-pane";
 import { CustomizePanel } from "@/components/your-page/customize-panel";
 import { parseOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
@@ -20,7 +25,7 @@ type Tab = "blocks" | "customize";
 export default function YourPageBuilder() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [template, setTemplate] = useState<TemplateId>("studio");
-  const [blocks, setBlocks] = useState<PageBlock[]>([]);
+  const [sections, setSections] = useState<PageSection[]>([]);
   const [overrides, setOverrides] = useState<PageOverrides>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -44,10 +49,15 @@ export default function YourPageBuilder() {
         setProvider(data);
         const branding = (data.branding as Record<string, unknown>) || {};
         setTemplate(getTemplateId(branding));
-        const existingBlocks = Array.isArray(branding.page_blocks)
-          ? (branding.page_blocks as PageBlock[])
-          : defaultStarterPage();
-        setBlocks(existingBlocks);
+        let existingSections: PageSection[];
+        if (isSectionsFormat(branding.page_sections)) {
+          existingSections = branding.page_sections as PageSection[];
+        } else if (Array.isArray(branding.page_blocks)) {
+          existingSections = migrateBlocksToSections(branding.page_blocks as PageBlock[]);
+        } else {
+          existingSections = defaultStarterSections();
+        }
+        setSections(existingSections);
         setOverrides(parseOverrides(branding.overrides));
       }
     }
@@ -58,10 +68,14 @@ export default function YourPageBuilder() {
     if (!provider) return;
     setSaving(true);
     const supabase = createClient();
+    const existingBranding = (provider.branding as Record<string, unknown>) || {};
+    // Drop the old page_blocks key — sections is the source of truth now
+    const { page_blocks: _legacy, ...rest } = existingBranding;
+    void _legacy;
     const newBranding = {
-      ...((provider.branding as Record<string, unknown>) || {}),
+      ...rest,
       template,
-      page_blocks: JSON.parse(JSON.stringify(blocks)),
+      page_sections: JSON.parse(JSON.stringify(sections)),
       overrides: JSON.parse(JSON.stringify(overrides)),
     };
     const { error } = await supabase
@@ -85,8 +99,8 @@ export default function YourPageBuilder() {
     setDirty(true);
   }
 
-  function handleBlocksChange(next: PageBlock[]) {
-    setBlocks(next);
+  function handleSectionsChange(next: PageSection[]) {
+    setSections(next);
     setDirty(true);
   }
 
@@ -145,14 +159,14 @@ export default function YourPageBuilder() {
               )}
             >
               <LayoutGrid className="h-4 w-4" />
-              Blocks
+              Sections
               <span
                 className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
                   tab === "blocks" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-500"
                 )}
               >
-                {blocks.length}
+                {sections.length}
               </span>
             </button>
             <button
@@ -172,9 +186,9 @@ export default function YourPageBuilder() {
 
           {/* Tab content */}
           {tab === "blocks" && (
-            <BlockListEditor
-              blocks={blocks}
-              onChange={handleBlocksChange}
+            <SectionListEditor
+              sections={sections}
+              onChange={handleSectionsChange}
               provider={provider}
             />
           )}
@@ -188,7 +202,7 @@ export default function YourPageBuilder() {
           <PreviewPane
             slug={provider.slug}
             template={template}
-            blocks={blocks}
+            sections={sections}
             overrides={overrides}
           />
         </div>

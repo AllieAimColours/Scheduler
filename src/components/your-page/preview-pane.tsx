@@ -2,18 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Smartphone, Monitor } from "lucide-react";
-import type { PageBlock } from "@/lib/page-builder/types";
+import type { PageSection } from "@/lib/page-builder/types";
 import type { TemplateId } from "@/lib/templates/index";
 import type { PageOverrides } from "@/lib/page-builder/overrides";
 
 interface Props {
   slug: string;
   template: TemplateId;
-  blocks: PageBlock[];
+  sections: PageSection[];
   overrides?: PageOverrides;
 }
 
-export function PreviewPane({ slug, template, blocks, overrides }: Props) {
+export function PreviewPane({ slug, template, sections, overrides }: Props) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [iframeReady, setIframeReady] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -29,14 +29,14 @@ export function PreviewPane({ slug, template, blocks, overrides }: Props) {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  // Push updates to the iframe whenever template/blocks/overrides change
+  // Push updates to the iframe whenever template/sections/overrides change
   useEffect(() => {
     if (!iframeReady || !iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(
-      { type: "preview-update", template, blocks, overrides },
+      { type: "preview-update", template, sections, overrides },
       "*"
     );
-  }, [template, blocks, overrides, iframeReady]);
+  }, [template, sections, overrides, iframeReady]);
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white shadow-lg overflow-hidden">

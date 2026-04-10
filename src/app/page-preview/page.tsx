@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { TemplateWrapper } from "@/components/booking/template-wrapper";
-import { BlockRenderer } from "@/components/booking/blocks/block-renderer";
+import { SectionsRenderer } from "@/components/booking/blocks/section-renderer";
 import { getTemplate, type TemplateId } from "@/lib/templates/index";
-import { defaultStarterPage } from "@/lib/page-builder/defaults";
-import type { PageBlock } from "@/lib/page-builder/types";
+import { defaultStarterSections } from "@/lib/page-builder/defaults";
+import type { PageSection } from "@/lib/page-builder/types";
 import type { DigitalProduct, Service, Provider } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { mergeOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
@@ -13,13 +13,13 @@ import { mergeOverrides, type PageOverrides } from "@/lib/page-builder/overrides
 interface PreviewMessage {
   type: "preview-update";
   template?: TemplateId;
-  blocks?: PageBlock[];
+  sections?: PageSection[];
   overrides?: PageOverrides;
 }
 
 export default function PagePreview() {
   const [template, setTemplate] = useState<TemplateId>("studio");
-  const [blocks, setBlocks] = useState<PageBlock[]>(defaultStarterPage());
+  const [sections, setSections] = useState<PageSection[]>(defaultStarterSections());
   const [overrides, setOverrides] = useState<PageOverrides>({});
   const [provider, setProvider] = useState<Provider | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -73,7 +73,7 @@ export default function PagePreview() {
     function handleMessage(e: MessageEvent<PreviewMessage>) {
       if (!e.data || e.data.type !== "preview-update") return;
       if (e.data.template) setTemplate(e.data.template);
-      if (Array.isArray(e.data.blocks)) setBlocks(e.data.blocks);
+      if (Array.isArray(e.data.sections)) setSections(e.data.sections);
       if (e.data.overrides !== undefined) setOverrides(e.data.overrides || {});
     }
     window.addEventListener("message", handleMessage);
@@ -110,22 +110,20 @@ export default function PagePreview() {
       fontClasses=""
       overrides={overrides}
     >
-      <div className="py-8 md:py-12">
-        <BlockRenderer
-          blocks={blocks}
-          provider={{
-            business_name: provider.business_name,
-            description: provider.description,
-            logo_url: provider.logo_url,
-            phone: provider.phone,
-            email: provider.email,
-            website: provider.website,
-            slug: provider.slug,
-          }}
-          services={services}
-          digitalProducts={digitalProducts}
-        />
-      </div>
+      <SectionsRenderer
+        sections={sections}
+        provider={{
+          business_name: provider.business_name,
+          description: provider.description,
+          logo_url: provider.logo_url,
+          phone: provider.phone,
+          email: provider.email,
+          website: provider.website,
+          slug: provider.slug,
+        }}
+        services={services}
+        digitalProducts={digitalProducts}
+      />
     </TemplateWrapper>
   );
 }

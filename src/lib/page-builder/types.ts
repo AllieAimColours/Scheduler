@@ -120,6 +120,92 @@ export type PageBlock =
   | DigitalProductBlock;
 
 // ─────────────────────────────────────────────────────────────
+//  Sections — group blocks into rows with layout, background, divider
+// ─────────────────────────────────────────────────────────────
+
+export type SectionLayout =
+  | "single"        // 1 full-width column
+  | "two-col"       // 50/50
+  | "two-col-60-40" // 60/40
+  | "two-col-40-60" // 40/60
+  | "three-col"     // 33/33/33
+  | "asymmetric";   // 60% main + 40% sidebar
+
+export type SectionBackground =
+  | { type: "none" }
+  | { type: "solid"; color: string }
+  | { type: "gradient"; from: string; to: string; angle?: number }
+  | { type: "mesh"; colors: string[] }
+  | { type: "image"; url: string; parallax?: boolean; overlay?: number };
+
+export type SectionDivider =
+  | "none"
+  | "wave"
+  | "wave-soft"
+  | "zigzag"
+  | "blob"
+  | "dots"
+  | "fade";
+
+export type RevealAnimation =
+  | "none"
+  | "fade"
+  | "slide-up"
+  | "slide-left"
+  | "slide-right"
+  | "zoom";
+
+export interface PageSection {
+  id: string;
+  layout: SectionLayout;
+  background?: SectionBackground;
+  divider?: SectionDivider;
+  reveal?: RevealAnimation;
+  columns: PageBlock[][]; // length matches the layout's column count
+  title?: string; // optional anchor name for top nav
+}
+
+export function columnCountFor(layout: SectionLayout): number {
+  switch (layout) {
+    case "single":
+      return 1;
+    case "two-col":
+    case "two-col-60-40":
+    case "two-col-40-60":
+    case "asymmetric":
+      return 2;
+    case "three-col":
+      return 3;
+  }
+}
+
+/**
+ * Migrate a flat blocks array (old format) into a single-column section
+ * (new format). Used when reading branding.page_blocks from the DB.
+ */
+export function migrateBlocksToSections(blocks: PageBlock[]): PageSection[] {
+  if (!blocks || blocks.length === 0) return [];
+  // Each block becomes its own single-column section so the user can
+  // immediately rearrange them into multi-column layouts
+  return blocks.map((b) => ({
+    id: `s-${b.id}`,
+    layout: "single" as SectionLayout,
+    columns: [[b]],
+  }));
+}
+
+/**
+ * Type guard: distinguish old (flat) and new (sections) formats so we can
+ * read both from branding.page_blocks during the rollout.
+ */
+export function isSectionsFormat(value: unknown): value is PageSection[] {
+  if (!Array.isArray(value)) return false;
+  if (value.length === 0) return true;
+  const first = value[0] as Record<string, unknown>;
+  return typeof first === "object" && first !== null && "columns" in first && "layout" in first;
+}
+
+// ─────────────────────────────────────────────────────────────
 //  Block metadata for the library UI
 // ─────────────────────────────────────────────────────────────
 export interface BlockMeta {
