@@ -50,6 +50,11 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
   const supabase = createClient();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Focus mode: collapse the sidebar to a thin strip on routes that need
+  // maximum canvas space (Your Page builder).
+  const focusMode = pathname.startsWith("/your-page");
+  const [focusExpanded, setFocusExpanded] = useState(false);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
@@ -205,10 +210,50 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
         </div>
       )}
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-gradient-to-b from-white via-gray-50/30 to-purple-50/20 min-h-screen shrink-0 sticky top-0 h-screen border-r border-gray-100">
-        {renderNav()}
-      </aside>
+      {/* Desktop sidebar — collapses to a thin icon strip in focus mode */}
+      {focusMode && !focusExpanded ? (
+        <aside className="hidden md:flex w-14 flex-col items-center bg-white border-r border-gray-100 sticky top-0 h-screen shrink-0 py-4 gap-2">
+          <button
+            onClick={() => setFocusExpanded(true)}
+            className="p-2 rounded-xl hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-all"
+            title="Expand menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <a
+            href="/dashboard"
+            className="p-2 rounded-xl hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-all"
+            title="Dashboard"
+          >
+            <LayoutDashboard className="h-5 w-5" />
+          </a>
+          <div className="mx-2 h-px w-6 bg-gray-100" />
+          {provider.logo_url ? (
+            <img
+              src={provider.logo_url}
+              alt={provider.business_name}
+              className="h-9 w-9 rounded-xl object-cover shadow-md mt-auto"
+            />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 shadow-md mt-auto">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+          )}
+        </aside>
+      ) : (
+        <aside className="hidden md:flex w-64 flex-col bg-gradient-to-b from-white via-gray-50/30 to-purple-50/20 min-h-screen shrink-0 sticky top-0 h-screen border-r border-gray-100">
+          {focusMode && (
+            <button
+              onClick={() => setFocusExpanded(false)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-all z-10"
+              title="Collapse menu"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          {renderNav()}
+        </aside>
+      )}
     </>
   );
 }

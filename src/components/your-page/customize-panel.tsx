@@ -255,19 +255,27 @@ function ColorPicker({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {COLOR_PRESETS.map((c) => (
           <button
             key={c}
             type="button"
             onClick={() => onChange(c)}
             className={cn(
-              "w-7 h-7 rounded-full border-2 transition-all hover:scale-110",
-              value === c ? "border-gray-800 ring-2 ring-purple-300" : "border-white shadow-sm"
+              "w-9 h-9 rounded-full transition-all hover:scale-110 relative",
+              value === c
+                ? "ring-4 ring-purple-300 scale-110 shadow-lg"
+                : "ring-2 ring-white shadow-md"
             )}
             style={{ backgroundColor: c }}
             aria-label={`Use ${c}`}
-          />
+          >
+            {value === c && (
+              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold drop-shadow">
+                ✓
+              </span>
+            )}
+          </button>
         ))}
       </div>
     </div>
@@ -284,17 +292,17 @@ function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-gray-100 rounded-xl">
+    <div className="inline-flex flex-wrap items-center gap-1.5 p-1.5 bg-gray-100 rounded-2xl border border-gray-200">
       {options.map((opt) => (
         <button
           key={opt.id}
           type="button"
           onClick={() => onChange(opt.id)}
           className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+            "px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
             value === opt.id
-              ? "bg-white text-purple-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
+              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md scale-105"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white"
           )}
         >
           {opt.label}
