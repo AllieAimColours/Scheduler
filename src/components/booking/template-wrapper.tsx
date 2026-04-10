@@ -29,7 +29,7 @@ function buildOverrideCss(scope: string, overrides: PageOverrides): string {
     if (family) {
       const familyName = family.replace(/_/g, " ");
       rules.push(
-        `${scope} h1, ${scope} h2, ${scope} h3, ${scope} h4 { font-family: '${familyName}', sans-serif !important; }`
+        `${scope} h1, ${scope} h2, ${scope} h3, ${scope} h4, ${scope} h5, ${scope} h6 { font-family: '${familyName}', serif !important; font-style: normal !important; }`
       );
     }
   }
@@ -39,28 +39,36 @@ function buildOverrideCss(scope: string, overrides: PageOverrides): string {
     if (family) {
       const familyName = family.replace(/_/g, " ");
       rules.push(
-        `${scope} p, ${scope} span:not(.no-font-override), ${scope} li, ${scope} input, ${scope} textarea, ${scope} button { font-family: '${familyName}', sans-serif !important; }`
+        `${scope} p, ${scope} li, ${scope} input, ${scope} textarea, ${scope} button, ${scope} a, ${scope} label { font-family: '${familyName}', sans-serif !important; }`
       );
     }
   }
 
-  // Color overrides — best-effort against arbitrary Tailwind values.
-  // We target common bg/text/border patterns inside the scope.
+  // Color overrides — best-effort against template-baked Tailwind classes.
   if (overrides.primary_color) {
     const c = overrides.primary_color;
     rules.push(
-      // Buttons with gradient backgrounds → flat override color
-      `${scope} button[class*="bg-gradient-to-r"], ${scope} a[class*="bg-gradient-to-r"], ${scope} button[class*="bg-gradient-to-b"], ${scope} a[class*="bg-gradient-to-b"] { background-image: none !important; background-color: ${c} !important; }`,
-      // Solid background buttons
-      `${scope} button[class*="bg-["], ${scope} a[class*="bg-["] { background-color: ${c} !important; }`
+      // Any element with a Tailwind gradient → replace with flat override
+      `${scope} [class*="bg-gradient"] { background-image: none !important; background-color: ${c} !important; }`,
+      // Solid bg-[#hex] patterns (escape brackets via attribute matcher)
+      `${scope} button[class*="bg-["], ${scope} a[class*="bg-["] { background-color: ${c} !important; background-image: none !important; }`,
+      // Time slot active state etc.
+      `${scope} [class*="text-template-accent"] { color: ${c} !important; }`
     );
   }
 
   if (overrides.accent_color) {
     const c = overrides.accent_color;
     rules.push(
-      // Accent bars + decorative dots
-      `${scope} [class*="from-["][class*="to-["] { background-image: linear-gradient(to right, ${c}, ${c}) !important; }`
+      // Accent bar gradients
+      `${scope} [class*="accent-bar"], ${scope} .h-1 { background-image: linear-gradient(to right, ${c}, ${c}) !important; background-color: ${c} !important; }`
+    );
+  }
+
+  if (overrides.background_color) {
+    const c = overrides.background_color;
+    rules.push(
+      `${scope} { background: ${c} !important; background-image: none !important; }`
     );
   }
 

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Sliders, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Field } from "./editors/field";
 import {
@@ -67,7 +66,6 @@ function hasAnyOverrides(o: PageOverrides): boolean {
 }
 
 export function CustomizePanel({ overrides, onUpdate }: Props) {
-  const [open, setOpen] = useState(false);
   const overridden = hasAnyOverrides(overrides);
 
   function set<K extends keyof PageOverrides>(key: K, value: PageOverrides[K]) {
@@ -85,114 +83,91 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
   }
 
   return (
-    <div className="rounded-3xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-purple-50/40 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="inline-flex p-2 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-md">
-            <Sliders className="h-4 w-4 text-white" />
-          </div>
-          <div className="text-left">
-            <div className="font-display text-lg font-semibold text-gray-800">Customize</div>
-            <div className="text-xs text-gray-400">
-              {overridden ? "Overrides active — click to expand" : "Override fonts, colors & feel"}
-            </div>
-          </div>
+    <div className="rounded-3xl border border-gray-100 bg-white shadow-sm p-5 space-y-5">
+      {/* Header with reset */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-display text-lg font-semibold text-gray-800">
+            Customize
+          </h3>
+          <p className="text-xs text-gray-400">
+            Override fonts, colors, and feel on top of your template.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {overridden && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                resetAll();
-              }}
-              className="text-xs text-gray-400 hover:text-purple-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-50 transition-colors"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset
-            </button>
-          )}
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 text-gray-400 transition-transform",
-              open && "rotate-180"
-            )}
+        {overridden && (
+          <button
+            type="button"
+            onClick={resetAll}
+            className="text-xs text-gray-400 hover:text-purple-600 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset all
+          </button>
+        )}
+      </div>
+
+      {/* Fonts */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Heading font">
+          <FontSelect
+            value={overrides.heading_font || "default"}
+            onChange={(v) => set("heading_font", v)}
           />
-        </div>
-      </button>
+        </Field>
+        <Field label="Body font">
+          <FontSelect
+            value={overrides.body_font || "default"}
+            onChange={(v) => set("body_font", v)}
+          />
+        </Field>
+      </div>
 
-      {open && (
-        <div className="px-6 pb-6 space-y-5 border-t border-gray-100 pt-5 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-          {/* Fonts */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Heading font">
-              <FontSelect
-                value={overrides.heading_font || "default"}
-                onChange={(v) => set("heading_font", v)}
-              />
-            </Field>
-            <Field label="Body font">
-              <FontSelect
-                value={overrides.body_font || "default"}
-                onChange={(v) => set("body_font", v)}
-              />
-            </Field>
-          </div>
+      {/* Colors — stacked, each with preview swatch + presets */}
+      <Field label="Primary color" hint="Buttons, accents, hover states">
+        <ColorPicker
+          value={overrides.primary_color}
+          onChange={(v) => set("primary_color", v)}
+        />
+      </Field>
 
-          {/* Colors */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Primary color" hint="Buttons, accents, hover states">
-              <ColorPicker
-                value={overrides.primary_color}
-                onChange={(v) => set("primary_color", v)}
-              />
-            </Field>
-            <Field label="Accent color" hint="Secondary highlights">
-              <ColorPicker
-                value={overrides.accent_color}
-                onChange={(v) => set("accent_color", v)}
-              />
-            </Field>
-          </div>
+      <Field label="Accent color" hint="Secondary highlights and bars">
+        <ColorPicker
+          value={overrides.accent_color}
+          onChange={(v) => set("accent_color", v)}
+        />
+      </Field>
 
-          <Field label="Background color" hint="Leave empty for the template default">
-            <ColorPicker
-              value={overrides.background_color}
-              onChange={(v) => set("background_color", v)}
-            />
-          </Field>
+      <Field label="Background color" hint="Page background">
+        <ColorPicker
+          value={overrides.background_color}
+          onChange={(v) => set("background_color", v)}
+        />
+      </Field>
 
-          {/* Radius */}
-          <Field label="Corner roundness">
-            <SegmentedControl
-              options={RADIUS_OPTIONS}
-              value={overrides.radius || "default"}
-              onChange={(v) => set("radius", v)}
-            />
-          </Field>
+      {/* Visual feel */}
+      <Field label="Corner roundness">
+        <SegmentedControl
+          options={RADIUS_OPTIONS}
+          value={overrides.radius || "default"}
+          onChange={(v) => set("radius", v)}
+        />
+      </Field>
 
-          {/* Decorations */}
-          <Field label="Background decorations" hint="Orbs, grids, confetti, shimmer">
-            <SegmentedControl
-              options={DECORATIONS_OPTIONS}
-              value={overrides.decorations || "default"}
-              onChange={(v) => set("decorations", v)}
-            />
-          </Field>
+      <Field label="Background decorations" hint="Orbs, grids, confetti, shimmer">
+        <SegmentedControl
+          options={DECORATIONS_OPTIONS}
+          value={overrides.decorations || "default"}
+          onChange={(v) => set("decorations", v)}
+        />
+      </Field>
 
-          {/* Animation */}
-          <Field label="Animation speed">
-            <SegmentedControl
-              options={ANIMATION_OPTIONS}
-              value={overrides.animation || "default"}
-              onChange={(v) => set("animation", v)}
-            />
-          </Field>
-        </div>
-      )}
+      <Field label="Animation speed">
+        <SegmentedControl
+          options={ANIMATION_OPTIONS}
+          value={overrides.animation || "default"}
+          onChange={(v) => set("animation", v)}
+        />
+      </Field>
     </div>
   );
 }
@@ -210,7 +185,7 @@ function FontSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as FontChoice)}
-      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm text-gray-900"
+      className="w-full px-3 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm text-gray-900 cursor-pointer hover:border-purple-300 transition-colors"
     >
       {FONT_OPTIONS.map((opt) => (
         <option key={opt.id} value={opt.id}>
@@ -235,20 +210,20 @@ function ColorPicker({
           type="color"
           value={value || "#a855f7"}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-12 rounded-lg border border-gray-200 cursor-pointer p-0"
+          className="h-10 w-14 rounded-lg border-2 border-gray-200 cursor-pointer p-0 hover:border-purple-300 transition-colors"
         />
         <input
           type="text"
           value={value || ""}
           onChange={(e) => onChange(e.target.value || undefined)}
           placeholder="Template default"
-          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm text-gray-900 font-mono"
+          className="flex-1 px-3 py-2 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-sm text-gray-900 font-mono"
         />
         {value && (
           <button
             type="button"
             onClick={() => onChange(undefined)}
-            className="text-xs text-gray-400 hover:text-purple-600 px-2 py-1 transition-colors"
+            className="text-xs text-gray-400 hover:text-purple-600 px-3 py-2 transition-colors cursor-pointer"
             aria-label="Reset to template"
           >
             Reset
@@ -262,7 +237,7 @@ function ColorPicker({
             type="button"
             onClick={() => onChange(c)}
             className={cn(
-              "w-9 h-9 rounded-full transition-all hover:scale-110 relative",
+              "w-9 h-9 rounded-full transition-all hover:scale-110 relative cursor-pointer",
               value === c
                 ? "ring-4 ring-purple-300 scale-110 shadow-lg"
                 : "ring-2 ring-white shadow-md"
@@ -292,22 +267,25 @@ function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex flex-wrap items-center gap-1.5 p-1.5 bg-gray-100 rounded-2xl border border-gray-200">
-      {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          onClick={() => onChange(opt.id)}
-          className={cn(
-            "px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
-            value === opt.id
-              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md scale-105"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white"
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
+    <div className="inline-flex flex-wrap items-center gap-2">
+      {options.map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={cn(
+              "px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer border-2",
+              active
+                ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg scale-105"
+                : "bg-white text-gray-700 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
