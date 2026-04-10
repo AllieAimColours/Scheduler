@@ -8,16 +8,19 @@ import { defaultStarterPage } from "@/lib/page-builder/defaults";
 import type { PageBlock } from "@/lib/page-builder/types";
 import type { DigitalProduct, Service, Provider } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { mergeOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
 
 interface PreviewMessage {
   type: "preview-update";
   template?: TemplateId;
   blocks?: PageBlock[];
+  overrides?: PageOverrides;
 }
 
 export default function PagePreview() {
   const [template, setTemplate] = useState<TemplateId>("studio");
   const [blocks, setBlocks] = useState<PageBlock[]>(defaultStarterPage());
+  const [overrides, setOverrides] = useState<PageOverrides>({});
   const [provider, setProvider] = useState<Provider | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [digitalProducts, setDigitalProducts] = useState<DigitalProduct[]>([]);
@@ -71,6 +74,7 @@ export default function PagePreview() {
       if (!e.data || e.data.type !== "preview-update") return;
       if (e.data.template) setTemplate(e.data.template);
       if (Array.isArray(e.data.blocks)) setBlocks(e.data.blocks);
+      if (e.data.overrides !== undefined) setOverrides(e.data.overrides || {});
     }
     window.addEventListener("message", handleMessage);
     // Signal we're ready to receive updates
@@ -97,9 +101,15 @@ export default function PagePreview() {
   }
 
   const tpl = getTemplate(template);
+  const mergedVars = mergeOverrides(tpl.cssVars, overrides);
 
   return (
-    <TemplateWrapper templateId={template} cssVars={tpl.cssVars} fontClasses="">
+    <TemplateWrapper
+      templateId={template}
+      cssVars={mergedVars}
+      fontClasses=""
+      overrides={overrides}
+    >
       <div className="py-8 md:py-12">
         <BlockRenderer
           blocks={blocks}

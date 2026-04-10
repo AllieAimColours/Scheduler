@@ -10,11 +10,14 @@ import { defaultStarterPage } from "@/lib/page-builder/defaults";
 import { TemplateBar } from "@/components/your-page/template-bar";
 import { BlockListEditor } from "@/components/your-page/block-list-editor";
 import { PreviewPane } from "@/components/your-page/preview-pane";
+import { CustomizePanel } from "@/components/your-page/customize-panel";
+import { parseOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
 
 export default function YourPageBuilder() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [template, setTemplate] = useState<TemplateId>("studio");
   const [blocks, setBlocks] = useState<PageBlock[]>([]);
+  const [overrides, setOverrides] = useState<PageOverrides>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -40,6 +43,7 @@ export default function YourPageBuilder() {
           ? (branding.page_blocks as PageBlock[])
           : defaultStarterPage();
         setBlocks(existingBlocks);
+        setOverrides(parseOverrides(branding.overrides));
       }
     }
     load();
@@ -53,6 +57,7 @@ export default function YourPageBuilder() {
       ...((provider.branding as Record<string, unknown>) || {}),
       template,
       page_blocks: JSON.parse(JSON.stringify(blocks)),
+      overrides: JSON.parse(JSON.stringify(overrides)),
     };
     const { error } = await supabase
       .from("providers")
@@ -77,6 +82,11 @@ export default function YourPageBuilder() {
 
   function handleBlocksChange(next: PageBlock[]) {
     setBlocks(next);
+    setDirty(true);
+  }
+
+  function handleOverridesChange(next: PageOverrides) {
+    setOverrides(next);
     setDirty(true);
   }
 
@@ -114,11 +124,19 @@ export default function YourPageBuilder() {
       {/* Template bar */}
       <TemplateBar selected={template} onSelect={handleTemplateChange} />
 
+      {/* Customize panel (collapsible overrides) */}
+      <CustomizePanel overrides={overrides} onUpdate={handleOverridesChange} />
+
       {/* Editor + Preview */}
       <div className="grid xl:grid-cols-[1fr_500px] gap-6">
         <BlockListEditor blocks={blocks} onChange={handleBlocksChange} provider={provider} />
         <div className="xl:sticky xl:top-6 xl:self-start">
-          <PreviewPane slug={provider.slug} template={template} blocks={blocks} />
+          <PreviewPane
+            slug={provider.slug}
+            template={template}
+            blocks={blocks}
+            overrides={overrides}
+          />
         </div>
       </div>
     </div>

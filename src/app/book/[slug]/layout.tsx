@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getTemplateId, getTemplate, type TemplateId } from "@/lib/templates/index";
 import { getTemplateFonts } from "@/lib/templates/fonts";
 import { TemplateWrapper } from "@/components/booking/template-wrapper";
+import { mergeOverrides, parseOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
 
 export default async function BookingLayout({
   params,
@@ -15,6 +16,7 @@ export default async function BookingLayout({
   let templateId: TemplateId = "studio";
   let template = getTemplate(templateId);
   let fontClasses = "";
+  let overrides: PageOverrides = {};
 
   try {
     const { slug } = await params;
@@ -31,23 +33,26 @@ export default async function BookingLayout({
     }
 
     if (provider) {
-      templateId = getTemplateId(
-        provider.branding as Record<string, any> | null
-      );
+      const branding = (provider.branding as Record<string, unknown>) || {};
+      templateId = getTemplateId(branding);
       template = getTemplate(templateId);
       const fonts = getTemplateFonts(templateId);
       fontClasses = `${fonts.heading.variable} ${fonts.body.variable}`;
+      overrides = parseOverrides(branding.overrides);
     }
   } catch (e) {
     console.error("Booking layout error:", e instanceof Error ? e.message : e);
     // Fall back to studio template if anything fails
   }
 
+  const mergedVars = mergeOverrides(template.cssVars, overrides);
+
   return (
     <TemplateWrapper
       templateId={templateId}
-      cssVars={template.cssVars}
+      cssVars={mergedVars}
       fontClasses={fontClasses}
+      overrides={overrides}
     >
       {children}
     </TemplateWrapper>

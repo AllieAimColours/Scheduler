@@ -4,14 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Smartphone, Monitor } from "lucide-react";
 import type { PageBlock } from "@/lib/page-builder/types";
 import type { TemplateId } from "@/lib/templates/index";
+import type { PageOverrides } from "@/lib/page-builder/overrides";
 
 interface Props {
   slug: string;
   template: TemplateId;
   blocks: PageBlock[];
+  overrides?: PageOverrides;
 }
 
-export function PreviewPane({ slug, template, blocks }: Props) {
+export function PreviewPane({ slug, template, blocks, overrides }: Props) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [iframeReady, setIframeReady] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -27,14 +29,14 @@ export function PreviewPane({ slug, template, blocks }: Props) {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  // Push updates to the iframe whenever template/blocks change
+  // Push updates to the iframe whenever template/blocks/overrides change
   useEffect(() => {
     if (!iframeReady || !iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(
-      { type: "preview-update", template, blocks },
+      { type: "preview-update", template, blocks, overrides },
       "*"
     );
-  }, [template, blocks, iframeReady]);
+  }, [template, blocks, overrides, iframeReady]);
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white shadow-lg overflow-hidden">
