@@ -22,7 +22,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Clock, DollarSign, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock, DollarSign } from "lucide-react";
+import { PeonyMark } from "@/components/peony-mark";
 import { createService, updateService, deleteService, toggleService } from "./actions";
 
 const PRESET_COLORS = [
@@ -244,8 +245,8 @@ export function ServiceList({
       {services.length === 0 ? (
         <Card className="rounded-2xl border-gray-100 shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg mb-6">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="inline-flex p-4 rounded-3xl bg-gradient-to-br from-pink-50 to-rose-100 shadow-lg mb-6">
+              <PeonyMark size={56} />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Time to showcase your magic</h3>
             <p className="text-gray-400 mb-6 max-w-sm">

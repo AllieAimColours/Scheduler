@@ -6,9 +6,9 @@ import {
   Users,
   TrendingUp,
   Clock,
-  Sparkles,
   ArrowRight,
 } from "lucide-react";
+import { PeonyMark } from "@/components/peony-mark";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -155,8 +155,8 @@ export default async function DashboardPage() {
 
         {!todayBookings || todayBookings.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 mb-4">
-              <Sparkles className="h-8 w-8 text-purple-400" />
+            <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-pink-50 to-rose-100 mb-4">
+              <PeonyMark size={48} />
             </div>
             <h3 className="font-semibold text-gray-700 mb-1">
               Your day is wide open

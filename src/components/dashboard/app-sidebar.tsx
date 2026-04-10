@@ -12,7 +12,6 @@ import {
   CreditCard,
   Settings,
   LogOut,
-  Sparkles,
   Menu,
   X,
   Eye,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { PeonyMark } from "@/components/peony-mark";
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -83,8 +83,8 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
               className="h-10 w-10 rounded-xl object-cover shadow-md ring-2 ring-white/50"
             />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 shadow-md ring-2 ring-white/20">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-50 to-rose-100 shadow-md ring-2 ring-white/20">
+              <PeonyMark size={32} />
             </div>
           )}
           <div className="flex flex-col">
@@ -182,8 +182,8 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
           <Menu className="h-5 w-5 text-gray-600" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-pink-500">
-            <Sparkles className="h-3.5 w-3.5 text-white" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-pink-50 to-rose-100">
+            <PeonyMark size={22} />
           </div>
           <span className="text-sm font-bold text-gray-800 truncate">
             {provider.business_name}
@@ -235,8 +235,8 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
               className="h-9 w-9 rounded-xl object-cover shadow-md mt-auto"
             />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 shadow-md mt-auto">
-              <Sparkles className="h-4 w-4 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-pink-50 to-rose-100 shadow-md mt-auto">
+              <PeonyMark size={28} />
             </div>
           )}
         </aside>
