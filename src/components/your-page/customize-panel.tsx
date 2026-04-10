@@ -254,12 +254,69 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
 
           {/* Cursor intensity slider */}
           {overrides.cursor_effect && overrides.cursor_effect !== "none" && (
-            <Field label={`Cursor intensity — ${overrides.cursor_intensity ?? 50}%`}>
+            <Field label={`Cursor size & frequency — ${overrides.cursor_intensity ?? 50}%`}>
               <IntensitySlider
                 value={overrides.cursor_intensity ?? 50}
                 onChange={(v) => set("cursor_intensity", v)}
               />
             </Field>
+          )}
+
+          {/* Cursor color override — own color picker independent of particles */}
+          {overrides.cursor_effect && overrides.cursor_effect !== "none" && overrides.cursor_effect !== "emoji" && (
+            <div className="rounded-2xl border border-gray-100 bg-purple-50/30 p-4 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={overrides.cursor_color_mode !== undefined}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      set("cursor_color_mode", overrides.particle_color_mode || "theme");
+                    } else {
+                      set("cursor_color_mode", undefined);
+                      set("cursor_custom_color", undefined);
+                    }
+                  }}
+                  className="rounded"
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Use different colors for cursor
+                </span>
+              </label>
+
+              {overrides.cursor_color_mode !== undefined && (
+                <div className="space-y-3 pl-7">
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_MODE_OPTIONS.map((opt) => {
+                      const active = overrides.cursor_color_mode === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => set("cursor_color_mode", opt.id)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border-2",
+                            active
+                              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-md"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                          )}
+                        >
+                          <span>{opt.preview}</span>
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {overrides.cursor_color_mode === "custom" && (
+                    <ColorPicker
+                      value={overrides.cursor_custom_color}
+                      onChange={(v) => set("cursor_custom_color", v)}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <Field label="Ambient particles" hint="Floating in the background, behind your content">

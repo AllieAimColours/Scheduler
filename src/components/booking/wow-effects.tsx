@@ -135,41 +135,56 @@ export function CursorEffects({
         })()}
 
       {effect === "sparkle" &&
-        particles.map((p, idx) => {
-          const age = (Date.now() - p.born) / 800;
-          const c = colorForIndex(p.id + idx, colorMode, baseColor, customColor);
-          return (
-            <div
-              key={p.id}
-              className="fixed"
-              style={{
-                left: p.x - 6,
-                top: p.y - 6 - age * 30,
-                opacity: 1 - age,
-                transform: `scale(${1 - age * 0.5}) rotate(${age * 180}deg)`,
-                transition: "none",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M6 0L7.3 4.7L12 6L7.3 7.3L6 12L4.7 7.3L0 6L4.7 4.7Z"
-                  fill={c}
-                />
-              </svg>
-            </div>
-          );
-        })}
+        (() => {
+          // Particle size scales with intensity: 8px at 0% → 32px at 100%
+          const particleSize = 8 + Math.round((intensity / 100) * 24);
+          return particles.map((p, idx) => {
+            const age = (Date.now() - p.born) / 800;
+            const c = colorForIndex(p.id + idx, colorMode, baseColor, customColor);
+            return (
+              <div
+                key={p.id}
+                className="fixed"
+                style={{
+                  left: p.x - particleSize / 2,
+                  top: p.y - particleSize / 2 - age * 30,
+                  opacity: 1 - age,
+                  transform: `scale(${1 - age * 0.5}) rotate(${age * 180}deg)`,
+                  transition: "none",
+                }}
+              >
+                <svg
+                  width={particleSize}
+                  height={particleSize}
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M6 0L7.3 4.7L12 6L7.3 7.3L6 12L4.7 7.3L0 6L4.7 4.7Z"
+                    fill={c}
+                  />
+                </svg>
+              </div>
+            );
+          });
+        })()}
 
-      {effect === "emoji" && emoji && (
-        <div
-          className="fixed text-2xl transition-transform duration-75"
-          style={{
-            transform: `translate(${mousePos.x + 12}px, ${mousePos.y + 12}px)`,
-          }}
-        >
-          {emoji}
-        </div>
-      )}
+      {effect === "emoji" && emoji && (() => {
+        // Font size scales with intensity: 16px at 0% → 56px at 100%
+        const fontSize = 16 + Math.round((intensity / 100) * 40);
+        return (
+          <div
+            className="fixed transition-transform duration-75"
+            style={{
+              fontSize: `${fontSize}px`,
+              lineHeight: 1,
+              transform: `translate(${mousePos.x + fontSize / 4}px, ${mousePos.y + fontSize / 4}px)`,
+            }}
+          >
+            {emoji}
+          </div>
+        );
+      })()}
     </div>
   );
 }

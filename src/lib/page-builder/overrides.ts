@@ -69,11 +69,17 @@ export interface PageOverrides {
   // Wow effects
   cursor_effect?: CursorEffect;
   cursor_emoji?: string; // only used when cursor_effect === "emoji"
-  cursor_intensity?: number; // 0-100, default 50
+  cursor_intensity?: number; // 0-100, default 50 (drives both spawn rate AND particle size)
+  cursor_color_mode?: ParticleColorMode; // optional override — if unset, inherits particle_color_mode
+  cursor_custom_color?: string; // only used when cursor_color_mode === "custom"
+
   ambient_particles?: AmbientParticles;
   ambient_intensity?: number; // 0-100, default 50
+
+  // Global default — applies to ambient + click burst + confetti unless they have their own override
   particle_color_mode?: ParticleColorMode; // theme/rainbow/custom/pastel
   particle_custom_color?: string; // only used when particle_color_mode === "custom"
+
   confetti_on_load?: boolean;
   click_burst?: ClickBurstStyle;
   click_burst_emoji?: string; // only used when click_burst === "emoji"
@@ -148,6 +154,8 @@ export function parseOverrides(raw: unknown): PageOverrides {
     cursor_effect: typeof o.cursor_effect === "string" ? (o.cursor_effect as CursorEffect) : undefined,
     cursor_emoji: typeof o.cursor_emoji === "string" ? o.cursor_emoji : undefined,
     cursor_intensity: typeof o.cursor_intensity === "number" ? o.cursor_intensity : undefined,
+    cursor_color_mode: typeof o.cursor_color_mode === "string" ? (o.cursor_color_mode as ParticleColorMode) : undefined,
+    cursor_custom_color: typeof o.cursor_custom_color === "string" ? o.cursor_custom_color : undefined,
     ambient_particles: typeof o.ambient_particles === "string" ? (o.ambient_particles as AmbientParticles) : undefined,
     ambient_intensity: typeof o.ambient_intensity === "number" ? o.ambient_intensity : undefined,
     particle_color_mode: typeof o.particle_color_mode === "string" ? (o.particle_color_mode as ParticleColorMode) : undefined,

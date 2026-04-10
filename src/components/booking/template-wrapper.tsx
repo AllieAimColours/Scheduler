@@ -140,8 +140,8 @@ export function TemplateWrapper({
             emoji={overrides.cursor_emoji}
             accentColor={accentColor}
             intensity={overrides.cursor_intensity ?? 50}
-            colorMode={overrides.particle_color_mode}
-            customColor={overrides.particle_custom_color}
+            colorMode={overrides.cursor_color_mode ?? overrides.particle_color_mode}
+            customColor={overrides.cursor_custom_color ?? overrides.particle_custom_color}
           />
         )}
         {overrides?.ambient_particles && overrides.ambient_particles !== "none" && (
