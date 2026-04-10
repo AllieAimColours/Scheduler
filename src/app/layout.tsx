@@ -26,14 +26,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Scheduler — Beautiful Booking Made Simple",
+  title: "Bloom · Rendez-vous — Booking, Beautifully",
   description:
-    "The scheduling platform designed for hair stylists and therapists. Set up your services, share your link, and let clients book and pay.",
-  applicationName: "Scheduler",
+    "Bloom · rendez-vous is the booking platform designed for hair stylists, beauty pros, and therapists. Pick a vibe, add your services, share your link, and let clients book and pay.",
+  applicationName: "Bloom",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Scheduler",
+    title: "Bloom",
   },
   formatDetection: {
     telephone: false,

@@ -5,7 +5,7 @@
 // notifications table without breaking the booking flow.
 
 const FROM_ADDRESS =
-  process.env.RESEND_FROM_ADDRESS || "Scheduler <bookings@resend.dev>";
+  process.env.RESEND_FROM_ADDRESS || "Bloom <bookings@resend.dev>";
 
 export interface SendResult {
   ok: boolean;

@@ -1,6 +1,22 @@
-# Scheduler
+# Bloom · Rendez-vous
 
-Booking/scheduling SaaS for hair stylists and therapists. Providers set up services, availability, and branding, then share a public booking link where clients pick a service, choose a time, pay via Stripe, and get confirmed.
+**Brand**: Bloom (one word, the name people say)
+**Domain**: bloomrdv.com
+**Tagline**: Booking, beautifully · Where bookings bloom into experiences
+**Positioning**: The premium, magical alternative to Calendly/Acuity for stylists, therapists, and creative service providers.
+
+The git repo is still named `Scheduler` for historical reasons — that's fine, we're not renaming it. All user-facing strings, metadata, OG tags, manifest, emails, etc. should say "Bloom" — never "Scheduler" except in this internal note.
+
+Booking/scheduling SaaS for hair stylists, beauty pros, and therapists. Providers set up services, availability, and branding, then share a public booking link where clients pick a service, choose a time, pay via Stripe, and get confirmed.
+
+## Naming convention (post-rebrand 2026-04-10)
+
+- Brand name: **Bloom** (when said aloud or written in marketing)
+- Full name: **Bloom · Rendez-vous** (formal/legal)
+- URL: **bloomrdv.com** (and `bloomrdv.com/[slug]` for booking pages)
+- Code repo: `Scheduler` (internal only, do not rename)
+- Database table: `providers` (do not rename)
+- Existing template named "Bloom" (the warm/feminine one): kept as internal ID `"bloom"` for data compatibility, but **display name changed to "Rose"** so users don't confuse it with the brand.
 
 ## Tech Stack
 

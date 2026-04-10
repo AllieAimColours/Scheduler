@@ -18,9 +18,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-6">
-        <div className="text-2xl font-bold tracking-tight">
+        <div className="text-2xl font-display font-bold tracking-tight">
           <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
-            Scheduler
+            Bloom
+          </span>
+          <span className="text-gray-300 font-light text-sm ml-1.5 tracking-wider">
+            · rendez-vous
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -57,17 +60,17 @@ export default function HomePage() {
             Not another boring scheduling tool
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 leading-[1.1]">
-            Booking that feels
+          <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight text-gray-900 leading-[1.1]">
+            Where bookings
             <br />
             <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
-              like your brand
+              bloom into experiences
             </span>
           </h1>
 
           <p className="text-xl text-gray-500 mt-8 max-w-2xl mx-auto leading-relaxed">
-            The scheduling platform that doesn&apos;t look like a spreadsheet.
-            Pick a vibe, add your services, share your link. Your booking page
+            The booking platform that doesn&apos;t look like a spreadsheet.
+            Pick a vibe, add your services, share your link. Your rendez-vous page
             transforms into an experience your clients will love.
           </p>
 

@@ -132,7 +132,7 @@ export default function OnboardingPage() {
               <Label htmlFor="slug">Booking URL</Label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  scheduler.app/book/
+                  bloomrdv.com/
                 </span>
                 <Input
                   id="slug"

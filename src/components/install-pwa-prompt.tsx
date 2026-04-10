@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISSED_KEY = "scheduler-pwa-prompt-dismissed";
+const DISMISSED_KEY = "bloom-pwa-prompt-dismissed";
 const DISMISS_DURATION_DAYS = 14;
 
 export function InstallPwaPrompt() {
@@ -86,10 +86,10 @@ export function InstallPwaPrompt() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="pwa-install-title" className="font-display text-base font-semibold text-gray-800">
-              Install Scheduler
+              Install Bloom
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Add to your home screen for faster access — works like a real app.
+              Add Bloom to your home screen for faster access — works like a real app.
             </p>
             <div className="flex items-center gap-2 mt-3">
               <button

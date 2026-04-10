@@ -44,11 +44,11 @@ function escapeIcs(s: string): string {
  * Caller wraps it in a Blob to trigger a download.
  */
 export function buildIcs(event: CalendarEvent): string {
-  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@scheduler.app`;
+  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@bloomrdv.com`;
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Scheduler//Booking//EN",
+    "PRODID:-//Bloom Rendez-vous//Booking//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

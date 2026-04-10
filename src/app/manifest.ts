@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Scheduler — Beautiful Booking",
-    short_name: "Scheduler",
+    name: "Bloom — Booking, Beautifully",
+    short_name: "Bloom",
     description:
-      "The booking platform designed for stylists, therapists, and creative service providers.",
+      "Bloom · rendez-vous — the booking platform designed for stylists, therapists, and creative service providers.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

@@ -101,11 +101,13 @@ const aura: TemplateDefinition = {
 };
 
 // ─────────────────────────────────────────────────────────────
-//  2. BLOOM — warm, feminine, lush (hair stylists, beauty, nails)
+//  2. ROSE — warm, feminine, lush (hair stylists, beauty, nails)
+//  Note: internal id stays "bloom" for data compatibility with
+//  providers who already picked it. Display name only changed.
 // ─────────────────────────────────────────────────────────────
 const bloom: TemplateDefinition = {
   id: "bloom",
-  name: "Bloom",
+  name: "Rose",
   tagline: "Warm, lush, feminine power",
   audience: "Hair stylists, beauty pros, nail artists",
   fonts: { heading: "Playfair Display", body: "DM Sans" },
