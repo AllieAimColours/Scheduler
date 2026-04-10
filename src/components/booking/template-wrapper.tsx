@@ -139,12 +139,14 @@ export function TemplateWrapper({
             effect={overrides.cursor_effect}
             emoji={overrides.cursor_emoji}
             accentColor={accentColor}
+            intensity={overrides.cursor_intensity ?? 50}
           />
         )}
         {overrides?.ambient_particles && overrides.ambient_particles !== "none" && (
           <AmbientParticlesEffect
             type={overrides.ambient_particles}
             accentColor={accentColor}
+            intensity={overrides.ambient_intensity ?? 50}
           />
         )}
         {overrides?.confetti_on_load && (

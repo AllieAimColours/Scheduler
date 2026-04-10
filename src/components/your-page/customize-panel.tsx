@@ -231,7 +231,17 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
             </Field>
           )}
 
-          <Field label="Ambient particles" hint="Floating elements in the background">
+          {/* Cursor intensity slider */}
+          {overrides.cursor_effect && overrides.cursor_effect !== "none" && (
+            <Field label={`Cursor intensity — ${overrides.cursor_intensity ?? 50}%`}>
+              <IntensitySlider
+                value={overrides.cursor_intensity ?? 50}
+                onChange={(v) => set("cursor_intensity", v)}
+              />
+            </Field>
+          )}
+
+          <Field label="Ambient particles" hint="Floating in the background, behind your content">
             <div className="flex flex-wrap gap-2">
               {PARTICLE_OPTIONS.map((opt) => {
                 const active = (overrides.ambient_particles || "none") === opt.id;
@@ -254,6 +264,16 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
               })}
             </div>
           </Field>
+
+          {/* Ambient intensity slider */}
+          {overrides.ambient_particles && overrides.ambient_particles !== "none" && (
+            <Field label={`Particle density — ${overrides.ambient_intensity ?? 50}%`}>
+              <IntensitySlider
+                value={overrides.ambient_intensity ?? 50}
+                onChange={(v) => set("ambient_intensity", v)}
+              />
+            </Field>
+          )}
 
           <Field label="Confetti burst">
             <div className="flex gap-2">
@@ -368,6 +388,30 @@ function ColorPicker({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function IntensitySlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-gray-400 w-8 text-right">Low</span>
+      <input
+        type="range"
+        min={5}
+        max={100}
+        step={5}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-purple-500 bg-gray-200 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-purple-500 [&::-webkit-slider-thumb]:to-pink-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer"
+      />
+      <span className="text-xs text-gray-400 w-8">High</span>
     </div>
   );
 }

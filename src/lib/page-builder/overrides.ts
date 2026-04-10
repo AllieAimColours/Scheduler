@@ -67,7 +67,9 @@ export interface PageOverrides {
   // Wow effects
   cursor_effect?: CursorEffect;
   cursor_emoji?: string; // only used when cursor_effect === "emoji"
+  cursor_intensity?: number; // 0-100, default 50
   ambient_particles?: AmbientParticles;
+  ambient_intensity?: number; // 0-100, default 50
   confetti_on_load?: boolean;
 }
 
@@ -139,7 +141,9 @@ export function parseOverrides(raw: unknown): PageOverrides {
     animation: typeof o.animation === "string" ? (o.animation as AnimationSpeed) : undefined,
     cursor_effect: typeof o.cursor_effect === "string" ? (o.cursor_effect as CursorEffect) : undefined,
     cursor_emoji: typeof o.cursor_emoji === "string" ? o.cursor_emoji : undefined,
+    cursor_intensity: typeof o.cursor_intensity === "number" ? o.cursor_intensity : undefined,
     ambient_particles: typeof o.ambient_particles === "string" ? (o.ambient_particles as AmbientParticles) : undefined,
+    ambient_intensity: typeof o.ambient_intensity === "number" ? o.ambient_intensity : undefined,
     confetti_on_load: typeof o.confetti_on_load === "boolean" ? o.confetti_on_load : undefined,
   };
 }
