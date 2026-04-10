@@ -7,6 +7,7 @@ import { TemplateProvider } from "@/lib/templates/context";
 import { Decorations } from "./decorations";
 import { cn } from "@/lib/utils";
 import { fontFamilyFor, type PageOverrides } from "@/lib/page-builder/overrides";
+import { CursorEffects, AmbientParticlesEffect, ConfettiBurst } from "./wow-effects";
 
 interface TemplateWrapperProps {
   templateId: TemplateId;
@@ -114,6 +115,8 @@ export function TemplateWrapper({
     ? buildOverrideCss(`.${scopeClass}`, overrides)
     : "";
 
+  const accentColor = (cssVars as Record<string, string>)["--template-accent"];
+
   return (
     <TemplateProvider value={templateId}>
       {overrideCss && (
@@ -129,6 +132,25 @@ export function TemplateWrapper({
         style={inlineStyle}
       >
         {showDecorations && <Decorations />}
+
+        {/* Wow effects — cursor, particles, confetti */}
+        {overrides?.cursor_effect && overrides.cursor_effect !== "none" && (
+          <CursorEffects
+            effect={overrides.cursor_effect}
+            emoji={overrides.cursor_emoji}
+            accentColor={accentColor}
+          />
+        )}
+        {overrides?.ambient_particles && overrides.ambient_particles !== "none" && (
+          <AmbientParticlesEffect
+            type={overrides.ambient_particles}
+            accentColor={accentColor}
+          />
+        )}
+        {overrides?.confetti_on_load && (
+          <ConfettiBurst accentColor={accentColor} />
+        )}
+
         <div className="relative z-10">{children}</div>
       </div>
     </TemplateProvider>

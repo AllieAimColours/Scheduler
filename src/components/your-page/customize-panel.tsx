@@ -10,6 +10,8 @@ import {
   type DecorationsLevel,
   type AnimationSpeed,
   type FontChoice,
+  type CursorEffect,
+  type AmbientParticles,
 } from "@/lib/page-builder/overrides";
 
 interface Props {
@@ -38,6 +40,21 @@ const ANIMATION_OPTIONS: Array<{ id: AnimationSpeed; label: string }> = [
   { id: "still", label: "Still" },
   { id: "gentle", label: "Gentle" },
   { id: "playful", label: "Playful" },
+];
+
+const CURSOR_OPTIONS: Array<{ id: CursorEffect; label: string; preview: string }> = [
+  { id: "none", label: "None", preview: "🚫" },
+  { id: "sparkle", label: "Sparkle trail", preview: "✨" },
+  { id: "glow", label: "Glow", preview: "💡" },
+  { id: "emoji", label: "Custom emoji", preview: "😎" },
+];
+
+const PARTICLE_OPTIONS: Array<{ id: AmbientParticles; label: string; preview: string }> = [
+  { id: "none", label: "None", preview: "🚫" },
+  { id: "stars", label: "Stars", preview: "⭐" },
+  { id: "sparkles", label: "Sparkles", preview: "✨" },
+  { id: "fireflies", label: "Fireflies", preview: "🔥" },
+  { id: "bubbles", label: "Bubbles", preview: "🫧" },
 ];
 
 const COLOR_PRESETS = [
@@ -168,6 +185,104 @@ export function CustomizePanel({ overrides, onUpdate }: Props) {
           onChange={(v) => set("animation", v)}
         />
       </Field>
+
+      {/* ── Wow Effects ── */}
+      <div className="pt-4 border-t border-gray-100">
+        <h4 className="font-display text-base font-semibold text-gray-800 mb-4">
+          Wow effects
+        </h4>
+
+        <div className="space-y-4">
+          <Field label="Cursor effect" hint="What happens when clients move their mouse">
+            <div className="flex flex-wrap gap-2">
+              {CURSOR_OPTIONS.map((opt) => {
+                const active = (overrides.cursor_effect || "none") === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => set("cursor_effect", opt.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-2",
+                      active
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                    )}
+                  >
+                    <span>{opt.preview}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          {/* Emoji picker — only show when cursor effect is emoji */}
+          {overrides.cursor_effect === "emoji" && (
+            <Field label="Cursor emoji" hint="Pick an emoji that follows the cursor">
+              <input
+                type="text"
+                value={overrides.cursor_emoji || ""}
+                onChange={(e) => set("cursor_emoji", e.target.value.slice(0, 2))}
+                placeholder="✨"
+                maxLength={2}
+                className="w-20 px-3 py-2 bg-white border-2 border-gray-200 rounded-xl text-center text-2xl focus:outline-none focus:border-purple-400"
+              />
+            </Field>
+          )}
+
+          <Field label="Ambient particles" hint="Floating elements in the background">
+            <div className="flex flex-wrap gap-2">
+              {PARTICLE_OPTIONS.map((opt) => {
+                const active = (overrides.ambient_particles || "none") === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => set("ambient_particles", opt.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-2",
+                      active
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                    )}
+                  >
+                    <span>{opt.preview}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Confetti burst">
+            <div className="flex gap-2">
+              {[
+                { id: false, label: "Off" },
+                { id: true, label: "On page load" },
+              ].map((opt) => {
+                const active = (overrides.confetti_on_load || false) === opt.id;
+                return (
+                  <button
+                    key={String(opt.id)}
+                    type="button"
+                    onClick={() => set("confetti_on_load", opt.id || undefined)}
+                    className={cn(
+                      "px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-2",
+                      active
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                    )}
+                  >
+                    {opt.id ? "🎉 " : ""}
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+        </div>
+      </div>
     </div>
   );
 }

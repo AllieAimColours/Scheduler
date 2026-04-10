@@ -46,6 +46,8 @@ export const FONT_OPTIONS: Array<{ id: FontChoice; label: string; family: string
 export type RadiusChoice = "default" | "sharp" | "soft" | "round" | "pill";
 export type DecorationsLevel = "default" | "off" | "subtle" | "normal" | "bold";
 export type AnimationSpeed = "default" | "still" | "gentle" | "playful";
+export type CursorEffect = "none" | "sparkle" | "glow" | "emoji";
+export type AmbientParticles = "none" | "stars" | "sparkles" | "fireflies" | "bubbles";
 
 export interface PageOverrides {
   // Optional font overrides
@@ -61,6 +63,12 @@ export interface PageOverrides {
   radius?: RadiusChoice;
   decorations?: DecorationsLevel;
   animation?: AnimationSpeed;
+
+  // Wow effects
+  cursor_effect?: CursorEffect;
+  cursor_emoji?: string; // only used when cursor_effect === "emoji"
+  ambient_particles?: AmbientParticles;
+  confetti_on_load?: boolean;
 }
 
 const RADIUS_VALUES: Record<RadiusChoice, string | undefined> = {
@@ -129,5 +137,9 @@ export function parseOverrides(raw: unknown): PageOverrides {
     radius: typeof o.radius === "string" ? (o.radius as RadiusChoice) : undefined,
     decorations: typeof o.decorations === "string" ? (o.decorations as DecorationsLevel) : undefined,
     animation: typeof o.animation === "string" ? (o.animation as AnimationSpeed) : undefined,
+    cursor_effect: typeof o.cursor_effect === "string" ? (o.cursor_effect as CursorEffect) : undefined,
+    cursor_emoji: typeof o.cursor_emoji === "string" ? o.cursor_emoji : undefined,
+    ambient_particles: typeof o.ambient_particles === "string" ? (o.ambient_particles as AmbientParticles) : undefined,
+    confetti_on_load: typeof o.confetti_on_load === "boolean" ? o.confetti_on_load : undefined,
   };
 }
