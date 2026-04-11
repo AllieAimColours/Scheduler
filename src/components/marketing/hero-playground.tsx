@@ -282,11 +282,8 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
         )}
         onMouseDown={handleInteract}
       >
-        {/* Header with collapse button */}
-        <div className="flex items-center justify-between px-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600">
-            ✨ Try the magic
-          </div>
+        {/* Header — just a close button, right-aligned. The doodle says "try the magic". */}
+        <div className="flex items-center justify-end px-1">
           <button
             onClick={() => setCollapsed(true)}
             aria-label="Close playground"
@@ -362,30 +359,31 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
           </div>
         </Link>
 
-        {/* Hand-drawn doodle pointing at the drawer header.
-            Anchored to the TOP-right of the drawer so the arrow tip lands
-            right next to the < close button. Wiggles after drawing in. */}
+        {/* Hand-drawn doodle pointing at the particle box.
+            Anchored just above the particle box so the arrow swoops down
+            and the tip lands ON the active particle button (Petals).
+            Label sits below the loop, well clear of the arrow path. */}
         {doodleVisible && (
           <div
             className={cn(
-              "absolute -right-48 top-0 pointer-events-none transition-opacity duration-500",
+              "absolute -right-56 top-0 pointer-events-none transition-opacity duration-500",
               doodleVisible ? "opacity-100" : "opacity-0"
             )}
             aria-hidden="true"
           >
             <div className="animate-doodle-wiggle">
               <svg
-                width="200"
-                height="100"
-                viewBox="0 0 200 100"
+                width="240"
+                height="180"
+                viewBox="0 0 240 180"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {/* Loop arrow — starts from the right where "try this!" lives,
-                    swoops down into a loop, and points up-left at the drawer header.
-                    Tip ends at (12, 12), pointing toward the < button. */}
+                {/* Loop arrow — starts top-right where the "try the magic" label
+                    will sit BELOW it. The path swoops up into a loop, then dives
+                    down-left to land on the particle box. Tip at (8, 80). */}
                 <path
-                  d="M190 20 C 160 5, 130 50, 160 65 C 175 72, 165 35, 120 35 C 85 35, 55 30, 30 22 C 22 19, 16 16, 12 12"
+                  d="M210 20 C 230 25, 230 60, 200 65 C 170 70, 175 25, 155 30 C 130 38, 105 50, 75 60 C 50 68, 25 75, 8 80"
                   stroke="#ec4899"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -394,9 +392,9 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   pathLength={1}
                   className="animate-doodle-draw"
                 />
-                {/* Arrowhead — tip at (12, 12) pointing up-left */}
+                {/* Arrowhead — tip at (8, 80) pointing down-left at the particle box */}
                 <path
-                  d="M12 12 L 22 14 M 12 12 L 16 22"
+                  d="M8 80 L 20 76 M 8 80 L 14 90"
                   stroke="#ec4899"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -407,13 +405,13 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   style={{ animationDelay: "1.6s" }}
                 />
               </svg>
-              {/* "try this!" text in cursive script — sits to the right of the loop,
-                  near where the loop starts (rightmost end of the arrow path) */}
+              {/* "try the magic" label — sits BELOW the loop, well clear of
+                  the arrow path. Right-aligned on its own row. */}
               <div
-                className="absolute top-8 right-2 font-script text-2xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700"
+                className="absolute top-[105px] right-2 font-script text-3xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700 whitespace-nowrap"
                 style={{ animationDelay: "1.8s", animationFillMode: "both" }}
               >
-                try this!
+                try the magic
               </div>
             </div>
           </div>
