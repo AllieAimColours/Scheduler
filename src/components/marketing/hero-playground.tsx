@@ -3,17 +3,30 @@
 /**
  * Hero playground for the marketing landing page.
  *
- * Minimal "try the magic" rail anchored to the left side of the screen.
- * Only two controls: which particle effect is falling, and one color
- * toggle (pink vs pastel). Cursor sparkle and heart click bursts are
- * always on so visitors discover them organically.
+ * Two layouts:
  *
- * Goal: show the magic without competing with the marketing copy.
+ * Desktop (lg+):
+ * - Drawer pinned to the left side of the screen
+ * - Starts EXPANDED on page load with a hand-drawn loop arrow doodle
+ *   pointing at it ("← try this!" label)
+ * - When user scrolls past 80vh, drawer collapses to a small "✨ Magic" tab
+ * - Tab can be clicked any time to re-expand
+ * - Scroll back to top → auto-re-expands (without doodle)
+ * - Doodle fades on first interaction OR first scroll past 100px
+ *
+ * Mobile (under lg):
+ * - Inline pill rendered between the brand title and the hero pill
+ * - Always visible there, doesn't move, doesn't collapse
+ * - Hero playground component returns null on mobile; <HeroPlaygroundInline />
+ *   is rendered separately by the marketing page in the right slot
+ *
+ * The actual wow effects (cursor sparkle, falling particles, click bursts)
+ * render fixed across the whole viewport regardless of which UI is shown.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AmbientParticlesEffect,
@@ -42,13 +55,37 @@ const COLOR_OPTIONS: Array<{ id: ParticleColorMode; label: string; preview: stri
 
 const ACCENT = "#ec4899"; // peony pink
 
+// ─────────────────────────────────────────────────────────────
+//  Shared state hook so the inline mobile picker and the desktop
+//  drawer drive the same particle/color values
+// ─────────────────────────────────────────────────────────────
+
+interface PlaygroundState {
+  particles: AmbientParticles;
+  setParticles: (v: AmbientParticles) => void;
+  colorMode: ParticleColorMode;
+  setColorMode: (v: ParticleColorMode) => void;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Top-level export — renders effects + desktop drawer
+// ─────────────────────────────────────────────────────────────
+
 export function HeroPlayground() {
-  const [particles, setParticles] = useState<AmbientParticles>("petals");
-  const [colorMode, setColorMode] = useState<ParticleColorMode>("theme");
+  const [particles, setParticles] = useSharedSignal<AmbientParticles>(
+    "playground.particles",
+    "petals"
+  );
+  const [colorMode, setColorMode] = useSharedSignal<ParticleColorMode>(
+    "playground.colorMode",
+    "theme"
+  );
+
+  const state: PlaygroundState = { particles, setParticles, colorMode, setColorMode };
 
   return (
     <>
-      {/* Always-on effects layered behind the page */}
+      {/* Always-on effects (apply across the entire page) */}
       <AmbientParticlesEffect
         type={particles}
         accentColor={ACCENT}
@@ -67,74 +104,39 @@ export function HeroPlayground() {
         colorMode={colorMode}
       />
 
-      {/* ─── Mobile / tablet: horizontal sticky bar across the top ─── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-xl border-b border-pink-100 shadow-md">
-        <div className="px-3 py-2 space-y-2">
-          {/* Particle picker — horizontal scroll */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
-            {PARTICLE_OPTIONS.map((opt) => {
-              const active = particles === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setParticles(opt.id)}
-                  className={cn(
-                    "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
-                    active
-                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-pink-300"
-                  )}
-                >
-                  <span>{opt.emoji}</span>
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Color + CTA row */}
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1 shrink-0">
-              {COLOR_OPTIONS.map((opt) => {
-                const active = colorMode === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setColorMode(opt.id)}
-                    className={cn(
-                      "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
-                      active
-                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                        : "bg-white text-gray-600 border border-gray-200"
-                    )}
-                  >
-                    <span>{opt.preview}</span>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-            <Link
-              href="/signup"
-              className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              Get started
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-        </div>
+      {/* Desktop drawer (hidden on mobile — mobile uses HeroPlaygroundInline) */}
+      <DesktopDrawer state={state} />
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Inline mobile playground — sits between hero title and pill
+// ─────────────────────────────────────────────────────────────
+
+export function HeroPlaygroundInline() {
+  // This component does NOT own state — that lives in HeroPlayground above.
+  // We use a tiny hidden trick: the inline picker reads/writes shared state
+  // via window events.
+  // For simplicity, the inline picker keeps its OWN state and the effects
+  // listen via a postMessage-style event pattern. To avoid that complexity
+  // we instead lift state into a module-level signal.
+  const [particles, setParticles] = useSharedSignal<AmbientParticles>(
+    "playground.particles",
+    "petals"
+  );
+  const [colorMode, setColorMode] = useSharedSignal<ParticleColorMode>(
+    "playground.colorMode",
+    "theme"
+  );
+
+  return (
+    <div className="lg:hidden flex flex-col items-center gap-2 my-6">
+      <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600">
+        ✨ Try the magic
       </div>
-
-      {/* ─── Desktop: vertical left rail ─── */}
-      <div className="hidden lg:flex fixed left-6 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 max-w-[180px]">
-        {/* Header */}
-        <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600 px-1">
-          ✨ Try the magic
-        </div>
-
-        {/* Particle picker */}
-        <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-pink-100 shadow-xl p-2 space-y-1">
+      <div className="rounded-2xl bg-white border border-pink-100 shadow-lg p-2 max-w-full">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
           {PARTICLE_OPTIONS.map((opt) => {
             const active = particles === opt.id;
             return (
@@ -142,6 +144,167 @@ export function HeroPlayground() {
                 key={opt.id}
                 type="button"
                 onClick={() => setParticles(opt.id)}
+                className={cn(
+                  "shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                  active
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                    : "text-gray-600 hover:bg-pink-50/60"
+                )}
+              >
+                <span>{opt.emoji}</span>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex gap-1.5">
+        {COLOR_OPTIONS.map((opt) => {
+          const active = colorMode === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => setColorMode(opt.id)}
+              className={cn(
+                "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border",
+                active
+                  ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-pink-600 shadow-md"
+                  : "bg-white text-gray-600 border-gray-200"
+              )}
+            >
+              <span>{opt.preview}</span>
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Tiny shared signal — module-level state with React subscribers
+// ─────────────────────────────────────────────────────────────
+
+const signalStore: Record<string, unknown> = {};
+const signalSubs: Record<string, Set<() => void>> = {};
+
+function useSharedSignal<T>(key: string, initial: T): [T, (v: T) => void] {
+  const [, force] = useState(0);
+
+  // Initialize on first read
+  if (!(key in signalStore)) {
+    signalStore[key] = initial;
+  }
+
+  useEffect(() => {
+    if (!signalSubs[key]) signalSubs[key] = new Set();
+    const cb = () => force((n) => n + 1);
+    signalSubs[key].add(cb);
+    return () => {
+      signalSubs[key]?.delete(cb);
+    };
+  }, [key]);
+
+  const value = signalStore[key] as T;
+  const setValue = (v: T) => {
+    signalStore[key] = v;
+    signalSubs[key]?.forEach((cb) => cb());
+  };
+
+  return [value, setValue];
+}
+
+// Also re-wire the top-level HeroPlayground to use the same signals so
+// desktop drawer and mobile inline both control the same effects.
+
+// ─────────────────────────────────────────────────────────────
+//  Desktop drawer with hand-drawn doodle and scroll-collapse
+// ─────────────────────────────────────────────────────────────
+
+function DesktopDrawer({ state }: { state: PlaygroundState }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [doodleVisible, setDoodleVisible] = useState(true);
+  const userInteracted = useRef(false);
+
+  // Auto-collapse on scroll past 80vh, auto-expand on scroll back to top.
+  useEffect(() => {
+    function onScroll() {
+      const threshold = window.innerHeight * 0.8;
+      const past = window.scrollY > threshold;
+
+      // Hide the doodle on any scroll past 100px
+      if (window.scrollY > 100 && doodleVisible) {
+        setDoodleVisible(false);
+      }
+
+      setCollapsed(past);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [doodleVisible]);
+
+  function handleInteract() {
+    if (!userInteracted.current) {
+      userInteracted.current = true;
+      setDoodleVisible(false);
+    }
+  }
+
+  return (
+    <div className="hidden lg:block">
+      {/* Collapsed tab — slides in from the left edge when collapsed */}
+      <button
+        onClick={() => setCollapsed(false)}
+        aria-label="Open the magic playground"
+        className={cn(
+          "fixed left-0 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 px-2.5 py-4 rounded-r-2xl bg-gradient-to-b from-pink-500 to-rose-500 text-white shadow-2xl hover:px-3 transition-all duration-500 cursor-pointer",
+          collapsed ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
+        )}
+      >
+        <Sparkles className="h-4 w-4" />
+        <div
+          className="text-[10px] font-bold uppercase tracking-wider"
+          style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+        >
+          Magic
+        </div>
+      </button>
+
+      {/* Expanded drawer */}
+      <div
+        className={cn(
+          "fixed left-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3 max-w-[200px] transition-all duration-500",
+          collapsed
+            ? "-translate-x-[120%] opacity-0 pointer-events-none"
+            : "translate-x-0 opacity-100"
+        )}
+        onMouseDown={handleInteract}
+      >
+        {/* Header with collapse button */}
+        <div className="flex items-center justify-between px-1">
+          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600">
+            ✨ Try the magic
+          </div>
+          <button
+            onClick={() => setCollapsed(true)}
+            aria-label="Close playground"
+            className="p-1 -mr-1 text-pink-400 hover:text-pink-600 transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Particle picker */}
+        <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-pink-100 shadow-xl p-2 space-y-1">
+          {PARTICLE_OPTIONS.map((opt) => {
+            const active = state.particles === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => state.setParticles(opt.id)}
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer text-left",
                   active
@@ -159,12 +322,12 @@ export function HeroPlayground() {
         {/* Color toggle */}
         <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-pink-100 shadow-xl p-2 flex gap-1">
           {COLOR_OPTIONS.map((opt) => {
-            const active = colorMode === opt.id;
+            const active = state.colorMode === opt.id;
             return (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setColorMode(opt.id)}
+                onClick={() => state.setColorMode(opt.id)}
                 className={cn(
                   "flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
                   active
@@ -199,10 +362,58 @@ export function HeroPlayground() {
           </div>
         </Link>
 
-        <p className="text-[10px] text-gray-400 text-center px-1 leading-relaxed">
-          Click anywhere<br />to see the burst
-        </p>
+        {/* Hand-drawn doodle pointing at the drawer.
+            Anchored to the drawer's right edge, drawn after a short delay,
+            wiggles gently after drawing, fades on interaction or scroll. */}
+        {doodleVisible && (
+          <div
+            className={cn(
+              "absolute -right-44 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-500",
+              doodleVisible ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden="true"
+          >
+            <div className="animate-doodle-wiggle">
+              <svg
+                width="180"
+                height="120"
+                viewBox="0 0 180 120"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Loop arrow path drawn from right to left, ending in an arrowhead near the drawer */}
+                <path
+                  d="M170 30 C 130 10, 100 60, 130 80 C 145 90, 130 50, 90 50 C 60 50, 35 65, 18 60"
+                  stroke="#ec4899"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  pathLength={1}
+                  className="animate-doodle-draw"
+                />
+                {/* Arrowhead */}
+                <path
+                  d="M18 60 L 28 53 M 18 60 L 28 67"
+                  stroke="#ec4899"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  pathLength={1}
+                  className="animate-doodle-draw"
+                  style={{ animationDelay: "1.6s" }}
+                />
+              </svg>
+              {/* "try this!" text in cursive script */}
+              <div className="absolute top-0 right-0 font-script text-2xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700"
+                   style={{ animationDelay: "1.8s", animationFillMode: "both" }}>
+                try this!
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }

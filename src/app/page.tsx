@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates/index";
-import { HeroPlayground } from "@/components/marketing/hero-playground";
+import { HeroPlayground, HeroPlaygroundInline } from "@/components/marketing/hero-playground";
 import { TemplatePreviewCard } from "@/components/marketing/template-preview-card";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white pt-[88px] lg:pt-0">
+    <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-6">
         <div className="flex items-baseline gap-2">
@@ -59,7 +59,10 @@ export default function HomePage() {
         {/* Interactive playground — falling petals + cursor sparkles + click bursts */}
         <HeroPlayground />
 
-        <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
+        <div className="max-w-5xl mx-auto px-6 pt-12 lg:pt-24 pb-20 text-center">
+          {/* Mobile playground — inline between nav and the hero pill */}
+          <HeroPlaygroundInline />
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4" />
             Not another boring scheduling tool
