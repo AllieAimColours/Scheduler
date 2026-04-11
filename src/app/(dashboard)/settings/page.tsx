@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2 } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -122,6 +122,43 @@ export default function SettingsPage() {
       {/* Cancellation Policy */}
       <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
 
+      {/* Data Export */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+              <Download className="h-4 w-4 text-white" />
+            </div>
+            Data Export
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Your data is yours. Download it any time — no questions asked.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-2">
+            <ExportButton type="bookings" label="Bookings" description="All appointments with client + payment details" icon={<FileText className="h-4 w-4" />} />
+            <ExportButton type="clients" label="Clients" description="Aggregated by email with visit history" icon={<FileText className="h-4 w-4" />} />
+            <ExportButton type="services" label="Services" description="Your service catalog" icon={<FileText className="h-4 w-4" />} />
+            <ExportButton type="payments" label="Payments" description="All paid + refunded transactions" icon={<FileText className="h-4 w-4" />} />
+          </div>
+
+          <div className="pt-2">
+            <ExportButton
+              type="all"
+              label="Everything (JSON)"
+              description="Full combined export — bookings, clients, services, payments — in one JSON file"
+              icon={<FileJson className="h-4 w-4" />}
+              prominent
+            />
+          </div>
+
+          <p className="text-xs text-gray-400 pt-2">
+            Files are generated on demand from your live data. CSV files work with Excel, Numbers, and Google Sheets.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Business Info */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
@@ -204,5 +241,52 @@ export default function SettingsPage() {
         {saving ? "Saving..." : "Save Settings"}
       </Button>
     </div>
+  );
+}
+
+// ─── Data export button ───
+
+function ExportButton({
+  type,
+  label,
+  description,
+  icon,
+  prominent = false,
+}: {
+  type: "bookings" | "clients" | "services" | "payments" | "all";
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  prominent?: boolean;
+}) {
+  return (
+    <a
+      href={`/api/export?type=${type}`}
+      download
+      className={
+        prominent
+          ? "group flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all"
+          : "group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-sm transition-all"
+      }
+    >
+      <div
+        className={
+          prominent
+            ? "shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md"
+            : "shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors"
+        }
+      >
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-gray-800 group-hover:text-emerald-700 transition-colors">
+          {label}
+        </div>
+        <div className="text-[11px] text-gray-500 leading-snug line-clamp-2">
+          {description}
+        </div>
+      </div>
+      <Download className="shrink-0 h-4 w-4 text-gray-300 group-hover:text-emerald-600 group-hover:translate-y-0.5 transition-all" />
+    </a>
   );
 }
