@@ -16,6 +16,7 @@ import {
 } from "@/components/booking/themed-availability-calendar";
 import { useTemplate } from "@/lib/templates/context";
 import { getTemplate } from "@/lib/templates/index";
+import { cn } from "@/lib/utils";
 
 interface TimeSlot {
   start: string;
@@ -199,8 +200,15 @@ export default function BookServicePage() {
     );
   }
 
+  // Visual stepper — highlights whichever step the user is currently on
+  const stepperSteps: Array<{ id: typeof step; label: string; done: boolean }> = [
+    { id: "date", label: "Date", done: !!selectedDate },
+    { id: "time", label: "Time", done: !!selectedSlot },
+    { id: "details", label: "Details", done: false },
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
+    <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
       <Link
         href={`/book/${slug}`}
         className="inline-flex items-center text-sm opacity-60 hover:opacity-100 mb-6 transition-opacity"
@@ -209,26 +217,34 @@ export default function BookServicePage() {
         Back to services
       </Link>
 
-      {/* Service Header */}
-      <ThemedCard className="mb-6 relative overflow-hidden">
+      {/* Service Header — premium, full-bleed accent stripe, larger heading */}
+      <ThemedCard className="mb-6 relative overflow-hidden p-6 md:p-8">
         <div
-          className="absolute top-0 left-0 w-full h-1"
+          className="absolute top-0 left-0 w-full h-1.5"
           style={{ backgroundColor: service.color }}
         />
-        <div className="flex items-center gap-4 pt-2">
+        <div className="flex items-start gap-5 pt-2">
           {service.emoji && (
-            <span className="text-3xl">{service.emoji}</span>
+            <div
+              className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-4xl md:text-5xl shadow-lg"
+              style={{
+                backgroundColor: `${service.color}15`,
+                boxShadow: `0 8px 32px ${service.color}25`,
+              }}
+            >
+              {service.emoji}
+            </div>
           )}
-          <div>
-            <h1 className={`text-xl font-bold ${template.classes.heading}`}>
+          <div className="flex-1 min-w-0">
+            <h1 className={cn(template.classes.heading, "text-3xl md:text-4xl leading-tight mb-2")}>
               {service.name}
             </h1>
-            <div className="flex items-center gap-4 text-sm opacity-60 mt-1">
-              <span className="flex items-center gap-1">
+            <div className="flex items-center gap-5 text-sm md:text-base opacity-75">
+              <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 {service.duration_minutes} min
               </span>
-              <span className="flex items-center gap-1 font-semibold opacity-100">
+              <span className={cn("flex items-center gap-1.5 font-bold", template.classes.heading)}>
                 <DollarSign className="h-4 w-4" />
                 {formatPrice(service.price_cents)}
               </span>
@@ -237,12 +253,40 @@ export default function BookServicePage() {
         </div>
       </ThemedCard>
 
+      {/* Visual stepper — shows progress through Date → Time → Details */}
+      <div className="flex items-center gap-2 md:gap-3 mb-6 px-1">
+        {stepperSteps.map((s, i) => {
+          const isActive = step === s.id;
+          const isDone = s.done && !isActive;
+          return (
+            <div key={s.id} className="flex items-center gap-2 md:gap-3 flex-1">
+              <div
+                className={cn(
+                  "inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full text-xs font-bold shrink-0 transition-all duration-300",
+                  isActive && "shadow-lg scale-110",
+                  !isActive && !isDone && "opacity-40"
+                )}
+                style={{
+                  backgroundColor: isActive || isDone ? "var(--template-accent)" : "var(--template-surface)",
+                  color: isActive || isDone ? "var(--primary-foreground, #fff)" : "var(--foreground)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {isDone ? "✓" : i + 1}
+              </div>
+              <div className={cn("text-xs md:text-sm font-semibold", !isActive && !isDone && "opacity-50")}>
+                {s.label}
+              </div>
+              {i < stepperSteps.length - 1 && (
+                <div className="flex-1 h-px opacity-20" style={{ backgroundColor: "var(--foreground)" }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Date Selection — themed availability calendar with color-coded days */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 text-lg font-semibold mb-4">
-          <Calendar className="h-5 w-5" />
-          <span className={template.classes.heading}>Select a Date</span>
-        </div>
+      <div className="mb-6 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
         <ThemedAvailabilityCalendar
           providerId={providerId}
           serviceId={serviceId}
@@ -257,20 +301,21 @@ export default function BookServicePage() {
 
       {/* Time Slots */}
       {selectedDate && (
-        <ThemedCard index={2} className="mb-6">
-          <div className={`text-lg font-semibold mb-4 ${template.classes.heading}`}>
-            Available Times
+        <ThemedCard index={2} className="mb-6 p-6">
+          <div className={cn("text-xl font-bold mb-5", template.classes.heading)}>
+            Pick a time
           </div>
           {loadingSlots ? (
-            <div className="text-center py-6 opacity-60">
-              Loading available times...
+            <div className="text-center py-8 opacity-60">
+              <div className="inline-block w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin mb-2" />
+              <div className="text-sm">Loading available times…</div>
             </div>
           ) : slots.length === 0 ? (
-            <div className="text-center py-6 opacity-60">
+            <div className="text-center py-8 opacity-60 text-sm">
               No available times for this date. Try another day.
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
               {slots.map((slot) => (
                 <ThemedTimeSlot
                   key={slot.start}
