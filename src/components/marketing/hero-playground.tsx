@@ -26,7 +26,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, ChevronLeft } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AmbientParticlesEffect,
@@ -226,28 +226,34 @@ function useSharedSignal<T>(key: string, initial: T): [T, (v: T) => void] {
 function DesktopDrawer({ state }: { state: PlaygroundState }) {
   const [collapsed, setCollapsed] = useState(false);
   const [doodleVisible, setDoodleVisible] = useState(true);
-  const userInteracted = useRef(false);
+  const interactedOnce = useRef(false);
 
   // Auto-collapse on scroll past 80vh, auto-expand on scroll back to top.
+  // Doodle reappears when the user scrolls back near the top (unless they
+  // already clicked something — once they have interacted, the doodle is
+  // permanently retired for this session).
   useEffect(() => {
     function onScroll() {
       const threshold = window.innerHeight * 0.8;
       const past = window.scrollY > threshold;
-
-      // Hide the doodle on any scroll past 100px
-      if (window.scrollY > 100 && doodleVisible) {
-        setDoodleVisible(false);
-      }
-
       setCollapsed(past);
+
+      if (interactedOnce.current) return;
+
+      // Hide the doodle when scrolled past 100px, show it again at top
+      if (window.scrollY > 100) {
+        setDoodleVisible(false);
+      } else {
+        setDoodleVisible(true);
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [doodleVisible]);
+  }, []);
 
   function handleInteract() {
-    if (!userInteracted.current) {
-      userInteracted.current = true;
+    if (!interactedOnce.current) {
+      interactedOnce.current = true;
       setDoodleVisible(false);
     }
   }
@@ -272,7 +278,7 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
         </div>
       </button>
 
-      {/* Expanded drawer */}
+      {/* Expanded drawer — no header, no close button. Auto-collapses on scroll. */}
       <div
         className={cn(
           "fixed left-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3 max-w-[200px] transition-all duration-500",
@@ -282,17 +288,6 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
         )}
         onMouseDown={handleInteract}
       >
-        {/* Header — just a close button, right-aligned. The doodle says "try the magic". */}
-        <div className="flex items-center justify-end px-1">
-          <button
-            onClick={() => setCollapsed(true)}
-            aria-label="Close playground"
-            className="p-1 -mr-1 text-pink-400 hover:text-pink-600 transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
         {/* Particle picker */}
         <div className="rounded-2xl bg-white/85 backdrop-blur-xl border border-pink-100 shadow-xl p-2 space-y-1">
           {PARTICLE_OPTIONS.map((opt) => {
@@ -392,11 +387,14 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   pathLength={1}
                   className="animate-doodle-draw"
                 />
-                {/* Arrowhead — tip at (8, 80) pointing down-left at the particle box */}
+                {/* Arrowhead — bigger, wider angle so it actually reads as an arrow.
+                    Tip at (8, 80), two flicks ~20px each at ~70° apart, pointing
+                    back into the page (up-right) so the arrow visually flows
+                    from the loop down-left to the particle box. */}
                 <path
-                  d="M8 80 L 20 76 M 8 80 L 14 90"
+                  d="M28 72 L 8 80 L 20 96"
                   stroke="#ec4899"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
