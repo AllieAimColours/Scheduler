@@ -16,15 +16,15 @@ import { HeroPlayground } from "@/components/marketing/hero-playground";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pt-[88px] lg:pt-0">
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-6">
-        <div className="text-2xl font-display font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-display font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
             Bloom
           </span>
-          <span className="text-gray-300 font-light text-sm ml-1.5 tracking-wider">
-            · rendez-vous
+          <span className="font-script text-2xl text-gray-900 leading-none -translate-y-0.5">
+            rendez-vous
           </span>
         </div>
         <div className="flex items-center gap-3">

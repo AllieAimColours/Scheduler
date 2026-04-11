@@ -147,6 +147,18 @@
     letter-spacing: -0.02em;
     font-style: normal;
   }
+  .font-script {
+    font-family: var(--font-script), cursive;
+    font-style: normal;
+    letter-spacing: 0;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Global: no italics anywhere — user preference */

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Plus_Jakarta_Sans, Fraunces } from "next/font/google";
+import { Geist_Mono, Plus_Jakarta_Sans, Fraunces, Caveat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { allFontVariables } from "@/lib/templates/fonts";
@@ -16,6 +16,13 @@ const jakarta = Plus_Jakarta_Sans({
 // Fraunces — elegant serif for dashboard headings (gives the premium magazine feel)
 const fraunces = Fraunces({
   variable: "--font-dashboard-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+// Caveat — handwritten cursive script for the "Rendez-vous" wordmark
+const caveat = Caveat({
+  variable: "--font-script",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -56,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${jakarta.variable} ${fraunces.variable} ${geistMono.variable} ${allFontVariables} h-full antialiased`}
+      className={`${jakarta.variable} ${fraunces.variable} ${caveat.variable} ${geistMono.variable} ${allFontVariables} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>

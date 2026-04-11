@@ -67,8 +67,66 @@ export function HeroPlayground() {
         colorMode={colorMode}
       />
 
-      {/* Always-visible left rail. Hidden on small screens because it
-          would crowd the hero. */}
+      {/* ─── Mobile / tablet: horizontal sticky bar across the top ─── */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-xl border-b border-pink-100 shadow-md">
+        <div className="px-3 py-2 space-y-2">
+          {/* Particle picker — horizontal scroll */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+            {PARTICLE_OPTIONS.map((opt) => {
+              const active = particles === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setParticles(opt.id)}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                    active
+                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-pink-300"
+                  )}
+                >
+                  <span>{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Color + CTA row */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 shrink-0">
+              {COLOR_OPTIONS.map((opt) => {
+                const active = colorMode === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setColorMode(opt.id)}
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                      active
+                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                        : "bg-white text-gray-600 border border-gray-200"
+                    )}
+                  >
+                    <span>{opt.preview}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            <Link
+              href="/signup"
+              className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              Get started
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Desktop: vertical left rail ─── */}
       <div className="hidden lg:flex fixed left-6 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 max-w-[180px]">
         {/* Header */}
         <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600 px-1">
