@@ -131,7 +131,7 @@ export function HeroPlaygroundInline() {
   );
 
   return (
-    <div className="lg:hidden flex flex-col items-center gap-2 my-6">
+    <div className="lg:hidden flex flex-col items-center gap-2 mt-2 mb-6">
       <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600">
         ✨ Try the magic
       </div>
