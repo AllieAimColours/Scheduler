@@ -126,8 +126,33 @@ Send Allie's hairstylist + therapist a 20-step script as soon as Phase 1 Tasks 3
 ### Risk register
 8 risks tracked with mitigations in the plan file §5. Highest watch items: testers ghosting, mobile UX surprises, calendar over-budget, email spam folder.
 
-### Pricing hypothesis (strawman for Phase 5)
-Free / $14 Starter / $29 Pro / $79 Salon. Real pricing comes from talking to real users — this is the starting point, not the answer.
+### Pricing hypothesis (strawman locked 2026-04-10, live on landing page)
+
+Five tiers, no Enterprise card (a "Need 16+ staff? Talk to us" link covers it):
+
+| Plan | Price | Includes |
+|---|---|---|
+| **Free** | $0 forever | 1 service, **unlimited bookings**, all 6 templates, page builder + customize, email confirmations, "Powered by Bloom" footer |
+| **Starter** | $19 / mo | Unlimited services, no footer, custom branding, all wow effects, all 8 widgets |
+| **Pro** ⭐ | $39 / mo | + SMS reminders, smart re-booking nudges, intake forms, **client memory + color formulas**, photos attached to bookings, sell digital products |
+| **Salon** | $79 / mo | + 2-5 staff members, per-staff schedules, team booking, "Meet the team" widget, shared calendar |
+| **Studio** | $149 / mo | + 6-15 staff, custom domain, white label (no Bloom branding), priority support, advanced analytics |
+
+**Key principle**: Free is gated by **scope** (1 service, footer), NOT by booking count. Throttling on bookings punishes the providers we most want as long-term customers (the ones who are growing). The upgrade triggers are real product moments — "I want a second service," "I want SMS reminders," "I want to see last visit's color formula" — not arbitrary count ceilings.
+
+**14-day free trial on all paid plans, no credit card required.**
+
+### Annual credit packs (Phase 5+ idea, save for later)
+
+Some providers are seasonal — wedding photographers, event planners, holiday-season businesses. They have 3 busy months and 9 dead months and would resent paying $19-39/mo year-round.
+
+For them, ship a **prepaid credit pack** alongside the monthly tiers:
+- **Solo Annual**: $99/year for 100 bookings, use anytime over 12 months
+- **Solo Plus**: $199/year for 250 bookings
+
+Cleaner UX (one purchase, no metered billing, no booking counters mid-month), better unit economics (cash collected upfront), and serves a real underserved segment without cannibalizing the monthly subscriptions.
+
+**Don't build this in v1.** Wait until data shows real users churning between months of heavy use and months of nothing — then ship as a third option in the pricing grid.
 
 ### Weekly tester cadence
 Friday Loom + 3 specific questions + take notes in `tester-feedback.md` + thank-yous every 2-3 weeks. Engaged testers stay engaged.
