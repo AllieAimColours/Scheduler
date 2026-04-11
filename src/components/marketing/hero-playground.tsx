@@ -362,28 +362,30 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
           </div>
         </Link>
 
-        {/* Hand-drawn doodle pointing at the drawer.
-            Anchored to the drawer's right edge, drawn after a short delay,
-            wiggles gently after drawing, fades on interaction or scroll. */}
+        {/* Hand-drawn doodle pointing at the drawer header.
+            Anchored to the TOP-right of the drawer so the arrow tip lands
+            right next to the < close button. Wiggles after drawing in. */}
         {doodleVisible && (
           <div
             className={cn(
-              "absolute -right-44 top-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-500",
+              "absolute -right-48 top-0 pointer-events-none transition-opacity duration-500",
               doodleVisible ? "opacity-100" : "opacity-0"
             )}
             aria-hidden="true"
           >
             <div className="animate-doodle-wiggle">
               <svg
-                width="180"
-                height="120"
-                viewBox="0 0 180 120"
+                width="200"
+                height="100"
+                viewBox="0 0 200 100"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {/* Loop arrow path drawn from right to left, ending in an arrowhead near the drawer */}
+                {/* Loop arrow — starts from the right where "try this!" lives,
+                    swoops down into a loop, and points up-left at the drawer header.
+                    Tip ends at (12, 12), pointing toward the < button. */}
                 <path
-                  d="M170 30 C 130 10, 100 60, 130 80 C 145 90, 130 50, 90 50 C 60 50, 35 65, 18 60"
+                  d="M190 20 C 160 5, 130 50, 160 65 C 175 72, 165 35, 120 35 C 85 35, 55 30, 30 22 C 22 19, 16 16, 12 12"
                   stroke="#ec4899"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -392,9 +394,9 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   pathLength={1}
                   className="animate-doodle-draw"
                 />
-                {/* Arrowhead */}
+                {/* Arrowhead — tip at (12, 12) pointing up-left */}
                 <path
-                  d="M18 60 L 28 53 M 18 60 L 28 67"
+                  d="M12 12 L 22 14 M 12 12 L 16 22"
                   stroke="#ec4899"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -405,9 +407,12 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   style={{ animationDelay: "1.6s" }}
                 />
               </svg>
-              {/* "try this!" text in cursive script */}
-              <div className="absolute top-0 right-0 font-script text-2xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700"
-                   style={{ animationDelay: "1.8s", animationFillMode: "both" }}>
+              {/* "try this!" text in cursive script — sits to the right of the loop,
+                  near where the loop starts (rightmost end of the arrow path) */}
+              <div
+                className="absolute top-8 right-2 font-script text-2xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700"
+                style={{ animationDelay: "1.8s", animationFillMode: "both" }}
+              >
                 try this!
               </div>
             </div>
