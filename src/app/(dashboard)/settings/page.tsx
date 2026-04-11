@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -27,6 +27,7 @@ export default function SettingsPage() {
     phone: "",
     website: "",
     address: "",
+    booking_calendar_range: "month" as "week" | "2weeks" | "month" | "3months",
   });
 
   useEffect(() => {
@@ -46,12 +47,21 @@ export default function SettingsPage() {
       if (data) {
         setProvider(data);
         const branding = (data.branding as Record<string, unknown>) || {};
+        const rawRange = branding.booking_calendar_range;
+        const calendarRange =
+          rawRange === "week" ||
+          rawRange === "2weeks" ||
+          rawRange === "month" ||
+          rawRange === "3months"
+            ? rawRange
+            : "month";
         setForm({
           business_name: data.business_name,
           description: data.description,
           phone: data.phone || "",
           website: data.website || "",
           address: typeof branding.address === "string" ? branding.address : "",
+          booking_calendar_range: calendarRange,
         });
       }
     }
@@ -66,6 +76,7 @@ export default function SettingsPage() {
     const newBranding = {
       ...((provider.branding as Record<string, unknown>) || {}),
       address: form.address || undefined,
+      booking_calendar_range: form.booking_calendar_range,
     };
     const { error } = await supabase
       .from("providers")
@@ -155,6 +166,60 @@ export default function SettingsPage() {
 
           <p className="text-xs text-gray-400 pt-2">
             Files are generated on demand from your live data. CSV files work with Excel, Numbers, and Google Sheets.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Booking calendar range */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg">
+              <CalendarDays className="h-4 w-4 text-white" />
+            </div>
+            Booking Calendar
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            How much of your calendar do clients see when they pick a date?
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {(
+              [
+                { id: "week", label: "1 week", hint: "For high-turnover stylists" },
+                { id: "2weeks", label: "2 weeks", hint: "Balanced" },
+                { id: "month", label: "1 month", hint: "Most common" },
+                { id: "3months", label: "3 months", hint: "For therapy, IVF, consultants" },
+              ] as const
+            ).map((opt) => {
+              const active = form.booking_calendar_range === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, booking_calendar_range: opt.id })}
+                  className={
+                    active
+                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
+                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
+                  }
+                >
+                  <div className={active ? "font-display text-lg font-bold text-purple-700" : "font-display text-lg font-bold text-gray-700"}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-tight">
+                    {opt.hint}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-4">
+            Days are color-coded for clients: <span className="text-green-600 font-medium">green</span> means lots free,
+            <span className="text-yellow-600 font-medium"> yellow</span> some free,
+            <span className="text-orange-600 font-medium"> orange</span> filling up,
+            <span className="text-red-600 font-medium"> red</span> last slots.
           </p>
         </CardContent>
       </Card>

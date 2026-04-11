@@ -10,6 +10,10 @@ import Link from "next/link";
 import { ThemedCard } from "@/components/booking/themed-card";
 import { ThemedButton } from "@/components/booking/themed-button";
 import { ThemedTimeSlot } from "@/components/booking/themed-time-slot";
+import {
+  ThemedAvailabilityCalendar,
+  type CalendarRange,
+} from "@/components/booking/themed-availability-calendar";
 import { useTemplate } from "@/lib/templates/context";
 import { getTemplate } from "@/lib/templates/index";
 
@@ -75,6 +79,7 @@ export default function BookServicePage() {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"date" | "time" | "details">("date");
   const [providerId, setProviderId] = useState("");
+  const [calendarRange, setCalendarRange] = useState<CalendarRange>("month");
   const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicyInfo | null>(null);
   const [effectiveDeposit, setEffectiveDeposit] = useState<DepositInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -90,6 +95,9 @@ export default function BookServicePage() {
           const data = await res.json();
           setService(data.service);
           setProviderId(data.providerId);
+          if (data.calendarRange) {
+            setCalendarRange(data.calendarRange as CalendarRange);
+          }
           if (data.cancellationPolicy) {
             setCancellationPolicy(data.cancellationPolicy);
           }
@@ -164,15 +172,6 @@ export default function BookServicePage() {
     }
   }
 
-  // Get tomorrow as min date
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split("T")[0];
-
-  // Max date: 30 days out
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 30);
-  const maxDateStr = maxDate.toISOString().split("T")[0];
 
   if (loadError) {
     return (
@@ -238,24 +237,23 @@ export default function BookServicePage() {
         </div>
       </ThemedCard>
 
-      {/* Date Selection */}
-      <ThemedCard index={1} className="mb-6">
+      {/* Date Selection — themed availability calendar with color-coded days */}
+      <div className="mb-6">
         <div className="flex items-center gap-2 text-lg font-semibold mb-4">
           <Calendar className="h-5 w-5" />
           <span className={template.classes.heading}>Select a Date</span>
         </div>
-        <input
-          type="date"
-          min={minDate}
-          max={maxDateStr}
+        <ThemedAvailabilityCalendar
+          providerId={providerId}
+          serviceId={serviceId}
           value={selectedDate}
-          onChange={(e) => {
-            setSelectedDate(e.target.value);
+          range={calendarRange}
+          onSelect={(date) => {
+            setSelectedDate(date);
             setStep("time");
           }}
-          className={`w-full ${template.classes.input}`}
         />
-      </ThemedCard>
+      </div>
 
       {/* Time Slots */}
       {selectedDate && (
