@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates/index";
 import { HeroPlayground, HeroPlaygroundInline } from "@/components/marketing/hero-playground";
 import { TemplatePreviewCard } from "@/components/marketing/template-preview-card";
+import { Pricing } from "@/components/marketing/pricing";
 
 export default function HomePage() {
   return (
@@ -29,7 +30,13 @@ export default function HomePage() {
             rendez-vous
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
+          <a
+            href="#pricing"
+            className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-pink-600 transition-colors"
+          >
+            Pricing
+          </a>
           <Link
             href="/login"
             className={cn(buttonVariants({ variant: "ghost" }))}
@@ -195,6 +202,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Pricing */}
+      <Pricing />
 
       {/* CTA */}
       <section className="py-24 bg-gradient-to-br from-purple-600 via-pink-500 to-rose-500">
