@@ -594,32 +594,53 @@ export function ClickBurst({
   return (
     <div className="fixed inset-0 pointer-events-none z-[9999]" aria-hidden="true">
       {bursts.map((b) => {
-        const particleCount = 12;
+        const particleCount = 16;
         return Array.from({ length: particleCount }).map((_, i) => {
-          // Use deterministic pseudo-random per (b.id, i) so distance/size
-          // stay stable across re-renders for the same particle.
-          const seed = (b.id * 31 + i) * 9301;
-          const rand = ((seed % 233280) / 233280 + 1) % 1;
-          const rand2 = (((seed * 7) % 233280) / 233280 + 1) % 1;
+          // Deterministic pseudo-random per (b.id, i) so particles stay
+          // stable across re-renders. Five independent streams for:
+          // angle jitter, distance, size, rotation, gravity coefficient.
+          const seed = (b.id * 31 + i) * 9301 + 49297;
+          const r1 = ((seed % 233280) / 233280 + 1) % 1;
+          const r2 = (((seed * 7) % 233280) / 233280 + 1) % 1;
+          const r3 = (((seed * 13) % 233280) / 233280 + 1) % 1;
+          const r4 = (((seed * 23) % 233280) / 233280 + 1) % 1;
+          const r5 = (((seed * 41) % 233280) / 233280 + 1) % 1;
 
-          const angle = (i / particleCount) * Math.PI * 2;
-          const distance = 60 + rand * 40;
+          // Base angle starts perfectly even, then gets ±60° of jitter so
+          // particles fan out in uneven clusters instead of a perfect wheel.
+          const baseAngle = (i / particleCount) * Math.PI * 2;
+          const angleJitter = (r1 - 0.5) * (Math.PI / 1.5); // ±60°
+          const angle = baseAngle + angleJitter;
+
+          // Variable distance — some particles travel 2-3x further than
+          // others, so the explosion has a ragged silhouette.
+          const distance = 40 + r2 * 120; // 40-160px
+
           const dx = Math.cos(angle) * distance;
           const dy = Math.sin(angle) * distance;
+
           const c = colorForIndex(i + b.id, colorMode, baseColor, customColor);
-          const size = 8 + rand2 * 8;
+          const size = 6 + r3 * 12; // 6-18px, wider spread
           const age = Math.min(1, (renderTime - b.born) / 1500);
 
-          // Smooth ease-out for the explosion + gravity for the falloff
+          // Per-particle rotation: full spin over the life, with random start
+          const startRotation = r4 * 360;
+          const spinAmount = (r4 - 0.5) * 1080; // -540° to +540°
+          const rotation = startRotation + spinAmount * age;
+
+          // Per-particle gravity: some fall fast, some drift
+          const gravityStrength = 60 + r5 * 100; // 60-160
+
+          // Ease-out for the outward burst — fast at first, slows down
           const eased = 1 - Math.pow(1 - Math.min(age * 2, 1), 2);
           const tx = b.x - size / 2 + dx * eased;
-          const ty = b.y - size / 2 + dy * eased + age * age * 80;
+          const ty = b.y - size / 2 + dy * eased + age * age * gravityStrength;
 
           const sharedStyle: React.CSSProperties = {
             position: "fixed",
             top: 0,
             left: 0,
-            transform: `translate3d(${tx}px, ${ty}px, 0) scale(${1 - age})`,
+            transform: `translate3d(${tx}px, ${ty}px, 0) scale(${1 - age}) rotate(${rotation}deg)`,
             opacity: 1 - age,
             willChange: "transform, opacity",
             transition: "none",

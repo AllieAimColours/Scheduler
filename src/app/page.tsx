@@ -15,6 +15,7 @@ import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates/index";
 import { HeroPlayground, HeroPlaygroundInline } from "@/components/marketing/hero-playground";
 import { TemplatePreviewCard } from "@/components/marketing/template-preview-card";
 import { Pricing } from "@/components/marketing/pricing";
+import { MarketingFooter } from "@/components/marketing/footer";
 
 export default function HomePage() {
   return (
@@ -230,10 +231,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-10 text-center text-sm text-gray-400 border-t">
-        <p>Made with care for the beauty and wellness community</p>
-      </footer>
+      {/* Footer — shared with trust pages */}
+      <MarketingFooter />
     </div>
   );
 }

@@ -161,6 +161,83 @@
   }
 }
 
+/* Long-form prose style for privacy / terms / security / about pages */
+.bloom-prose {
+  color: rgb(75, 85, 99); /* gray-600 */
+  font-size: 16px;
+  line-height: 1.75;
+}
+.bloom-prose h2 {
+  font-family: var(--font-dashboard-display);
+  font-weight: 600;
+  font-size: 1.75rem;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  color: rgb(17, 24, 39); /* gray-900 */
+  letter-spacing: -0.02em;
+}
+.bloom-prose h3 {
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: rgb(31, 41, 55); /* gray-800 */
+}
+.bloom-prose p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+.bloom-prose ul {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+.bloom-prose ol {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+  list-style-type: decimal;
+}
+.bloom-prose li {
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+.bloom-prose a {
+  color: rgb(219, 39, 119); /* pink-600 */
+  text-decoration: none;
+  font-weight: 500;
+}
+.bloom-prose a:hover {
+  text-decoration: underline;
+}
+.bloom-prose strong {
+  color: rgb(17, 24, 39);
+  font-weight: 600;
+}
+.bloom-prose code {
+  background: rgb(249, 250, 251);
+  border: 1px solid rgb(229, 231, 235);
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+  font-family: var(--font-geist-mono);
+}
+.bloom-prose .callout {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgb(253, 242, 248), rgb(252, 231, 243));
+  border: 1px solid rgb(251, 207, 232);
+  border-radius: 1rem;
+}
+.bloom-prose .callout p:first-child {
+  margin-top: 0;
+}
+.bloom-prose .callout p:last-child {
+  margin-bottom: 0;
+}
+
 /* Global: no italics anywhere — user preference */
 em, i, blockquote, q, address, cite, dfn, var {
   font-style: normal;
