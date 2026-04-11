@@ -355,30 +355,29 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
         </Link>
 
         {/* Hand-drawn doodle pointing at the particle box.
-            Anchored just above the particle box so the arrow swoops down
-            and the tip lands ON the active particle button (Petals).
-            Label sits below the loop, well clear of the arrow path. */}
+            Uses the original loop arrow shape (the one Allie liked).
+            The SVG wrapper is positioned so the arrow tip at (18, 60) in
+            the 180x120 viewBox lands on the active Petals button. */}
         {doodleVisible && (
           <div
             className={cn(
-              "absolute -right-56 top-0 pointer-events-none transition-opacity duration-500",
+              "absolute -right-48 top-12 pointer-events-none transition-opacity duration-500",
               doodleVisible ? "opacity-100" : "opacity-0"
             )}
             aria-hidden="true"
           >
             <div className="animate-doodle-wiggle">
               <svg
-                width="240"
-                height="180"
-                viewBox="0 0 240 180"
+                width="180"
+                height="120"
+                viewBox="0 0 180 120"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {/* Loop arrow — starts top-right where the "try the magic" label
-                    will sit BELOW it. The path swoops up into a loop, then dives
-                    down-left to land on the particle box. Tip at (8, 80). */}
+                {/* Original loop arrow — swoops right to left into a loop and
+                    points at the drawer. Tip at (18, 60). */}
                 <path
-                  d="M210 20 C 230 25, 230 60, 200 65 C 170 70, 175 25, 155 30 C 130 38, 105 50, 75 60 C 50 68, 25 75, 8 80"
+                  d="M170 30 C 130 10, 100 60, 130 80 C 145 90, 130 50, 90 50 C 60 50, 35 65, 18 60"
                   stroke="#ec4899"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -387,14 +386,11 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   pathLength={1}
                   className="animate-doodle-draw"
                 />
-                {/* Arrowhead — bigger, wider angle so it actually reads as an arrow.
-                    Tip at (8, 80), two flicks ~20px each at ~70° apart, pointing
-                    back into the page (up-right) so the arrow visually flows
-                    from the loop down-left to the particle box. */}
+                {/* Original arrowhead at (18, 60) */}
                 <path
-                  d="M28 72 L 8 80 L 20 96"
+                  d="M18 60 L 28 53 M 18 60 L 28 67"
                   stroke="#ec4899"
-                  strokeWidth="3"
+                  strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   fill="none"
@@ -404,9 +400,9 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                 />
               </svg>
               {/* "try the magic" label — sits BELOW the loop, well clear of
-                  the arrow path. Right-aligned on its own row. */}
+                  the arrow path. */}
               <div
-                className="absolute top-[105px] right-2 font-script text-3xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700 whitespace-nowrap"
+                className="absolute top-[125px] right-2 font-script text-3xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700 whitespace-nowrap"
                 style={{ animationDelay: "1.8s", animationFillMode: "both" }}
               >
                 try the magic
