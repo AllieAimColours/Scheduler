@@ -413,10 +413,10 @@ function DesktopDrawer({ state }: { state: PlaygroundState }) {
                   style={{ animationDelay: "1.6s" }}
                 />
               </svg>
-              {/* "try the magic" label — sits BELOW the loop, well clear of
-                  the arrow path. */}
+              {/* "try the magic" label — sits ABOVE the loop so it does not
+                  overlap the hero text below the arrow. */}
               <div
-                className="absolute top-[125px] right-2 font-script text-3xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700 whitespace-nowrap"
+                className="absolute -top-8 right-2 font-script text-3xl text-pink-500 -rotate-6 select-none animate-in fade-in-0 slide-in-from-right-2 duration-700 whitespace-nowrap"
                 style={{ animationDelay: "1.8s", animationFillMode: "both" }}
               >
                 try the magic
