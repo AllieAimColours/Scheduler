@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates/index";
 import { HeroPlayground } from "@/components/marketing/hero-playground";
+import { TemplatePreviewCard } from "@/components/marketing/template-preview-card";
 
 export default function HomePage() {
   return (
@@ -98,84 +99,22 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              6 vibes. Infinite personality.
+              6 vibes. Every kind of business.
             </h2>
             <p className="text-lg text-gray-500 mt-4 max-w-xl mx-auto">
-              Each template is a complete design language — fonts, colors,
-              animations, card styles, micro-interactions. Not just a color swap.
+              From hair stylists to IVF clinics, nail salons to therapy practices —
+              each template is a complete design language that bends to your brand.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TEMPLATE_IDS.map((id) => {
-              const t = TEMPLATES[id];
-              return (
-                <div
-                  key={id}
-                  className="group rounded-2xl overflow-hidden border border-gray-200 bg-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  {/* Mini preview */}
-                  <div
-                    className="h-40 relative overflow-hidden p-5"
-                    style={{
-                      background: t.cssVars["--background"] || "#fff",
-                      color: t.cssVars["--foreground"] || "#000",
-                    }}
-                  >
-                    <div className="space-y-2">
-                      <div
-                        className="text-sm font-bold opacity-70"
-                        style={{ fontFamily: t.fonts.heading }}
-                      >
-                        Gorgeous Cuts Studio
-                      </div>
-                      {["Balayage Highlights", "Precision Cut", "Deep Conditioning"].map(
-                        (name, i) => (
-                          <div
-                            key={name}
-                            className="flex items-center justify-between px-3 py-2 rounded"
-                            style={{
-                              background: t.cssVars["--card"] || "#fff",
-                              borderRadius: t.cssVars["--radius"] || "0.5rem",
-                              border: `1px solid ${t.cssVars["--border"] || "#e5e5e5"}`,
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs">{["✂️", "💇‍♀️", "🧴"][i]}</span>
-                              <span
-                                className="text-xs font-medium"
-                                style={{
-                                  color: t.cssVars["--card-foreground"] || t.cssVars["--foreground"] || "#000",
-                                }}
-                              >
-                                {name}
-                              </span>
-                            </div>
-                            <span
-                              className="text-xs font-bold"
-                              style={{
-                                color: t.cssVars["--primary"] || "#6366f1",
-                              }}
-                            >
-                              ${[150, 65, 45][i]}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-5 border-t">
-                    <h3 className="font-bold text-lg">{t.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{t.tagline}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Perfect for {t.audience}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            {TEMPLATE_IDS.map((id, idx) => (
+              <TemplatePreviewCard
+                key={id}
+                template={TEMPLATES[id]}
+                staggerOffset={idx * 600}
+              />
+            ))}
           </div>
         </div>
       </section>

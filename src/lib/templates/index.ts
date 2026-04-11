@@ -48,7 +48,7 @@ const aura: TemplateDefinition = {
   id: "aura",
   name: "Aura",
   tagline: "Dreamlike, ethereal magic",
-  audience: "Therapists, spas, wellness practitioners",
+  audience: "Therapy, IVF clinics, acupuncture, energy healing, wellness retreats",
   fonts: { heading: "Cormorant Garamond", body: "Inter" },
   cssVars: {
     "--background": "#1A0F2E",
@@ -109,7 +109,7 @@ const bloom: TemplateDefinition = {
   id: "bloom",
   name: "Rose",
   tagline: "Warm, lush, feminine power",
-  audience: "Hair stylists, beauty pros, nail artists",
+  audience: "Nail salons, beauty pros, lash & brow studios, brides",
   fonts: { heading: "Playfair Display", body: "DM Sans" },
   cssVars: {
     "--background": "#FFF1EC",
@@ -168,7 +168,7 @@ const edge: TemplateDefinition = {
   id: "edge",
   name: "Edge",
   tagline: "Bold, dark, electric",
-  audience: "Barbers, tattoo artists, edgy stylists",
+  audience: "Barbers, tattoo studios, fitness coaches, edgy hair stylists",
   fonts: { heading: "Space Grotesk", body: "JetBrains Mono" },
   cssVars: {
     "--background": "#0D0D0D",
@@ -227,7 +227,7 @@ const luxe: TemplateDefinition = {
   id: "luxe",
   name: "Luxe",
   tagline: "Black tie, gilded, dramatic",
-  audience: "Luxury salons, premium aesthetics",
+  audience: "Med spas, dermatology, luxury hair, premium aesthetics, IVF concierge",
   fonts: { heading: "Bodoni Moda", body: "Outfit" },
   cssVars: {
     "--background": "#0A0A0A",
@@ -286,7 +286,7 @@ const pop: TemplateDefinition = {
   id: "pop",
   name: "Pop",
   tagline: "Bright, bold, playful",
-  audience: "Kids stylists, creative therapists, fun brands",
+  audience: "Kids hairdressers, party planners, kids therapy, family photography",
   fonts: { heading: "Fredoka", body: "Nunito" },
   cssVars: {
     "--background": "#F5F0FF",
@@ -345,7 +345,7 @@ const studio: TemplateDefinition = {
   id: "studio",
   name: "Studio",
   tagline: "Crisp, modern, vivid",
-  audience: "Clinical practices, medical aesthetics",
+  audience: "Physiotherapy, dental, dermatology, fertility clinics, mental health",
   fonts: { heading: "Plus Jakarta Sans", body: "Plus Jakarta Sans" },
   cssVars: {
     "--background": "#F0FDFC",
