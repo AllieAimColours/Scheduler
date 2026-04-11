@@ -135,8 +135,18 @@ export function HeroPlaygroundInline() {
       <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-pink-600">
         ✨ Try the magic
       </div>
-      <div className="rounded-2xl bg-white border border-pink-100 shadow-lg p-2 max-w-full">
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+      {/* Particle picker — horizontal scroll with a fading right edge that
+          signals "swipe for more" without using arrow chrome. */}
+      <div className="relative rounded-2xl bg-white border border-pink-100 shadow-lg p-2 max-w-full overflow-hidden">
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide"
+          style={{
+            maskImage:
+              "linear-gradient(to right, black 0%, black 85%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, black 0%, black 85%, transparent 100%)",
+          }}
+        >
           {PARTICLE_OPTIONS.map((opt) => {
             const active = particles === opt.id;
             return (
@@ -156,6 +166,10 @@ export function HeroPlaygroundInline() {
               </button>
             );
           })}
+        </div>
+        {/* Subtle scroll cue: small chevron on the right edge */}
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-pink-400 text-xs font-bold opacity-70">
+          ›
         </div>
       </div>
       <div className="flex gap-1.5">

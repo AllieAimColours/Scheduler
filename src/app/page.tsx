@@ -20,11 +20,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-6">
-        <div className="flex items-baseline gap-2">
+        {/* Wordmark — stacked on mobile (Bloom over rendez-vous), inline on desktop */}
+        <div className="flex flex-col items-start sm:flex-row sm:items-baseline sm:gap-2 leading-none">
           <span className="text-3xl font-display font-bold tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
             Bloom
           </span>
-          <span className="font-script text-2xl text-gray-900 leading-none -translate-y-0.5">
+          <span className="font-script text-2xl text-gray-900 -mt-1 sm:mt-0 sm:-translate-y-0.5">
             rendez-vous
           </span>
         </div>
@@ -59,7 +60,7 @@ export default function HomePage() {
         {/* Interactive playground — falling petals + cursor sparkles + click bursts */}
         <HeroPlayground />
 
-        <div className="max-w-5xl mx-auto px-6 pt-12 lg:pt-24 pb-20 text-center">
+        <div className="max-w-5xl mx-auto px-6 py-16 lg:py-24 text-center">
           {/* Mobile playground — inline between nav and the hero pill */}
           <HeroPlaygroundInline />
 
