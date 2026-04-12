@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { LayoutGrid, Sliders } from "lucide-react";
@@ -63,6 +63,34 @@ export default function YourPageBuilder() {
     }
     load();
   }, []);
+
+  // Warn before leaving with unsaved changes (browser tab close / navigate away)
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (dirty) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  // Intercept sidebar navigation when dirty
+  useEffect(() => {
+    if (!dirty) return;
+    function onClick(e: MouseEvent) {
+      const link = (e.target as HTMLElement).closest("a[href]");
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("http") || href === "/your-page") return;
+      if (!confirm("You have unsaved changes. Leave without saving?")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [dirty]);
 
   async function handleSave() {
     if (!provider) return;

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +19,9 @@ import { CancellationPolicyEditor } from "./cancellation-policy-editor";
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState<Provider | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const loaded = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState({
     business_name: "",
     description: "",
@@ -82,52 +83,67 @@ export default function SettingsPage() {
           default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
           min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
         });
+        // Mark as loaded AFTER state is set, via a microtask, so the
+        // autosave effect doesn't fire for the initial hydration.
+        setTimeout(() => { loaded.current = true; }, 0);
       }
     }
     load();
   }, []);
 
-  async function handleSave() {
-    if (!provider) return;
-    setSaving(true);
+  const doSave = useCallback(async (currentForm: typeof form, currentProvider: Provider) => {
+    setSaveStatus("saving");
 
     const supabase = createClient();
     const newBranding = {
-      ...((provider.branding as Record<string, unknown>) || {}),
-      address: form.address || undefined,
-      booking_calendar_range: form.booking_calendar_range,
-      default_slot_minutes: form.default_slot_minutes,
-      default_buffer_before_minutes: form.default_buffer_before_minutes,
-      default_buffer_after_minutes: form.default_buffer_after_minutes,
-      min_booking_notice_hours: form.min_booking_notice_hours,
+      ...((currentProvider.branding as Record<string, unknown>) || {}),
+      address: currentForm.address || undefined,
+      booking_calendar_range: currentForm.booking_calendar_range,
+      default_slot_minutes: currentForm.default_slot_minutes,
+      default_buffer_before_minutes: currentForm.default_buffer_before_minutes,
+      default_buffer_after_minutes: currentForm.default_buffer_after_minutes,
+      min_booking_notice_hours: currentForm.min_booking_notice_hours,
     };
     const { error } = await supabase
       .from("providers")
       .update({
-        business_name: form.business_name,
-        description: form.description,
-        phone: form.phone || null,
-        website: form.website || null,
+        business_name: currentForm.business_name,
+        description: currentForm.description,
+        phone: currentForm.phone || null,
+        website: currentForm.website || null,
         branding: newBranding,
       })
-      .eq("id", provider.id);
+      .eq("id", currentProvider.id);
 
     if (error) {
       console.error("Settings save error:", error);
+      setSaveStatus("error");
       toast.error(`Failed to save: ${error.message}`);
     } else {
-      toast.success("Settings saved!");
+      setSaveStatus("saved");
       setProvider({
-        ...provider,
-        business_name: form.business_name,
-        description: form.description,
-        phone: form.phone || null,
-        website: form.website || null,
+        ...currentProvider,
+        business_name: currentForm.business_name,
+        description: currentForm.description,
+        phone: currentForm.phone || null,
+        website: currentForm.website || null,
         branding: newBranding,
       });
     }
-    setSaving(false);
-  }
+  }, []);
+
+  // Autosave: debounce 1.5s after any form change
+  useEffect(() => {
+    if (!loaded.current || !provider) return;
+    setSaveStatus("idle");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      doSave(form, provider);
+    }, 1500);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [form, provider, doSave]);
 
   if (!provider) {
     return (
@@ -140,17 +156,39 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-          Settings
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Your business info and policies. Looking for templates and the page builder?{" "}
-          <a href="/your-page" className="text-purple-600 font-medium hover:underline inline-flex items-center gap-1">
-            <Wand2 className="h-3.5 w-3.5" />
-            Open Your Page
-          </a>
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+            Settings
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Your business info and policies. Looking for templates and the page builder?{" "}
+            <a href="/your-page" className="text-purple-600 font-medium hover:underline inline-flex items-center gap-1">
+              <Wand2 className="h-3.5 w-3.5" />
+              Open Your Page
+            </a>
+          </p>
+        </div>
+        <div className="text-xs text-gray-400 pt-2 flex items-center gap-1.5 shrink-0">
+          {saveStatus === "saving" && (
+            <>
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+              Saving…
+            </>
+          )}
+          {saveStatus === "saved" && (
+            <>
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Saved
+            </>
+          )}
+          {saveStatus === "error" && (
+            <>
+              <div className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              Save failed
+            </>
+          )}
+        </div>
       </div>
 
       {/* Cancellation Policy */}
@@ -479,13 +517,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Button
-        onClick={handleSave}
-        disabled={saving}
-        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-      >
-        {saving ? "Saving..." : "Save Settings"}
-      </Button>
+      {/* Autosave status — no manual save button needed */}
     </div>
   );
 }
