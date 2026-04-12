@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Clock, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock, DollarSign, Ban } from "lucide-react";
 import { PeonyMark } from "@/components/peony-mark";
 import { createService, updateService, deleteService, toggleService } from "./actions";
 
@@ -54,6 +54,7 @@ function ServiceForm({
 }) {
   const [color, setColor] = useState(service?.color || "#6366f1");
   const [emoji, setEmoji] = useState(service?.emoji || "");
+  const [showCustomEmoji, setShowCustomEmoji] = useState(false);
   const [pending, setPending] = useState(false);
   const [overrideBuffers, setOverrideBuffers] = useState(
     service?.buffer_before_minutes !== null && service?.buffer_before_minutes !== undefined
@@ -98,12 +99,30 @@ function ServiceForm({
         </div>
         <div className="space-y-2">
           <Label className="text-gray-800 font-medium">Emoji</Label>
-          <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+          <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+            {/* None option */}
+            <button
+              type="button"
+              onClick={() => {
+                setEmoji("");
+                setShowCustomEmoji(false);
+              }}
+              title="No emoji"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center hover:bg-purple-50 transition-all duration-200 ${
+                emoji === "" ? "bg-purple-100 ring-2 ring-purple-400 scale-110 shadow-sm" : "hover:scale-105"
+              }`}
+            >
+              <Ban className="h-4 w-4 text-gray-400" />
+            </button>
+
             {PRESET_EMOJIS.map((e) => (
               <button
                 key={e}
                 type="button"
-                onClick={() => setEmoji(e)}
+                onClick={() => {
+                  setEmoji(e);
+                  setShowCustomEmoji(false);
+                }}
                 className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center hover:bg-purple-50 transition-all duration-200 ${
                   emoji === e ? "bg-purple-100 ring-2 ring-purple-400 scale-110 shadow-sm" : "hover:scale-105"
                 }`}
@@ -111,7 +130,31 @@ function ServiceForm({
                 {e}
               </button>
             ))}
+
+            {/* Custom emoji option */}
+            <button
+              type="button"
+              onClick={() => setShowCustomEmoji(true)}
+              title="Add your own"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center hover:bg-purple-50 transition-all duration-200 ${
+                showCustomEmoji || (emoji !== "" && !PRESET_EMOJIS.includes(emoji))
+                  ? "bg-purple-100 ring-2 ring-purple-400 scale-110 shadow-sm"
+                  : "hover:scale-105"
+              }`}
+            >
+              <Plus className="h-4 w-4 text-gray-500" />
+            </button>
           </div>
+          {(showCustomEmoji || (emoji !== "" && !PRESET_EMOJIS.includes(emoji))) && (
+            <Input
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value.slice(0, 4))}
+              placeholder="Paste or type any emoji"
+              maxLength={4}
+              className="w-[200px] text-lg text-center border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              autoFocus={showCustomEmoji && !emoji}
+            />
+          )}
         </div>
       </div>
 
