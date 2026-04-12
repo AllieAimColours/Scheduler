@@ -40,9 +40,11 @@ export default async function DashboardPage() {
     .neq("status", "cancelled")
     .order("starts_at") as { data: any[] | null };
 
-  // Fetch this week's stats
+  // Fetch this week's stats (Monday-based week)
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  startOfWeek.setDate(today.getDate() + mondayOffset);
   startOfWeek.setHours(0, 0, 0, 0);
 
   const { data: weekBookings } = await supabase
@@ -111,7 +113,7 @@ export default async function DashboardPage() {
             bgGlow: "bg-violet-500/10",
           },
           {
-            label: "This Week's Revenue",
+            label: `Revenue · ${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
             value: `$${(weekTotalRevenue / 100).toFixed(0)}`,
             subtitle: weekDeposits > 0 || weekDueAtAppt > 0
               ? `$${(weekDeposits / 100).toFixed(0)} deposits · $${(weekDueAtAppt / 100).toFixed(0)} at appt`
