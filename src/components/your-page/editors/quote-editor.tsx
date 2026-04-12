@@ -2,6 +2,7 @@
 
 import type { QuoteBlock } from "@/lib/page-builder/types";
 import { Field, TextInput, TextArea } from "./field";
+import { ImageUpload } from "../image-upload";
 
 export function QuoteEditor({
   block,
@@ -37,13 +38,12 @@ export function QuoteEditor({
           />
         </Field>
       </div>
-      <Field label="Author photo URL (optional)">
-        <TextInput
-          value={c.author_photo_url || ""}
-          onChange={(v) => onUpdate({ author_photo_url: v })}
-          placeholder="https://..."
-        />
-      </Field>
+      <ImageUpload
+        value={c.author_photo_url || ""}
+        onChange={(v) => onUpdate({ author_photo_url: v })}
+        label="Author photo (optional)"
+        folder="quotes"
+      />
     </div>
   );
 }

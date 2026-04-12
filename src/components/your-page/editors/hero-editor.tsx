@@ -2,6 +2,7 @@
 
 import type { HeroBlock } from "@/lib/page-builder/types";
 import { Field, TextInput, TextArea, Toggle } from "./field";
+import { ImageUpload } from "../image-upload";
 
 export function HeroEditor({
   block,
@@ -13,13 +14,13 @@ export function HeroEditor({
   const c = block.config;
   return (
     <div className="space-y-4">
-      <Field label="Hero image URL" hint="Square image works best. Falls back to your logo if empty.">
-        <TextInput
-          value={c.image_url || ""}
-          onChange={(v) => onUpdate({ image_url: v })}
-          placeholder="https://..."
-        />
-      </Field>
+      <ImageUpload
+        value={c.image_url || ""}
+        onChange={(v) => onUpdate({ image_url: v })}
+        label="Hero image"
+        hint="Square image works best. Falls back to your logo if empty."
+        folder="hero"
+      />
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Headline" hint="Falls back to your business name">
           <TextInput

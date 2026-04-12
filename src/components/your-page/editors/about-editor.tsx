@@ -2,6 +2,7 @@
 
 import type { AboutBlock } from "@/lib/page-builder/types";
 import { Field, TextInput, TextArea } from "./field";
+import { ImageUpload } from "../image-upload";
 import { Plus, X } from "lucide-react";
 
 export function AboutEditor({
@@ -31,13 +32,12 @@ export function AboutEditor({
   return (
     <div className="space-y-4">
       <div className="grid sm:grid-cols-[200px_1fr] gap-4">
-        <Field label="Photo URL">
-          <TextInput
-            value={c.photo_url || ""}
-            onChange={(v) => onUpdate({ photo_url: v })}
-            placeholder="https://..."
-          />
-        </Field>
+        <ImageUpload
+          value={c.photo_url || ""}
+          onChange={(v) => onUpdate({ photo_url: v })}
+          label="Photo"
+          folder="about"
+        />
         <Field label="Section title">
           <TextInput
             value={c.title || ""}

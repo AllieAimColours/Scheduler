@@ -2,6 +2,7 @@
 
 import type { LinkBlock } from "@/lib/page-builder/types";
 import { Field, TextInput } from "./field";
+import { ImageUpload } from "../image-upload";
 
 export function LinkEditor({
   block,
@@ -34,13 +35,12 @@ export function LinkEditor({
           placeholder="See my latest work and behind-the-scenes"
         />
       </Field>
-      <Field label="Thumbnail URL (optional)">
-        <TextInput
-          value={c.thumbnail_url || ""}
-          onChange={(v) => onUpdate({ thumbnail_url: v })}
-          placeholder="https://..."
-        />
-      </Field>
+      <ImageUpload
+        value={c.thumbnail_url || ""}
+        onChange={(v) => onUpdate({ thumbnail_url: v })}
+        label="Thumbnail (optional)"
+        folder="links"
+      />
     </div>
   );
 }

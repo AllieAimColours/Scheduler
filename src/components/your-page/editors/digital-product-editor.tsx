@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { DigitalProductBlock } from "@/lib/page-builder/types";
 import type { Provider, DigitalProduct } from "@/types/database";
 import { Field, TextInput, TextArea } from "./field";
+import { ImageUpload } from "../image-upload";
 import { Plus, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
@@ -135,13 +136,12 @@ export function DigitalProductEditor({ block, provider, onUpdate }: Props) {
             />
           </Field>
           <div className="grid sm:grid-cols-2 gap-3">
-            <Field label="Cover image URL">
-              <TextInput
-                value={draft.cover_image_url}
-                onChange={(v) => setDraft({ ...draft, cover_image_url: v })}
-                placeholder="https://..."
-              />
-            </Field>
+            <ImageUpload
+              value={draft.cover_image_url}
+              onChange={(v) => setDraft({ ...draft, cover_image_url: v })}
+              label="Cover image"
+              folder="products"
+            />
             <Field label="Price (USD)">
               <TextInput
                 type="number"

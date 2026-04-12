@@ -2,6 +2,7 @@
 
 import type { GalleryBlock, GalleryLayout } from "@/lib/page-builder/types";
 import { Field, TextInput } from "./field";
+import { ImageUpload } from "../image-upload";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -158,28 +159,25 @@ export function GalleryEditor({
           <p className="text-xs text-gray-400">No images yet. Add some to show off your work.</p>
         )}
         {images.map((img, i) => (
-          <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-white border border-gray-100">
-            {img.url && (
-              <img src={img.url} alt="" className="w-16 h-16 object-cover rounded-lg shrink-0" />
-            )}
-            <div className="flex-1 space-y-2">
-              <TextInput
+          <div key={i} className="p-3 rounded-xl bg-white border border-gray-100 space-y-2">
+            <div className="flex items-start justify-between">
+              <ImageUpload
                 value={img.url}
                 onChange={(v) => updateImage(i, { url: v })}
-                placeholder="Image URL"
+                folder="gallery"
               />
-              <TextInput
-                value={img.caption || ""}
-                onChange={(v) => updateImage(i, { caption: v })}
-                placeholder="Caption (optional)"
-              />
+              <button
+                onClick={() => removeImage(i)}
+                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0 ml-2"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={() => removeImage(i)}
-              className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <TextInput
+              value={img.caption || ""}
+              onChange={(v) => updateImage(i, { caption: v })}
+              placeholder="Caption (optional)"
+            />
           </div>
         ))}
       </div>

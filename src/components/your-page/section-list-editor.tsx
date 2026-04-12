@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ImageUpload } from "./image-upload";
 import {
   DndContext,
   closestCenter,
@@ -882,21 +883,19 @@ function SectionSettings({
 
         {section.background?.type === "image" && (
           <div className="mt-2 space-y-2">
-            <input
-              type="text"
+            <ImageUpload
               value={section.background.url}
-              onChange={(e) =>
+              onChange={(v) =>
                 onUpdateSection({
                   background: {
                     type: "image",
-                    url: e.target.value,
+                    url: v,
                     parallax: (section.background as { parallax?: boolean }).parallax,
                     overlay: (section.background as { overlay?: number }).overlay,
                   },
                 })
               }
-              placeholder="Image URL"
-              className="w-full px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg text-xs"
+              folder="sections"
             />
             <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
               <input
