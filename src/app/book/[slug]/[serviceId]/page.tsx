@@ -435,7 +435,7 @@ export default function BookServicePage() {
                         <span className="font-semibold">Total</span>
                         <span className="font-semibold">{formatPrice(totalCents)}</span>
                       </div>
-                      {hasDeposit && (
+                      {hasDeposit ? (
                         <>
                           <div className="flex justify-between text-xs pt-1">
                             <span className="opacity-70">Due now (deposit)</span>
@@ -446,7 +446,12 @@ export default function BookServicePage() {
                             <span className="font-medium">{formatPrice(remainderCents)}</span>
                           </div>
                         </>
-                      )}
+                      ) : totalCents > 0 ? (
+                        <div className="flex justify-between text-xs pt-1">
+                          <span className="opacity-70">Due at appointment</span>
+                          <span className="font-medium">{formatPrice(totalCents)}</span>
+                        </div>
+                      ) : null}
                     </>
                   );
                 })()}
@@ -511,34 +516,48 @@ export default function BookServicePage() {
               </div>
             )}
 
-            {service.price_cents > 0 && !paymentsEnabled ? (
-              <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-center space-y-1">
-                <p className="text-sm font-medium text-foreground">
-                  Online booking isn&apos;t available yet
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Contact the provider directly to book this service.
-                </p>
-              </div>
-            ) : (
-              <ThemedButton
-                type="submit"
-                className="w-full"
-                disabled={submitting}
-              >
-                {submitting
-                  ? "Processing..."
-                  : service.price_cents === 0
-                  ? "Confirm Booking"
-                  : `Book & Pay ${formatPrice(
-                      effectiveDeposit && effectiveDeposit.deposit_cents > 0
-                        ? effectiveDeposit.deposit_cents
-                        : service.deposit_cents > 0
-                        ? service.deposit_cents
-                        : service.price_cents
-                    )}`}
-              </ThemedButton>
-            )}
+            {(() => {
+              const depositCents =
+                effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                  ? effectiveDeposit.deposit_cents
+                  : service.deposit_cents > 0
+                  ? service.deposit_cents
+                  : 0;
+              const needsStripe = depositCents > 0;
+
+              // Only block booking if there's a deposit to collect and Stripe isn't set up
+              if (needsStripe && !paymentsEnabled) {
+                return (
+                  <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-center space-y-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Online booking isn&apos;t available yet
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Contact the provider directly to book this service.
+                    </p>
+                  </div>
+                );
+              }
+
+              let buttonLabel: string;
+              if (submitting) {
+                buttonLabel = "Processing...";
+              } else if (depositCents > 0) {
+                buttonLabel = `Book & Pay Deposit ${formatPrice(depositCents)}`;
+              } else {
+                buttonLabel = "Confirm Booking";
+              }
+
+              return (
+                <ThemedButton
+                  type="submit"
+                  className="w-full"
+                  disabled={submitting}
+                >
+                  {buttonLabel}
+                </ThemedButton>
+              );
+            })()}
           </form>
         </ThemedCard>
       )}

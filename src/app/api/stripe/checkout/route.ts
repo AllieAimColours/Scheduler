@@ -74,10 +74,13 @@ export async function POST(request: NextRequest) {
 
     const policy = parseCancellationPolicy(provider.cancellation_policy);
     const effectiveDepositCents = getEffectiveDeposit(service, policy);
-    const chargeAmount =
-      effectiveDepositCents > 0 ? effectiveDepositCents : service.price_cents;
 
-    // Free service: create booking directly + send confirmation
+    // Only charge the deposit. If there's no deposit, skip Stripe entirely
+    // and create the booking directly — the full amount is due at the
+    // appointment (cash, tap, Square, whatever the provider uses in person).
+    const chargeAmount = effectiveDepositCents;
+
+    // No deposit (including free services): create booking directly
     if (chargeAmount === 0) {
       const cancellationToken = generateCancellationToken();
 
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
           ends_at: data.slotEnd,
           status: "confirmed",
           client_notes: data.clientNotes,
-          payment_status: "paid",
+          payment_status: service.price_cents === 0 ? "paid" : "unpaid",
           payment_amount_cents: 0,
           timezone: data.timezone,
           cancellation_token: cancellationToken,
