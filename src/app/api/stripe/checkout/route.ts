@@ -132,6 +132,9 @@ export async function POST(request: NextRequest) {
         ? `${appUrl}/cancel/${cancellationToken}`
         : undefined;
       const providerBranding = (provider.branding as Record<string, unknown>) || {};
+      const customHeading = typeof providerBranding.confirmation_heading === "string" && providerBranding.confirmation_heading.trim()
+        ? providerBranding.confirmation_heading.trim()
+        : undefined;
       const customMessage = typeof providerBranding.confirmation_message === "string" && providerBranding.confirmation_message.trim()
         ? providerBranding.confirmation_message.trim()
         : undefined;
@@ -146,6 +149,7 @@ export async function POST(request: NextRequest) {
         duration: service.duration_minutes,
         priceCents: 0,
         servicePriceCents: service.price_cents,
+        customHeading,
         customMessage,
         currency: provider.currency || "USD",
         cancellationUrl,

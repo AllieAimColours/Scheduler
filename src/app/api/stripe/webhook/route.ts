@@ -121,6 +121,9 @@ export async function POST(request: NextRequest) {
     const service = serviceRes.data as unknown as Pick<Service, "name" | "emoji" | "duration_minutes" | "price_cents"> | null;
     const provider = providerRes.data as unknown as Pick<Provider, "business_name" | "currency" | "slug" | "branding"> | null;
     const providerBranding = (provider?.branding as Record<string, unknown>) || {};
+    const customHeading = typeof providerBranding.confirmation_heading === "string" && providerBranding.confirmation_heading.trim()
+      ? providerBranding.confirmation_heading.trim()
+      : undefined;
     const customMessage = typeof providerBranding.confirmation_message === "string" && providerBranding.confirmation_message.trim()
       ? providerBranding.confirmation_message.trim()
       : undefined;
@@ -141,6 +144,7 @@ export async function POST(request: NextRequest) {
       servicePriceCents: service?.price_cents || 0,
       currency: provider?.currency || "USD",
       cancellationUrl,
+      customHeading,
       customMessage,
     });
 

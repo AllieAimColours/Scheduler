@@ -28,6 +28,7 @@ export default function YourPageBuilder() {
   const [template, setTemplate] = useState<TemplateId>("studio");
   const [sections, setSections] = useState<PageSection[]>([]);
   const [overrides, setOverrides] = useState<PageOverrides>({});
+  const [confirmationHeading, setConfirmationHeading] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -61,6 +62,7 @@ export default function YourPageBuilder() {
         }
         setSections(existingSections);
         setOverrides(parseOverrides(branding.overrides));
+        setConfirmationHeading(typeof branding.confirmation_heading === "string" ? branding.confirmation_heading : "");
         setConfirmationMessage(typeof branding.confirmation_message === "string" ? branding.confirmation_message : "");
       }
     }
@@ -108,6 +110,7 @@ export default function YourPageBuilder() {
       template,
       page_sections: JSON.parse(JSON.stringify(sections)),
       overrides: JSON.parse(JSON.stringify(overrides)),
+      confirmation_heading: confirmationHeading.trim() || undefined,
       confirmation_message: confirmationMessage.trim() || undefined,
     };
     const { error } = await supabase
@@ -138,6 +141,11 @@ export default function YourPageBuilder() {
 
   function handleOverridesChange(next: PageOverrides) {
     setOverrides(next);
+    setDirty(true);
+  }
+
+  function handleConfirmationHeadingChange(next: string) {
+    setConfirmationHeading(next);
     setDirty(true);
   }
 
@@ -247,8 +255,10 @@ export default function YourPageBuilder() {
           )}
           {tab === "confirmation" && (
             <ConfirmationEditor
-              value={confirmationMessage}
-              onChange={handleConfirmationMessageChange}
+              heading={confirmationHeading}
+              message={confirmationMessage}
+              onHeadingChange={handleConfirmationHeadingChange}
+              onMessageChange={handleConfirmationMessageChange}
               template={template}
             />
           )}

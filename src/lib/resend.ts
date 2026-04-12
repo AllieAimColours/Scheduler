@@ -24,6 +24,7 @@ export async function sendBookingConfirmation({
   servicePriceCents,
   currency = "USD",
   cancellationUrl,
+  customHeading,
   customMessage,
 }: {
   to: string;
@@ -37,6 +38,7 @@ export async function sendBookingConfirmation({
   servicePriceCents?: number;
   currency?: string;
   cancellationUrl?: string;
+  customHeading?: string;
   customMessage?: string;
 }): Promise<SendResult> {
   if (!process.env.RESEND_API_KEY) {
@@ -130,7 +132,7 @@ export async function sendBookingConfirmation({
 
           <div style="text-align: center; margin-bottom: 32px;">
             <div style="font-size: 56px; line-height: 1; margin-bottom: 12px;">${emoji}</div>
-            <h1 style="font-size: 28px; color: #1a1a1a; margin: 0 0 8px; font-weight: 700;">You're booked!</h1>
+            <h1 style="font-size: 28px; color: #1a1a1a; margin: 0 0 8px; font-weight: 700;">${customHeading || "You're booked!"}</h1>
             <p style="color: #888; font-size: 15px; margin: 0;">${
               customMessage
                 ? customMessage.replace(/\{name\}/gi, clientName)

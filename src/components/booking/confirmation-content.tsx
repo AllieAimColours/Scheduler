@@ -36,8 +36,11 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
   const [showCalendarMenu, setShowCalendarMenu] = useState(false);
   const [confettiVisible, setConfettiVisible] = useState(true);
 
-  // Provider-customizable confirmation message
+  // Provider-customizable confirmation heading + message
   const providerBranding = (provider?.branding as Record<string, unknown>) || {};
+  const customHeading = typeof providerBranding.confirmation_heading === "string" && providerBranding.confirmation_heading.trim()
+    ? providerBranding.confirmation_heading.trim()
+    : null;
   const customMessage = typeof providerBranding.confirmation_message === "string" && providerBranding.confirmation_message.trim()
     ? providerBranding.confirmation_message.trim()
     : null;
@@ -62,10 +65,12 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
             <Sparkles className="h-10 w-10" style={{ color: "var(--template-accent)" }} />
           </div>
           <h1 className={cn(template.classes.heading, "text-3xl mb-3")}>
-            Booking confirmed!
+            {customHeading || "Booking confirmed!"}
           </h1>
           <p className={cn(template.classes.body, "text-base")}>
-            {customMessage || "Check your email for the details. We'll see you soon."}
+            {customMessage
+              ? customMessage.replace(/\{name\}/gi, "")
+              : "Check your email for the details. We'll see you soon."}
           </p>
         </ThemedCard>
       </div>
@@ -196,7 +201,7 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
           </div>
 
           <h1 className={cn(template.classes.heading, "text-4xl md:text-5xl mb-3")}>
-            You&apos;re booked!
+            {customHeading || "You're booked!"}
           </h1>
           <p className={cn(template.classes.body, "text-base md:text-lg mb-8")}>
             {customMessage
