@@ -84,18 +84,15 @@ function ServiceForm({
     if (!overrideMaxPerDay) {
       formData.set("max_per_day", "");
     }
-    try {
-      if (service) {
-        await updateService(service.id, formData);
-        toast.success("Service updated!");
-      } else {
-        await createService(formData);
-        toast.success("Service added!");
-      }
+    const result = service
+      ? await updateService(service.id, formData)
+      : await createService(formData);
+
+    if (result.ok) {
+      toast.success(service ? "Service updated!" : "Service added!");
       onClose();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong";
-      toast.error(`Failed to save: ${msg}`);
+    } else {
+      toast.error(`Failed to save: ${result.error}`);
       setPending(false);
     }
   }

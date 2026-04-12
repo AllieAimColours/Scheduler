@@ -53,60 +53,75 @@ async function getProviderId() {
   return provider.id;
 }
 
-export async function createService(formData: FormData) {
-  const supabase = await createClient();
-  const providerId = await getProviderId();
+export async function createService(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const supabase = await createClient();
+    const providerId = await getProviderId();
 
-  const parsed = serviceSchema.parse({
-    name: formData.get("name"),
-    description: formData.get("description"),
-    duration_minutes: formData.get("duration_minutes"),
-    price_cents: Math.round(Number(formData.get("price")) * 100),
-    deposit_cents: Math.round(Number(formData.get("deposit") || 0) * 100),
-    category: formData.get("category"),
-    color: formData.get("color"),
-    emoji: formData.get("emoji"),
-    buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
-    buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
-    min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
-    max_per_day: parseOptionalNumber(formData.get("max_per_day")),
-  });
+    const parsed = serviceSchema.parse({
+      name: formData.get("name"),
+      description: formData.get("description"),
+      duration_minutes: formData.get("duration_minutes"),
+      price_cents: Math.round(Number(formData.get("price")) * 100),
+      deposit_cents: Math.round(Number(formData.get("deposit") || 0) * 100),
+      category: formData.get("category"),
+      color: formData.get("color"),
+      emoji: formData.get("emoji"),
+      buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
+      buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
+      min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
+      max_per_day: parseOptionalNumber(formData.get("max_per_day")),
+    });
 
-  const { error } = await supabase.from("services").insert({
-    provider_id: providerId,
-    ...parsed,
-  });
+    const { error } = await supabase.from("services").insert({
+      provider_id: providerId,
+      ...parsed,
+    });
 
-  if (error) throw new Error(error.message);
-  revalidatePath("/services");
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/services");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
 }
 
-export async function updateService(id: string, formData: FormData) {
-  const supabase = await createClient();
-  await getProviderId();
+export async function updateService(
+  id: string,
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const supabase = await createClient();
+    await getProviderId();
 
-  const parsed = serviceSchema.parse({
-    name: formData.get("name"),
-    description: formData.get("description"),
-    duration_minutes: formData.get("duration_minutes"),
-    price_cents: Math.round(Number(formData.get("price")) * 100),
-    deposit_cents: Math.round(Number(formData.get("deposit") || 0) * 100),
-    category: formData.get("category"),
-    color: formData.get("color"),
-    emoji: formData.get("emoji"),
-    buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
-    buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
-    min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
-    max_per_day: parseOptionalNumber(formData.get("max_per_day")),
-  });
+    const parsed = serviceSchema.parse({
+      name: formData.get("name"),
+      description: formData.get("description"),
+      duration_minutes: formData.get("duration_minutes"),
+      price_cents: Math.round(Number(formData.get("price")) * 100),
+      deposit_cents: Math.round(Number(formData.get("deposit") || 0) * 100),
+      category: formData.get("category"),
+      color: formData.get("color"),
+      emoji: formData.get("emoji"),
+      buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
+      buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
+      min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
+      max_per_day: parseOptionalNumber(formData.get("max_per_day")),
+    });
 
-  const { error } = await supabase
-    .from("services")
-    .update(parsed)
-    .eq("id", id);
+    const { error } = await supabase
+      .from("services")
+      .update(parsed)
+      .eq("id", id);
 
-  if (error) throw new Error(error.message);
-  revalidatePath("/services");
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/services");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
 }
 
 export async function deleteService(id: string) {
