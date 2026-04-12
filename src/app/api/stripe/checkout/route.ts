@@ -74,11 +74,25 @@ export async function POST(request: NextRequest) {
 
     const policy = parseCancellationPolicy(provider.cancellation_policy);
     const effectiveDepositCents = getEffectiveDeposit(service, policy);
+    const branding = (provider.branding as Record<string, unknown>) || {};
+    const paymentMode = branding.payment_mode === "full_upfront"
+      ? "full_upfront"
+      : branding.payment_mode === "at_appointment"
+      ? "at_appointment"
+      : "deposit_only";
 
-    // Only charge the deposit. If there's no deposit, skip Stripe entirely
-    // and create the booking directly — the full amount is due at the
-    // appointment (cash, tap, Square, whatever the provider uses in person).
-    const chargeAmount = effectiveDepositCents;
+    // Determine what to charge based on the provider's payment mode:
+    // - deposit_only: charge the deposit, rest at appointment (default)
+    // - full_upfront: charge the full service price online
+    // - at_appointment: never charge online, always pay in person
+    let chargeAmount: number;
+    if (paymentMode === "full_upfront") {
+      chargeAmount = effectiveDepositCents > 0 ? effectiveDepositCents : service.price_cents;
+    } else if (paymentMode === "at_appointment") {
+      chargeAmount = 0;
+    } else {
+      chargeAmount = effectiveDepositCents;
+    }
 
     // No deposit (including free services): create booking directly
     if (chargeAmount === 0) {

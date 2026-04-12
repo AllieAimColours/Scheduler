@@ -188,16 +188,19 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-gray-700 leading-relaxed space-y-1">
                   <p>
-                    <span className="font-semibold">Refunds can only be processed on money collected at checkout.</span> Bloom never holds money it didn&apos;t collect.
+                    <span className="font-semibold">Refunds apply only to what was collected online.</span> Bloom never holds money it didn&apos;t collect.
                   </p>
                   <p className="text-gray-600">
-                    <strong>Services with a deposit:</strong> Only the deposit is charged at checkout. A 100% refund rule returns the deposit — not the full service price. Example: $150 service, $20 deposit, 100% refund = client gets back $20.
+                    <strong>Deposits only:</strong> Only the deposit is charged online. A 100% refund returns the deposit, not the full price. Example: $150 service, $20 deposit = $20 back.
                   </p>
                   <p className="text-gray-600">
-                    <strong>Services with no deposit:</strong> The full price is charged at checkout, so refund percentages apply to the full price.
+                    <strong>Full payment upfront:</strong> The full price is charged at checkout, so refund percentages apply to the full amount.
                   </p>
                   <p className="text-gray-600">
-                    <strong>Free services ($0):</strong> Cancellation policy is not shown to clients — there&apos;s nothing to refund. Clients can still cancel, but no money changes hands.
+                    <strong>Pay at appointment:</strong> No money is collected online — cancellation policy won&apos;t show to clients since there&apos;s nothing to refund.
+                  </p>
+                  <p className="text-gray-600">
+                    Change payment mode in Settings → Payment Mode.
                   </p>
                 </div>
               </div>

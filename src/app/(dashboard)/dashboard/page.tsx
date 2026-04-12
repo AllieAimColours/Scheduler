@@ -234,6 +234,12 @@ export default function DashboardPage() {
             month: "long",
             day: "numeric",
           })}
+          {period !== "today" && (
+            <span className="ml-2 text-gray-300">·</span>
+          )}
+          {period !== "today" && (
+            <span className="ml-2 font-medium text-purple-500">{range.label}</span>
+          )}
         </p>
       </div>
 

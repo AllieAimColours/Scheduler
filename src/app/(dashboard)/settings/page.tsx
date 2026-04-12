@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -34,6 +34,7 @@ export default function SettingsPage() {
     default_buffer_after_minutes: 0,
     min_booking_notice_hours: 0,
     currency: "USD",
+    payment_mode: "deposit_only" as "deposit_only" | "full_upfront" | "at_appointment",
   });
 
   useEffect(() => {
@@ -84,8 +85,10 @@ export default function SettingsPage() {
           default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
           min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
           currency: data.currency || "USD",
+          payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
+            ? branding.payment_mode as "full_upfront" | "at_appointment"
+            : "deposit_only",
         });
-        // Snapshot so autosave can compare against last saved values
         lastSaved.current = JSON.stringify({
           business_name: data.business_name,
           description: data.description,
@@ -98,6 +101,9 @@ export default function SettingsPage() {
           default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
           min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
           currency: data.currency || "USD",
+          payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
+            ? branding.payment_mode as "full_upfront" | "at_appointment"
+            : "deposit_only",
         });
         setTimeout(() => { loaded.current = true; }, 0);
       }
@@ -115,6 +121,7 @@ export default function SettingsPage() {
       default_buffer_before_minutes: currentForm.default_buffer_before_minutes,
       default_buffer_after_minutes: currentForm.default_buffer_after_minutes,
       min_booking_notice_hours: currentForm.min_booking_notice_hours,
+      payment_mode: currentForm.payment_mode,
     };
     const { error } = await supabase
       .from("providers")
@@ -295,6 +302,63 @@ export default function SettingsPage() {
             <span className="text-orange-600 font-medium"> orange</span> filling up,
             <span className="text-red-600 font-medium"> red</span> last slots.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Payment Mode */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
+              <DollarSign className="h-4 w-4 text-white" />
+            </div>
+            Payment Mode
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Choose how clients pay for your services
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3">
+            {([
+              {
+                id: "deposit_only" as const,
+                label: "Deposits only",
+                description: "Charge the deposit online, client pays the rest at the appointment. No deposit = no online payment.",
+              },
+              {
+                id: "full_upfront" as const,
+                label: "Full payment upfront",
+                description: "Charge the full service price at checkout. If a deposit is set, charge just the deposit instead.",
+              },
+              {
+                id: "at_appointment" as const,
+                label: "Always pay at appointment",
+                description: "Never charge online. Clients book freely, pay in person with cash, tap, or card.",
+              },
+            ]).map((opt) => {
+              const active = form.payment_mode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, payment_mode: opt.id })}
+                  className={
+                    active
+                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
+                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
+                  }
+                >
+                  <div className={active ? "font-display font-bold text-purple-700" : "font-display font-bold text-gray-700"}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                    {opt.description}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 

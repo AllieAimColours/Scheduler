@@ -84,6 +84,7 @@ export default function BookServicePage() {
   const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicyInfo | null>(null);
   const [effectiveDeposit, setEffectiveDeposit] = useState<DepositInfo | null>(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState(true);
+  const [paymentMode, setPaymentMode] = useState<"deposit_only" | "full_upfront" | "at_appointment">("deposit_only");
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -109,6 +110,9 @@ export default function BookServicePage() {
           }
           if (data.paymentsEnabled !== undefined) {
             setPaymentsEnabled(data.paymentsEnabled);
+          }
+          if (data.paymentMode) {
+            setPaymentMode(data.paymentMode);
           }
         } else {
           const errorData = await res.json().catch(() => ({}));
@@ -416,9 +420,6 @@ export default function BookServicePage() {
                   <span className="font-medium">{service.name}</span>
                 </div>
                 {(() => {
-                  // Resolve what the client actually owes now vs at the appointment.
-                  // effectiveDeposit (from the policy) wins over the service's own
-                  // deposit_cents. If neither is set, there's no deposit.
                   const depositCents =
                     effectiveDeposit && effectiveDeposit.deposit_cents > 0
                       ? effectiveDeposit.deposit_cents
@@ -435,7 +436,12 @@ export default function BookServicePage() {
                         <span className="font-semibold">Total</span>
                         <span className="font-semibold">{formatPrice(totalCents)}</span>
                       </div>
-                      {hasDeposit ? (
+                      {paymentMode === "full_upfront" && !hasDeposit && totalCents > 0 ? (
+                        <div className="flex justify-between text-xs pt-1">
+                          <span className="opacity-70">Charged now</span>
+                          <span className="font-medium">{formatPrice(totalCents)}</span>
+                        </div>
+                      ) : hasDeposit ? (
                         <>
                           <div className="flex justify-between text-xs pt-1">
                             <span className="opacity-70">Due now (deposit)</span>
@@ -523,9 +529,13 @@ export default function BookServicePage() {
                   : service.deposit_cents > 0
                   ? service.deposit_cents
                   : 0;
-              const needsStripe = depositCents > 0;
 
-              // Only block booking if there's a deposit to collect and Stripe isn't set up
+              // Determine if Stripe is needed for this booking
+              const needsStripe =
+                paymentMode === "full_upfront"
+                  ? service.price_cents > 0
+                  : depositCents > 0;
+
               if (needsStripe && !paymentsEnabled) {
                 return (
                   <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-center space-y-1">
@@ -542,6 +552,8 @@ export default function BookServicePage() {
               let buttonLabel: string;
               if (submitting) {
                 buttonLabel = "Processing...";
+              } else if (paymentMode === "full_upfront" && service.price_cents > 0 && !depositCents) {
+                buttonLabel = `Book & Pay ${formatPrice(service.price_cents)}`;
               } else if (depositCents > 0) {
                 buttonLabel = `Book & Pay Deposit ${formatPrice(depositCents)}`;
               } else {

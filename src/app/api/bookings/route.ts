@@ -53,10 +53,17 @@ export async function GET(request: NextRequest) {
     const policy = parseCancellationPolicy(provider.cancellation_policy);
     const depositCents = getEffectiveDeposit(service, policy);
 
+    const rawPaymentMode = branding.payment_mode;
+    const paymentMode =
+      rawPaymentMode === "full_upfront" || rawPaymentMode === "at_appointment"
+        ? rawPaymentMode
+        : "deposit_only";
+
     return NextResponse.json({
       service,
       providerId: provider.id,
       calendarRange,
+      paymentMode,
       paymentsEnabled: !!(provider.stripe_account_id && provider.stripe_onboarding_complete),
       cancellationPolicy: policy.enabled
         ? { enabled: true, rules: policy.rules, policy_text: policy.policy_text }
