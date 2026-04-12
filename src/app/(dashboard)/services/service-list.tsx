@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, Clock, DollarSign, Ban } from "lucide-react";
 import { PeonyMark } from "@/components/peony-mark";
+import { toast } from "sonner";
 import { createService, updateService, deleteService, toggleService } from "./actions";
 
 const PRESET_COLORS = [
@@ -86,11 +87,15 @@ function ServiceForm({
     try {
       if (service) {
         await updateService(service.id, formData);
+        toast.success("Service updated!");
       } else {
         await createService(formData);
+        toast.success("Service added!");
       }
       onClose();
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(`Failed to save: ${msg}`);
       setPending(false);
     }
   }
@@ -245,7 +250,7 @@ function ServiceForm({
 
       <div className="space-y-2">
         <Label className="text-gray-800 font-medium">Color</Label>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-2.5 items-center">
           {PRESET_COLORS.map((c) => (
             <button
               key={c}
@@ -257,7 +262,30 @@ function ServiceForm({
               style={{ backgroundColor: c }}
             />
           ))}
+          {/* Custom hex */}
+          <div className="relative">
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="absolute inset-0 w-9 h-9 opacity-0 cursor-pointer"
+            />
+            <div
+              className={`w-9 h-9 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs transition-all hover:border-purple-400 hover:text-purple-500 ${
+                !PRESET_COLORS.includes(color) ? "ring-2 ring-offset-2 ring-purple-400" : ""
+              }`}
+              style={!PRESET_COLORS.includes(color) ? { backgroundColor: color, borderStyle: "solid", borderColor: color } : undefined}
+            >
+              {PRESET_COLORS.includes(color) && "#"}
+            </div>
+          </div>
         </div>
+        {!PRESET_COLORS.includes(color) && (
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full" style={{ backgroundColor: color }} />
+            <span className="text-xs text-gray-500 font-mono">{color}</span>
+          </div>
+        )}
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />

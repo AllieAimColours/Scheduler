@@ -165,7 +165,7 @@ function PlanCard({ plan }: { plan: Plan }) {
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
-          ✨ Most popular
+          ✨ Recommended
         </div>
       )}
 

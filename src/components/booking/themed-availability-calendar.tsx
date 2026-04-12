@@ -294,7 +294,11 @@ export function ThemedAvailabilityCalendar({
             <div className="text-[10px] opacity-50 mt-1">Loading…</div>
           )}
           {error && (
-            <div className="text-[10px] text-red-500 mt-1">{error}</div>
+            <div className="text-[10px] text-red-500 mt-1">
+              {error.includes("Service not found")
+                ? "This service is unavailable right now"
+                : error}
+            </div>
           )}
         </div>
         <button
