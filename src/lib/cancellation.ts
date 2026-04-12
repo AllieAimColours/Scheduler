@@ -7,6 +7,7 @@ export interface CancellationRule {
 
 export interface CancellationPolicy {
   enabled: boolean;
+  allow_online_cancellation: boolean;
   rules: CancellationRule[];
   policy_text: string;
   require_deposit_above_cents: number;
@@ -15,6 +16,7 @@ export interface CancellationPolicy {
 
 export const DEFAULT_POLICY: CancellationPolicy = {
   enabled: false,
+  allow_online_cancellation: true,
   rules: [
     { hours_before: 48, refund_percent: 100 },
     { hours_before: 24, refund_percent: 50 },
@@ -33,6 +35,7 @@ export function parseCancellationPolicy(raw: unknown): CancellationPolicy {
   const obj = raw as Record<string, unknown>;
   return {
     enabled: Boolean(obj.enabled),
+    allow_online_cancellation: obj.allow_online_cancellation !== false,
     rules: Array.isArray(obj.rules) ? obj.rules : [...DEFAULT_POLICY.rules],
     policy_text: typeof obj.policy_text === "string" ? obj.policy_text : "",
     require_deposit_above_cents:

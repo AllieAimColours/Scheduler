@@ -19,9 +19,9 @@ import { CancellationPolicyEditor } from "./cancellation-policy-editor";
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState<Provider | null>(null);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const loaded = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSaved = useRef<string>("");
   const [form, setForm] = useState({
     business_name: "",
     description: "",
@@ -85,8 +85,20 @@ export default function SettingsPage() {
           min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
           currency: data.currency || "USD",
         });
-        // Mark as loaded AFTER state is set, via a microtask, so the
-        // autosave effect doesn't fire for the initial hydration.
+        // Snapshot so autosave can compare against last saved values
+        lastSaved.current = JSON.stringify({
+          business_name: data.business_name,
+          description: data.description,
+          phone: data.phone || "",
+          website: data.website || "",
+          address: typeof branding.address === "string" ? branding.address : "",
+          booking_calendar_range: calendarRange,
+          default_slot_minutes: slotInterval,
+          default_buffer_before_minutes: clampBuffer(branding.default_buffer_before_minutes),
+          default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
+          min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
+          currency: data.currency || "USD",
+        });
         setTimeout(() => { loaded.current = true; }, 0);
       }
     }
@@ -94,8 +106,6 @@ export default function SettingsPage() {
   }, []);
 
   const doSave = useCallback(async (currentForm: typeof form, currentProvider: Provider) => {
-    setSaveStatus("saving");
-
     const supabase = createClient();
     const newBranding = {
       ...((currentProvider.branding as Record<string, unknown>) || {}),
@@ -120,10 +130,10 @@ export default function SettingsPage() {
 
     if (error) {
       console.error("Settings save error:", error);
-      setSaveStatus("error");
       toast.error(`Failed to save: ${error.message}`);
     } else {
-      setSaveStatus("saved");
+      lastSaved.current = JSON.stringify(currentForm);
+      toast.success("Settings saved");
       setProvider({
         ...currentProvider,
         business_name: currentForm.business_name,
@@ -136,10 +146,11 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Autosave: debounce 1.5s after any form change
+  // Autosave: debounce 1.5s, but ONLY when form values actually changed
   useEffect(() => {
     if (!loaded.current || !provider) return;
-    setSaveStatus("idle");
+    const currentSnapshot = JSON.stringify(form);
+    if (currentSnapshot === lastSaved.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       doSave(form, provider);
@@ -160,39 +171,17 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-            Settings
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Your business info and policies. Looking for templates and the page builder?{" "}
-            <a href="/your-page" className="text-purple-600 font-medium hover:underline inline-flex items-center gap-1">
-              <Wand2 className="h-3.5 w-3.5" />
-              Open Your Page
-            </a>
-          </p>
-        </div>
-        <div className="text-xs text-gray-400 pt-2 flex items-center gap-1.5 shrink-0">
-          {saveStatus === "saving" && (
-            <>
-              <div className="h-3 w-3 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
-              Saving…
-            </>
-          )}
-          {saveStatus === "saved" && (
-            <>
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Saved
-            </>
-          )}
-          {saveStatus === "error" && (
-            <>
-              <div className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-              Save failed
-            </>
-          )}
-        </div>
+      <div>
+        <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+          Settings
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Your business info and policies. Looking for templates and the page builder?{" "}
+          <a href="/your-page" className="text-purple-600 font-medium hover:underline inline-flex items-center gap-1">
+            <Wand2 className="h-3.5 w-3.5" />
+            Open Your Page
+          </a>
+        </p>
       </div>
 
       {/* Cancellation Policy */}

@@ -30,6 +30,7 @@ interface Props {
 export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
   const policy = parseCancellationPolicy(provider.cancellation_policy);
   const [enabled, setEnabled] = useState(policy.enabled);
+  const [allowOnlineCancellation, setAllowOnlineCancellation] = useState(policy.allow_online_cancellation);
   const [rules, setRules] = useState<CancellationRule[]>(policy.rules);
   const [policyText, setPolicyText] = useState(policy.policy_text);
   const [depositThreshold, setDepositThreshold] = useState(
@@ -73,6 +74,7 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
 
     const newPolicy: CancellationPolicy = {
       enabled,
+      allow_online_cancellation: allowOnlineCancellation,
       rules: rules.sort((a, b) => b.hours_before - a.hours_before),
       policy_text: policyText,
       require_deposit_above_cents: Math.round(depositThreshold * 100),
@@ -142,6 +144,35 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
 
         {enabled && (
           <>
+            {/* Allow online cancellation toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-800">
+                  Allow online cancellation
+                </p>
+                <p className="text-sm text-gray-400">
+                  {allowOnlineCancellation
+                    ? "Clients can cancel via the link in their confirmation email"
+                    : "Clients must contact you directly to cancel — no self-service cancel link"}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={allowOnlineCancellation}
+                onClick={() => setAllowOnlineCancellation(!allowOnlineCancellation)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  allowOnlineCancellation ? "bg-purple-500" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    allowOnlineCancellation ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* Refund tiers */}
             <div className="space-y-3">
               <Label className="text-gray-800 font-medium flex items-center gap-2">

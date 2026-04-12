@@ -114,7 +114,9 @@ export async function POST(request: NextRequest) {
 
       const booking = bookingData as unknown as Booking;
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-      const cancellationUrl = appUrl ? `${appUrl}/cancel/${cancellationToken}` : undefined;
+      const cancellationUrl = policy.allow_online_cancellation && appUrl
+        ? `${appUrl}/cancel/${cancellationToken}`
+        : undefined;
 
       const result = await sendBookingConfirmation({
         to: booking.client_email,
