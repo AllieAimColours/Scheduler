@@ -86,6 +86,8 @@ export interface Database {
           emoji: string;
           is_active: boolean;
           sort_order: number;
+          buffer_before_minutes: number | null;
+          buffer_after_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -102,6 +104,8 @@ export interface Database {
           emoji?: string;
           is_active?: boolean;
           sort_order?: number;
+          buffer_before_minutes?: number | null;
+          buffer_after_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -118,6 +122,8 @@ export interface Database {
           emoji?: string;
           is_active?: boolean;
           sort_order?: number;
+          buffer_before_minutes?: number | null;
+          buffer_after_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };

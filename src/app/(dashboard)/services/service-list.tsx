@@ -55,11 +55,21 @@ function ServiceForm({
   const [color, setColor] = useState(service?.color || "#6366f1");
   const [emoji, setEmoji] = useState(service?.emoji || "");
   const [pending, setPending] = useState(false);
+  const [overrideBuffers, setOverrideBuffers] = useState(
+    service?.buffer_before_minutes !== null && service?.buffer_before_minutes !== undefined
+      || service?.buffer_after_minutes !== null && service?.buffer_after_minutes !== undefined
+  );
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
     formData.set("color", color);
     formData.set("emoji", emoji);
+    // If buffers are set to "use default", clear the inputs so the server
+    // stores NULL and inherits the provider-wide default.
+    if (!overrideBuffers) {
+      formData.set("buffer_before_minutes", "");
+      formData.set("buffer_after_minutes", "");
+    }
     try {
       if (service) {
         await updateService(service.id, formData);
@@ -193,6 +203,64 @@ function ServiceForm({
             />
           ))}
         </div>
+      </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-gray-800 font-medium">Buffer time</Label>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Extra minutes reserved around this service. Defaults come from Settings.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOverrideBuffers(!overrideBuffers)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+              overrideBuffers
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {overrideBuffers ? "Using override" : "Using default"}
+          </button>
+        </div>
+        {overrideBuffers && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="buffer_before_minutes" className="text-gray-800 font-medium text-sm">
+                Before (min)
+              </Label>
+              <Input
+                id="buffer_before_minutes"
+                name="buffer_before_minutes"
+                type="number"
+                min={0}
+                max={120}
+                step={5}
+                defaultValue={service?.buffer_before_minutes ?? 0}
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buffer_after_minutes" className="text-gray-800 font-medium text-sm">
+                After (min)
+              </Label>
+              <Input
+                id="buffer_after_minutes"
+                name="buffer_after_minutes"
+                type="number"
+                min={0}
+                max={120}
+                step={5}
+                defaultValue={service?.buffer_after_minutes ?? 0}
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />

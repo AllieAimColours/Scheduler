@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -28,6 +28,9 @@ export default function SettingsPage() {
     website: "",
     address: "",
     booking_calendar_range: "month" as "week" | "2weeks" | "month" | "3months",
+    default_slot_minutes: 15 as 15 | 30 | 60,
+    default_buffer_before_minutes: 0,
+    default_buffer_after_minutes: 0,
   });
 
   useEffect(() => {
@@ -55,6 +58,13 @@ export default function SettingsPage() {
           rawRange === "3months"
             ? rawRange
             : "month";
+        const rawSlot = branding.default_slot_minutes;
+        const slotInterval: 15 | 30 | 60 =
+          rawSlot === 15 || rawSlot === 30 || rawSlot === 60 ? rawSlot : 15;
+        const clampBuffer = (v: unknown): number => {
+          if (typeof v !== "number" || !Number.isFinite(v)) return 0;
+          return Math.max(0, Math.min(120, Math.round(v)));
+        };
         setForm({
           business_name: data.business_name,
           description: data.description,
@@ -62,6 +72,9 @@ export default function SettingsPage() {
           website: data.website || "",
           address: typeof branding.address === "string" ? branding.address : "",
           booking_calendar_range: calendarRange,
+          default_slot_minutes: slotInterval,
+          default_buffer_before_minutes: clampBuffer(branding.default_buffer_before_minutes),
+          default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
         });
       }
     }
@@ -77,6 +90,9 @@ export default function SettingsPage() {
       ...((provider.branding as Record<string, unknown>) || {}),
       address: form.address || undefined,
       booking_calendar_range: form.booking_calendar_range,
+      default_slot_minutes: form.default_slot_minutes,
+      default_buffer_before_minutes: form.default_buffer_before_minutes,
+      default_buffer_after_minutes: form.default_buffer_after_minutes,
     };
     const { error } = await supabase
       .from("providers")
@@ -221,6 +237,114 @@ export default function SettingsPage() {
             <span className="text-orange-600 font-medium"> orange</span> filling up,
             <span className="text-red-600 font-medium"> red</span> last slots.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Booking Defaults — slot interval + buffer times */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
+              <Timer className="h-4 w-4 text-white" />
+            </div>
+            Booking Defaults
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Control how often slots appear and how much breathing room between appointments. Individual services can override buffers.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label className="text-gray-800 font-medium">Slot interval</Label>
+            <div className="grid grid-cols-3 gap-3">
+              {([15, 30, 60] as const).map((n) => {
+                const active = form.default_slot_minutes === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setForm({ ...form, default_slot_minutes: n })}
+                    className={
+                      active
+                        ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
+                        : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
+                    }
+                  >
+                    <div className={active ? "font-display text-lg font-bold text-purple-700" : "font-display text-lg font-bold text-gray-700"}>
+                      {n === 60 ? "1 hour" : `${n} min`}
+                    </div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 leading-tight">
+                      {n === 15 && "Tight scheduling"}
+                      {n === 30 && "Most common"}
+                      {n === 60 && "Therapy / consults"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-400">
+              Clients only see bookable start times on this interval.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="buffer_before" className="text-gray-800 font-medium">Default buffer before (min)</Label>
+              <Input
+                id="buffer_before"
+                type="number"
+                min={0}
+                max={120}
+                step={5}
+                value={form.default_buffer_before_minutes}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    default_buffer_before_minutes: Math.max(
+                      0,
+                      Math.min(120, Number(e.target.value) || 0)
+                    ),
+                  })
+                }
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+              <p className="text-[11px] text-gray-400">
+                Prep time reserved before every appointment.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buffer_after" className="text-gray-800 font-medium">Default buffer after (min)</Label>
+              <Input
+                id="buffer_after"
+                type="number"
+                min={0}
+                max={120}
+                step={5}
+                value={form.default_buffer_after_minutes}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    default_buffer_after_minutes: Math.max(
+                      0,
+                      Math.min(120, Number(e.target.value) || 0)
+                    ),
+                  })
+                }
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+              <p className="text-[11px] text-gray-400">
+                Cleanup / turnover time after every appointment.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-xl p-4 border border-amber-100/60">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              <span className="font-medium text-gray-800">Tip:</span> buffers here apply to <em>every</em> service.
+              Need a hair color to have a 30-minute buffer after while a blowout only needs 5?
+              Open that service from the Services page and set a per-service override.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

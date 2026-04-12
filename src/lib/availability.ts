@@ -94,16 +94,56 @@ function mergeWindows(windows: MinuteWindow[]): MinuteWindow[] {
 // Main algorithm
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve a service's effective buffer times. Per-service override wins,
+ * then provider default, then 0.
+ */
+function resolveBuffers(
+  serviceBefore: number | null | undefined,
+  serviceAfter: number | null | undefined,
+  providerDefaults: { before: number; after: number }
+): { before: number; after: number } {
+  return {
+    before:
+      serviceBefore === null || serviceBefore === undefined
+        ? providerDefaults.before
+        : serviceBefore,
+    after:
+      serviceAfter === null || serviceAfter === undefined
+        ? providerDefaults.after
+        : serviceAfter,
+  };
+}
+
+/**
+ * Parse the booking defaults from a provider's branding JSON.
+ */
+function parseBookingDefaults(branding: unknown): {
+  slotInterval: number;
+  defaultBufferBefore: number;
+  defaultBufferAfter: number;
+} {
+  const b = (branding || {}) as Record<string, unknown>;
+  const slot = typeof b.default_slot_minutes === "number" ? b.default_slot_minutes : 15;
+  const before = typeof b.default_buffer_before_minutes === "number" ? b.default_buffer_before_minutes : 0;
+  const after = typeof b.default_buffer_after_minutes === "number" ? b.default_buffer_after_minutes : 0;
+  return {
+    slotInterval: [15, 30, 60].includes(slot) ? slot : 15,
+    defaultBufferBefore: Math.max(0, Math.min(120, before)),
+    defaultBufferAfter: Math.max(0, Math.min(120, after)),
+  };
+}
+
 export async function getAvailableSlots(
   supabase: SupabaseClient<Database>,
   providerId: string,
   serviceId: string,
   date: string // ISO date string like "2026-04-15"
 ): Promise<TimeSlot[]> {
-  // ------ 1. Fetch service --------------------------------------------------
+  // ------ 1. Fetch target service -------------------------------------------
   const { data: service, error: serviceErr } = await supabase
     .from("services")
-    .select("duration_minutes")
+    .select("duration_minutes, buffer_before_minutes, buffer_after_minutes")
     .eq("id", serviceId)
     .single();
 
@@ -113,10 +153,10 @@ export async function getAvailableSlots(
 
   const durationMinutes = service.duration_minutes;
 
-  // ------ 2. Fetch provider -------------------------------------------------
+  // ------ 2. Fetch provider + booking defaults ------------------------------
   const { data: provider, error: providerErr } = await supabase
     .from("providers")
-    .select("timezone")
+    .select("timezone, branding")
     .eq("id", providerId)
     .single();
 
@@ -125,6 +165,15 @@ export async function getAvailableSlots(
   }
 
   const tz = provider.timezone;
+  const { slotInterval, defaultBufferBefore, defaultBufferAfter } =
+    parseBookingDefaults(provider.branding);
+
+  // Resolve the NEW booking's effective buffers (service override → provider default)
+  const newBuffers = resolveBuffers(
+    service.buffer_before_minutes,
+    service.buffer_after_minutes,
+    { before: defaultBufferBefore, after: defaultBufferAfter }
+  );
 
   // ------ 3. Day of week ----------------------------------------------------
   // parseISO gives us midnight UTC for the date string.  We need the
@@ -190,18 +239,47 @@ export async function getAvailableSlots(
     tz
   ).toISOString();
 
+  // Fetch all this provider's services so we can look up each existing
+  // booking's own buffer times (bookings can be for different services, each
+  // with its own buffer_before/after).
+  const { data: allServices } = await supabase
+    .from("services")
+    .select("id, buffer_before_minutes, buffer_after_minutes")
+    .eq("provider_id", providerId);
+
+  const servicesById = new Map<
+    string,
+    { before: number | null; after: number | null }
+  >();
+  for (const s of allServices ?? []) {
+    servicesById.set(s.id, {
+      before: s.buffer_before_minutes,
+      after: s.buffer_after_minutes,
+    });
+  }
+
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("starts_at, ends_at")
+    .select("starts_at, ends_at, service_id")
     .eq("provider_id", providerId)
     .not("status", "in", '("cancelled")')
     .gte("starts_at", dayStartUTC)
     .lte("starts_at", dayEndUTC);
 
-  const bookingBusy: MinuteWindow[] = (bookings ?? []).map((b) => ({
-    start: isoToLocalMinutes(b.starts_at, tz),
-    end: isoToLocalMinutes(b.ends_at, tz),
-  }));
+  // Each existing booking gets PADDED by its own service's buffers, so the
+  // "don't touch" zone fully encapsulates prep and cleanup time.
+  const bookingBusy: MinuteWindow[] = (bookings ?? []).map((b) => {
+    const bookingSvc = servicesById.get(b.service_id);
+    const bufs = resolveBuffers(
+      bookingSvc?.before ?? null,
+      bookingSvc?.after ?? null,
+      { before: defaultBufferBefore, after: defaultBufferAfter }
+    );
+    return {
+      start: isoToLocalMinutes(b.starts_at, tz) - bufs.before,
+      end: isoToLocalMinutes(b.ends_at, tz) + bufs.after,
+    };
+  });
 
   freeWindows = subtractWindows(freeWindows, bookingBusy);
 
@@ -220,18 +298,28 @@ export async function getAvailableSlots(
 
   freeWindows = subtractWindows(freeWindows, externalBusyWindows);
 
-  // ------ 8g. Generate 15-minute interval slots -----------------------------
-  const SLOT_INTERVAL = 15;
+  // ------ 7. Generate candidate slots --------------------------------------
+  //
+  //  For each free window, we iterate start times at the provider's chosen
+  //  interval. The new booking needs `newBuffers.before` minutes of empty
+  //  time BEFORE its start and `newBuffers.after` minutes AFTER its end,
+  //  all inside the same free window. So a candidate start time `s` is
+  //  valid only if:
+  //
+  //    s >= window.start + newBuffers.before
+  //    s + durationMinutes + newBuffers.after <= window.end
+  //
   const slots: TimeSlot[] = [];
 
   for (const window of freeWindows) {
-    let cursor = window.start;
-    // Align cursor to next 15-minute boundary
-    if (cursor % SLOT_INTERVAL !== 0) {
-      cursor = cursor + (SLOT_INTERVAL - (cursor % SLOT_INTERVAL));
+    // First valid start accounting for the new booking's prep buffer
+    let cursor = window.start + newBuffers.before;
+    // Align to the next slot interval boundary
+    if (cursor % slotInterval !== 0) {
+      cursor = cursor + (slotInterval - (cursor % slotInterval));
     }
 
-    while (cursor + durationMinutes <= window.end) {
+    while (cursor + durationMinutes + newBuffers.after <= window.end) {
       // Convert minutes-since-midnight back to UTC ISO strings
       const startLocal = new Date(`${date}T00:00:00`);
       startLocal.setMinutes(startLocal.getMinutes() + cursor);
@@ -247,7 +335,7 @@ export async function getAvailableSlots(
         end: endUTC.toISOString(),
       });
 
-      cursor += SLOT_INTERVAL;
+      cursor += slotInterval;
     }
   }
 
@@ -279,19 +367,25 @@ function formatLocalDate(d: Date, tz: string): string {
 }
 
 /**
- * Count bookable slots in a set of free windows for a given service duration.
+ * Count bookable slots in a set of free windows for a given service duration,
+ * respecting the new booking's before/after buffers and the provider's chosen
+ * slot interval.
  */
-function countSlots(windows: MinuteWindow[], durationMinutes: number): number {
-  const SLOT_INTERVAL = 15;
+function countSlots(
+  windows: MinuteWindow[],
+  durationMinutes: number,
+  opts: { slotInterval: number; bufferBefore: number; bufferAfter: number }
+): number {
+  const { slotInterval, bufferBefore, bufferAfter } = opts;
   let total = 0;
   for (const w of windows) {
-    let cursor = w.start;
-    if (cursor % SLOT_INTERVAL !== 0) {
-      cursor = cursor + (SLOT_INTERVAL - (cursor % SLOT_INTERVAL));
+    let cursor = w.start + bufferBefore;
+    if (cursor % slotInterval !== 0) {
+      cursor = cursor + (slotInterval - (cursor % slotInterval));
     }
-    while (cursor + durationMinutes <= w.end) {
+    while (cursor + durationMinutes + bufferAfter <= w.end) {
       total += 1;
-      cursor += SLOT_INTERVAL;
+      cursor += slotInterval;
     }
   }
   return total;
@@ -313,18 +407,27 @@ export async function getAvailabilityCounts(
   startDate: string,
   endDate: string
 ): Promise<Record<string, DayAvailability>> {
-  // ── 1. Fetch service + provider ──────────────────────────────────────────
-  const [serviceRes, providerRes] = await Promise.all([
+  // ── 1. Fetch target service + provider + all provider's services ────────
+  //
+  //  We fetch ALL of the provider's services in one shot so we can look up
+  //  each existing booking's own buffer times (different services may have
+  //  different buffers).
+  //
+  const [serviceRes, providerRes, allServicesRes] = await Promise.all([
     supabase
       .from("services")
-      .select("duration_minutes")
+      .select("duration_minutes, buffer_before_minutes, buffer_after_minutes")
       .eq("id", serviceId)
       .single(),
     supabase
       .from("providers")
-      .select("timezone")
+      .select("timezone, branding")
       .eq("id", providerId)
       .single(),
+    supabase
+      .from("services")
+      .select("id, buffer_before_minutes, buffer_after_minutes")
+      .eq("provider_id", providerId),
   ]);
 
   if (serviceRes.error || !serviceRes.data) {
@@ -336,6 +439,27 @@ export async function getAvailabilityCounts(
 
   const durationMinutes = serviceRes.data.duration_minutes;
   const tz = providerRes.data.timezone;
+  const { slotInterval, defaultBufferBefore, defaultBufferAfter } =
+    parseBookingDefaults(providerRes.data.branding);
+
+  // NEW booking's effective buffers (per-service override → provider default → 0)
+  const newBuffers = resolveBuffers(
+    serviceRes.data.buffer_before_minutes,
+    serviceRes.data.buffer_after_minutes,
+    { before: defaultBufferBefore, after: defaultBufferAfter }
+  );
+
+  // Lookup map of service id → that service's own buffers (for existing bookings)
+  const servicesById = new Map<
+    string,
+    { before: number | null; after: number | null }
+  >();
+  for (const s of allServicesRes.data ?? []) {
+    servicesById.set(s.id, {
+      before: s.buffer_before_minutes,
+      after: s.buffer_after_minutes,
+    });
+  }
 
   // ── 2. Fetch all recurring rules ─────────────────────────────────────────
   const { data: allRules } = await supabase
@@ -390,20 +514,27 @@ export async function getAvailabilityCounts(
 
   const { data: allBookings } = await supabase
     .from("bookings")
-    .select("starts_at, ends_at")
+    .select("starts_at, ends_at, service_id")
     .eq("provider_id", providerId)
     .not("status", "in", '("cancelled")')
     .gte("starts_at", rangeStartUTC)
     .lte("starts_at", rangeEndUTC);
 
-  // Bucket bookings by local date
+  // Bucket bookings by local date — each booking padded by ITS OWN service's
+  // buffer_before and buffer_after (resolved against provider defaults).
   const bookingsByDate = new Map<string, MinuteWindow[]>();
   for (const b of allBookings ?? []) {
     const localDate = formatLocalDate(parseISO(b.starts_at), tz);
     const list = bookingsByDate.get(localDate) ?? [];
+    const bookingSvc = servicesById.get(b.service_id);
+    const bufs = resolveBuffers(
+      bookingSvc?.before ?? null,
+      bookingSvc?.after ?? null,
+      { before: defaultBufferBefore, after: defaultBufferAfter }
+    );
     list.push({
-      start: isoToLocalMinutes(b.starts_at, tz),
-      end: isoToLocalMinutes(b.ends_at, tz),
+      start: isoToLocalMinutes(b.starts_at, tz) - bufs.before,
+      end: isoToLocalMinutes(b.ends_at, tz) + bufs.after,
     });
     bookingsByDate.set(localDate, list);
   }
@@ -473,7 +604,11 @@ export async function getAvailabilityCounts(
     }
 
     // Capacity = slot count WITHOUT subtracting bookings
-    const capacity = countSlots(free, durationMinutes);
+    const capacity = countSlots(free, durationMinutes, {
+      slotInterval,
+      bufferBefore: newBuffers.before,
+      bufferAfter: newBuffers.after,
+    });
 
     // Actual = subtract bookings + external busy
     const bookingBusy = bookingsByDate.get(dateStr) ?? [];
@@ -481,7 +616,11 @@ export async function getAvailabilityCounts(
     const busy = [...bookingBusy, ...externalBusy];
 
     const available = subtractWindows(free, busy);
-    const slots = countSlots(available, durationMinutes);
+    const slots = countSlots(available, durationMinutes, {
+      slotInterval,
+      bufferBefore: newBuffers.before,
+      bufferAfter: newBuffers.after,
+    });
 
     result[dateStr] = { slots, capacity };
   }

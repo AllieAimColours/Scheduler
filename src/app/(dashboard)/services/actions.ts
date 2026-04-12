@@ -13,7 +13,21 @@ const serviceSchema = z.object({
   category: z.string().max(50).default("general"),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#6366f1"),
   emoji: z.string().max(4).default(""),
+  buffer_before_minutes: z
+    .union([z.coerce.number().int().min(0).max(120), z.null()])
+    .default(null),
+  buffer_after_minutes: z
+    .union([z.coerce.number().int().min(0).max(120), z.null()])
+    .default(null),
 });
+
+// Form fields come in as strings; "" means "inherit provider default"
+function parseBufferField(v: FormDataEntryValue | null): number | null {
+  if (v === null) return null;
+  const s = String(v).trim();
+  if (s === "") return null;
+  return Number(s);
+}
 
 async function getProviderId() {
   const supabase = await createClient();
@@ -45,6 +59,8 @@ export async function createService(formData: FormData) {
     category: formData.get("category"),
     color: formData.get("color"),
     emoji: formData.get("emoji"),
+    buffer_before_minutes: parseBufferField(formData.get("buffer_before_minutes")),
+    buffer_after_minutes: parseBufferField(formData.get("buffer_after_minutes")),
   });
 
   const { error } = await supabase.from("services").insert({
@@ -69,6 +85,8 @@ export async function updateService(id: string, formData: FormData) {
     category: formData.get("category"),
     color: formData.get("color"),
     emoji: formData.get("emoji"),
+    buffer_before_minutes: parseBufferField(formData.get("buffer_before_minutes")),
+    buffer_after_minutes: parseBufferField(formData.get("buffer_after_minutes")),
   });
 
   const { error } = await supabase
