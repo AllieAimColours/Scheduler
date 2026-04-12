@@ -157,13 +157,16 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-gray-700 leading-relaxed space-y-1">
                   <p>
-                    <span className="font-semibold">Refund percentages apply to what the client actually paid upfront</span> — not the full service price.
+                    <span className="font-semibold">Refunds can only be processed on money collected at checkout.</span> Bloom never holds money it didn&apos;t collect.
                   </p>
                   <p className="text-gray-600">
-                    If a service has a deposit, only the deposit was charged at checkout, so that&apos;s the amount you&apos;re refunding from. Example: a $150 service with a $20 deposit and a 100% refund rule = the client gets back $20. The $130 balance is only owed if they show up, so there&apos;s nothing to refund there.
+                    <strong>Services with a deposit:</strong> Only the deposit is charged at checkout. A 100% refund rule returns the deposit — not the full service price. Example: $150 service, $20 deposit, 100% refund = client gets back $20.
                   </p>
                   <p className="text-gray-600">
-                    Services with no deposit charge the full price upfront — so the percentages apply to the full service price.
+                    <strong>Services with no deposit:</strong> The full price is charged at checkout, so refund percentages apply to the full price.
+                  </p>
+                  <p className="text-gray-600">
+                    <strong>Free services ($0):</strong> Cancellation policy is not shown to clients — there&apos;s nothing to refund. Clients can still cancel, but no money changes hands.
                   </p>
                 </div>
               </div>

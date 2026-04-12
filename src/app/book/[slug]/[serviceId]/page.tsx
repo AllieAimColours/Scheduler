@@ -453,8 +453,10 @@ export default function BookServicePage() {
               </div>
             </div>
 
-            {/* Cancellation policy notice */}
-            {cancellationPolicy?.enabled && (
+            {/* Cancellation policy — only show when there's actually money
+                involved AND payments are working. No point showing refund
+                rules for free services or when Stripe isn't connected. */}
+            {cancellationPolicy?.enabled && service.price_cents > 0 && paymentsEnabled && (
               <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-2">
                 <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                   <ShieldCheck className="h-4 w-4 text-[var(--accent-color,#a78bfa)]" />
