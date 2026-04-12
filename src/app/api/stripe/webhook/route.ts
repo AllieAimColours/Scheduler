@@ -148,5 +148,19 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // ─── Stripe Connect: account onboarding complete ───
+  if (event.type === "account.updated") {
+    const account = event.data.object;
+    // An Express account is ready to receive payments when
+    // charges_enabled flips to true (identity verified, bank added).
+    if (account.charges_enabled) {
+      const supabase = createAdminClient();
+      await supabase
+        .from("providers")
+        .update({ stripe_onboarding_complete: true })
+        .eq("stripe_account_id", account.id);
+    }
+  }
+
   return NextResponse.json({ received: true });
 }

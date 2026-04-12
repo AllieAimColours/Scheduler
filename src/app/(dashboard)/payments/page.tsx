@@ -30,11 +30,30 @@ export default function PaymentsPage() {
 
       const { data } = await supabase
         .from("providers")
-        .select("stripe_account_id, stripe_onboarding_complete")
+        .select("id, stripe_account_id, stripe_onboarding_complete")
         .eq("user_id", user.id)
         .single();
 
+      if (!data) return;
       setProvider(data);
+
+      // If returning from Stripe onboarding and not yet marked complete,
+      // hit a server endpoint to check the account status immediately
+      // instead of waiting for the webhook.
+      const params = new URLSearchParams(window.location.search);
+      if (
+        params.get("onboarding") === "complete" &&
+        data.stripe_account_id &&
+        !data.stripe_onboarding_complete
+      ) {
+        const res = await fetch("/api/stripe/connect/status", { method: "POST" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.charges_enabled) {
+            setProvider({ ...data, stripe_onboarding_complete: true });
+          }
+        }
+      }
     }
     fetchProvider();
   }, []);
