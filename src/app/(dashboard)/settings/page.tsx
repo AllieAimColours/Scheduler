@@ -35,6 +35,7 @@ export default function SettingsPage() {
     min_booking_notice_hours: 0,
     currency: "USD",
     payment_mode: "deposit_only" as "deposit_only" | "full_upfront" | "at_appointment",
+    confirmation_message: "",
   });
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function SettingsPage() {
           payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
             ? branding.payment_mode as "full_upfront" | "at_appointment"
             : "deposit_only",
+          confirmation_message: typeof branding.confirmation_message === "string" ? branding.confirmation_message : "",
         });
         lastSaved.current = JSON.stringify({
           business_name: data.business_name,
@@ -104,6 +106,7 @@ export default function SettingsPage() {
           payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
             ? branding.payment_mode as "full_upfront" | "at_appointment"
             : "deposit_only",
+          confirmation_message: typeof branding.confirmation_message === "string" ? branding.confirmation_message : "",
         });
         setTimeout(() => { loaded.current = true; }, 0);
       }
@@ -122,6 +125,7 @@ export default function SettingsPage() {
       default_buffer_after_minutes: currentForm.default_buffer_after_minutes,
       min_booking_notice_hours: currentForm.min_booking_notice_hours,
       payment_mode: currentForm.payment_mode,
+      confirmation_message: currentForm.confirmation_message || undefined,
     };
     const { error } = await supabase
       .from("providers")
@@ -193,6 +197,33 @@ export default function SettingsPage() {
 
       {/* Cancellation Policy */}
       <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
+
+      {/* Confirmation Message */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+            Confirmation Message
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            What clients see after they book and in their confirmation email
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Textarea
+            value={form.confirmation_message}
+            onChange={(e) => setForm({ ...form, confirmation_message: e.target.value })}
+            placeholder="We'll see you soon, {name}!"
+            rows={3}
+            className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+          />
+          <p className="text-xs text-gray-400">
+            Use <span className="font-mono text-purple-600">{`{name}`}</span> to insert the client&apos;s name. Leave blank to use the default &quot;We&apos;ll see you soon, [name].&quot;
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Data Export */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">

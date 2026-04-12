@@ -113,13 +113,17 @@ export async function POST(request: NextRequest) {
         .single(),
       supabase
         .from("providers")
-        .select("business_name, currency, slug")
+        .select("business_name, currency, slug, branding")
         .eq("id", metadata.provider_id)
         .single(),
     ]);
 
     const service = serviceRes.data as unknown as Pick<Service, "name" | "emoji" | "duration_minutes" | "price_cents"> | null;
-    const provider = providerRes.data as unknown as Pick<Provider, "business_name" | "currency" | "slug"> | null;
+    const provider = providerRes.data as unknown as Pick<Provider, "business_name" | "currency" | "slug" | "branding"> | null;
+    const providerBranding = (provider?.branding as Record<string, unknown>) || {};
+    const customMessage = typeof providerBranding.confirmation_message === "string" && providerBranding.confirmation_message.trim()
+      ? providerBranding.confirmation_message.trim()
+      : undefined;
 
     // Send the confirmation email
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
@@ -137,6 +141,7 @@ export async function POST(request: NextRequest) {
       servicePriceCents: service?.price_cents || 0,
       currency: provider?.currency || "USD",
       cancellationUrl,
+      customMessage,
     });
 
     await logNotification(supabase, {

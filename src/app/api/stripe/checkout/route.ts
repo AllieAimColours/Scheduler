@@ -131,6 +131,10 @@ export async function POST(request: NextRequest) {
       const cancellationUrl = policy.allow_online_cancellation && appUrl
         ? `${appUrl}/cancel/${cancellationToken}`
         : undefined;
+      const providerBranding = (provider.branding as Record<string, unknown>) || {};
+      const customMessage = typeof providerBranding.confirmation_message === "string" && providerBranding.confirmation_message.trim()
+        ? providerBranding.confirmation_message.trim()
+        : undefined;
 
       const result = await sendBookingConfirmation({
         to: booking.client_email,
@@ -142,6 +146,7 @@ export async function POST(request: NextRequest) {
         duration: service.duration_minutes,
         priceCents: 0,
         servicePriceCents: service.price_cents,
+        customMessage,
         currency: provider.currency || "USD",
         cancellationUrl,
       });
