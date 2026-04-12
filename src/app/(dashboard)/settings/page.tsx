@@ -35,7 +35,6 @@ export default function SettingsPage() {
     min_booking_notice_hours: 0,
     currency: "USD",
     payment_mode: "deposit_only" as "deposit_only" | "full_upfront" | "at_appointment",
-    confirmation_message: "",
   });
 
   useEffect(() => {
@@ -89,7 +88,6 @@ export default function SettingsPage() {
           payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
             ? branding.payment_mode as "full_upfront" | "at_appointment"
             : "deposit_only",
-          confirmation_message: typeof branding.confirmation_message === "string" ? branding.confirmation_message : "",
         });
         lastSaved.current = JSON.stringify({
           business_name: data.business_name,
@@ -106,7 +104,6 @@ export default function SettingsPage() {
           payment_mode: (branding.payment_mode === "full_upfront" || branding.payment_mode === "at_appointment")
             ? branding.payment_mode as "full_upfront" | "at_appointment"
             : "deposit_only",
-          confirmation_message: typeof branding.confirmation_message === "string" ? branding.confirmation_message : "",
         });
         setTimeout(() => { loaded.current = true; }, 0);
       }
@@ -125,7 +122,6 @@ export default function SettingsPage() {
       default_buffer_after_minutes: currentForm.default_buffer_after_minutes,
       min_booking_notice_hours: currentForm.min_booking_notice_hours,
       payment_mode: currentForm.payment_mode,
-      confirmation_message: currentForm.confirmation_message || undefined,
     };
     const { error } = await supabase
       .from("providers")
@@ -195,35 +191,65 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Cancellation Policy */}
-      <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
-
-      {/* Confirmation Message */}
+      {/* Payment Mode */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
-              <FileText className="h-4 w-4 text-white" />
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
+              <DollarSign className="h-4 w-4 text-white" />
             </div>
-            Confirmation Message
+            Payment Mode
           </CardTitle>
           <CardDescription className="text-gray-400">
-            What clients see after they book and in their confirmation email
+            Choose how clients pay for your services
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <Textarea
-            value={form.confirmation_message}
-            onChange={(e) => setForm({ ...form, confirmation_message: e.target.value })}
-            placeholder="We'll see you soon, {name}!"
-            rows={3}
-            className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-          />
-          <p className="text-xs text-gray-400">
-            Use <span className="font-mono text-purple-600">{`{name}`}</span> to insert the client&apos;s name. Leave blank to use the default &quot;We&apos;ll see you soon, [name].&quot;
-          </p>
+        <CardContent>
+          <div className="grid gap-3">
+            {([
+              {
+                id: "deposit_only" as const,
+                label: "Deposits only",
+                description: "Charge the deposit online, client pays the rest at the appointment. No deposit = no online payment.",
+              },
+              {
+                id: "full_upfront" as const,
+                label: "Full payment upfront",
+                description: "Charge the full service price at checkout. If a deposit is set, charge just the deposit instead.",
+              },
+              {
+                id: "at_appointment" as const,
+                label: "Always pay at appointment",
+                description: "Never charge online. Clients book freely, pay in person with cash, tap, or card.",
+              },
+            ]).map((opt) => {
+              const active = form.payment_mode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, payment_mode: opt.id })}
+                  className={
+                    active
+                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
+                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
+                  }
+                >
+                  <div className={active ? "font-display font-bold text-purple-700" : "font-display font-bold text-gray-700"}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                    {opt.description}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Cancellation Policy */}
+      <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
 
       {/* Data Export */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
@@ -333,63 +359,6 @@ export default function SettingsPage() {
             <span className="text-orange-600 font-medium"> orange</span> filling up,
             <span className="text-red-600 font-medium"> red</span> last slots.
           </p>
-        </CardContent>
-      </Card>
-
-      {/* Payment Mode */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
-              <DollarSign className="h-4 w-4 text-white" />
-            </div>
-            Payment Mode
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            Choose how clients pay for your services
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3">
-            {([
-              {
-                id: "deposit_only" as const,
-                label: "Deposits only",
-                description: "Charge the deposit online, client pays the rest at the appointment. No deposit = no online payment.",
-              },
-              {
-                id: "full_upfront" as const,
-                label: "Full payment upfront",
-                description: "Charge the full service price at checkout. If a deposit is set, charge just the deposit instead.",
-              },
-              {
-                id: "at_appointment" as const,
-                label: "Always pay at appointment",
-                description: "Never charge online. Clients book freely, pay in person with cash, tap, or card.",
-              },
-            ]).map((opt) => {
-              const active = form.payment_mode === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setForm({ ...form, payment_mode: opt.id })}
-                  className={
-                    active
-                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
-                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
-                  }
-                >
-                  <div className={active ? "font-display font-bold text-purple-700" : "font-display font-bold text-gray-700"}>
-                    {opt.label}
-                  </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                    {opt.description}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </CardContent>
       </Card>
 

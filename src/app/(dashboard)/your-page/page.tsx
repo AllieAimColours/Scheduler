@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { LayoutGrid, Sliders } from "lucide-react";
+import { LayoutGrid, Sliders, MessageCircle } from "lucide-react";
 import type { Provider } from "@/types/database";
 import { getTemplateId, type TemplateId } from "@/lib/templates/index";
 import {
@@ -17,16 +17,18 @@ import { TemplateBar } from "@/components/your-page/template-bar";
 import { SectionListEditor } from "@/components/your-page/section-list-editor";
 import { PreviewPane } from "@/components/your-page/preview-pane";
 import { CustomizePanel } from "@/components/your-page/customize-panel";
+import { ConfirmationEditor } from "@/components/your-page/confirmation-editor";
 import { parseOverrides, type PageOverrides } from "@/lib/page-builder/overrides";
 import { cn } from "@/lib/utils";
 
-type Tab = "blocks" | "customize";
+type Tab = "blocks" | "customize" | "confirmation";
 
 export default function YourPageBuilder() {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [template, setTemplate] = useState<TemplateId>("studio");
   const [sections, setSections] = useState<PageSection[]>([]);
   const [overrides, setOverrides] = useState<PageOverrides>({});
+  const [confirmationMessage, setConfirmationMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState<Tab>("blocks");
@@ -59,6 +61,7 @@ export default function YourPageBuilder() {
         }
         setSections(existingSections);
         setOverrides(parseOverrides(branding.overrides));
+        setConfirmationMessage(typeof branding.confirmation_message === "string" ? branding.confirmation_message : "");
       }
     }
     load();
@@ -105,6 +108,7 @@ export default function YourPageBuilder() {
       template,
       page_sections: JSON.parse(JSON.stringify(sections)),
       overrides: JSON.parse(JSON.stringify(overrides)),
+      confirmation_message: confirmationMessage.trim() || undefined,
     };
     const { error } = await supabase
       .from("providers")
@@ -134,6 +138,11 @@ export default function YourPageBuilder() {
 
   function handleOverridesChange(next: PageOverrides) {
     setOverrides(next);
+    setDirty(true);
+  }
+
+  function handleConfirmationMessageChange(next: string) {
+    setConfirmationMessage(next);
     setDirty(true);
   }
 
@@ -210,6 +219,19 @@ export default function YourPageBuilder() {
               <Sliders className="h-4 w-4" />
               Customize
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("confirmation")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer",
+                tab === "confirmation"
+                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-purple-50"
+              )}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Confirmation
+            </button>
           </div>
 
           {/* Tab content */}
@@ -222,6 +244,13 @@ export default function YourPageBuilder() {
           )}
           {tab === "customize" && (
             <CustomizePanel overrides={overrides} onUpdate={handleOverridesChange} />
+          )}
+          {tab === "confirmation" && (
+            <ConfirmationEditor
+              value={confirmationMessage}
+              onChange={handleConfirmationMessageChange}
+              template={template}
+            />
           )}
         </div>
 
