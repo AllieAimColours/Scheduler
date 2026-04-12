@@ -47,10 +47,13 @@ export default async function DashboardPage() {
 
   const { data: weekBookings } = await supabase
     .from("bookings")
-    .select("payment_amount_cents")
+    .select("payment_amount_cents, services(price_cents)")
     .eq("provider_id", provider.id)
     .gte("starts_at", startOfWeek.toISOString())
-    .neq("status", "cancelled");
+    .neq("status", "cancelled") as { data: Array<{
+      payment_amount_cents: number;
+      services: { price_cents: number } | null;
+    }> | null };
 
   const { count: totalClients } = await supabase
     .from("bookings")
@@ -58,10 +61,18 @@ export default async function DashboardPage() {
     .eq("provider_id", provider.id)
     .neq("status", "cancelled");
 
-  const weekRevenue = (weekBookings || []).reduce(
+  const weekDeposits = (weekBookings || []).reduce(
     (sum, b) => sum + (b.payment_amount_cents || 0),
     0
   );
+  const weekDueAtAppt = (weekBookings || []).reduce(
+    (sum, b) => {
+      const svcPrice = b.services?.price_cents || 0;
+      return sum + Math.max(0, svcPrice - (b.payment_amount_cents || 0));
+    },
+    0
+  );
+  const weekTotalRevenue = weekDeposits + weekDueAtAppt;
 
   // Greeting based on time of day
   const hour = new Date().getHours();
@@ -101,7 +112,10 @@ export default async function DashboardPage() {
           },
           {
             label: "This Week's Revenue",
-            value: `$${(weekRevenue / 100).toFixed(0)}`,
+            value: `$${(weekTotalRevenue / 100).toFixed(0)}`,
+            subtitle: weekDeposits > 0 || weekDueAtAppt > 0
+              ? `$${(weekDeposits / 100).toFixed(0)} deposits · $${(weekDueAtAppt / 100).toFixed(0)} at appt`
+              : undefined,
             icon: DollarSign,
             gradient: "from-pink-500 to-rose-600",
             bgGlow: "bg-pink-500/10",
@@ -133,6 +147,9 @@ export default async function DashboardPage() {
             <div className="text-xs text-gray-400 font-medium mt-0.5">
               {stat.label}
             </div>
+            {"subtitle" in stat && stat.subtitle && (
+              <div className="text-[10px] text-gray-400 mt-1">{stat.subtitle}</div>
+            )}
           </div>
         ))}
       </div>

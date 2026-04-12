@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
         dateTime: booking.starts_at,
         duration: service.duration_minutes,
         priceCents: 0,
+        servicePriceCents: service.price_cents,
         currency: provider.currency || "USD",
         cancellationUrl,
       });

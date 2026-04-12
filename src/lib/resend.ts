@@ -21,6 +21,7 @@ export async function sendBookingConfirmation({
   dateTime,
   duration,
   priceCents,
+  servicePriceCents,
   currency = "USD",
   cancellationUrl,
 }: {
@@ -32,6 +33,7 @@ export async function sendBookingConfirmation({
   dateTime: string;
   duration: number;
   priceCents: number;
+  servicePriceCents?: number;
   currency?: string;
   cancellationUrl?: string;
 }): Promise<SendResult> {
@@ -63,6 +65,14 @@ export async function sendBookingConfirmation({
     }).format(priceCents / 100);
 
     const emoji = serviceEmoji || "✨";
+    const totalPrice = servicePriceCents && servicePriceCents > 0
+      ? new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(servicePriceCents / 100)
+      : null;
+    const isDeposit = priceCents > 0 && servicePriceCents && priceCents < servicePriceCents;
+    const remainderCents = isDeposit ? servicePriceCents - priceCents : 0;
+    const remainderPrice = remainderCents > 0
+      ? new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(remainderCents / 100)
+      : null;
 
     const cancelBlock = cancellationUrl
       ? `
@@ -78,12 +88,44 @@ export async function sendBookingConfirmation({
         </p>
       `;
 
+    // Payment rows — adapt to deposit vs full-pay vs free
+    let paymentRows = "";
+    if (totalPrice) {
+      paymentRows += `
+        <tr style="border-top: 1px solid #e8e2f0;">
+          <td style="padding: 14px 0 0; color: #888; font-size: 14px; font-weight: 600;">Total</td>
+          <td style="padding: 14px 0 0; text-align: right; font-weight: 700; color: #1a1a1a; font-size: 20px;">${totalPrice}</td>
+        </tr>`;
+      if (isDeposit) {
+        paymentRows += `
+        <tr>
+          <td style="padding: 6px 0 0; color: #888; font-size: 13px;">Deposit paid</td>
+          <td style="padding: 6px 0 0; text-align: right; font-weight: 600; color: #16a34a; font-size: 14px;">${price}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0 0; color: #888; font-size: 13px;">Due at appointment</td>
+          <td style="padding: 6px 0 0; text-align: right; font-weight: 600; color: #1a1a1a; font-size: 14px;">${remainderPrice}</td>
+        </tr>`;
+      } else if (priceCents === 0) {
+        paymentRows += `
+        <tr>
+          <td style="padding: 6px 0 0; color: #888; font-size: 13px;">Due at appointment</td>
+          <td style="padding: 6px 0 0; text-align: right; font-weight: 600; color: #1a1a1a; font-size: 14px;">${totalPrice}</td>
+        </tr>`;
+      }
+    }
+
     const { error } = await resend.emails.send({
       from: FROM_ADDRESS,
       to,
       subject: `${emoji} Booking Confirmed — ${serviceName} with ${providerName}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 40px 20px; color: #1a1a1a;">
+          <!-- Bloom logo/brand -->
+          <div style="text-align: center; margin-bottom: 8px;">
+            <span style="font-size: 14px; font-weight: 700; letter-spacing: 0.08em; background: linear-gradient(135deg, #7c3aed, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">BLOOM</span>
+          </div>
+
           <div style="text-align: center; margin-bottom: 32px;">
             <div style="font-size: 56px; line-height: 1; margin-bottom: 12px;">${emoji}</div>
             <h1 style="font-size: 28px; color: #1a1a1a; margin: 0 0 8px; font-weight: 700;">You're booked!</h1>
@@ -112,14 +154,15 @@ export async function sendBookingConfirmation({
                 <td style="padding: 10px 0; color: #888; font-size: 14px;">With</td>
                 <td style="padding: 10px 0; text-align: right; font-weight: 600; color: #1a1a1a;">${providerName}</td>
               </tr>
-              <tr style="border-top: 1px solid #e8e2f0;">
-                <td style="padding: 14px 0 0; color: #888; font-size: 14px; font-weight: 600;">Paid</td>
-                <td style="padding: 14px 0 0; text-align: right; font-weight: 700; color: #1a1a1a; font-size: 20px;">${price}</td>
-              </tr>
+              ${paymentRows}
             </table>
           </div>
 
           ${cancelBlock}
+
+          <p style="text-align: center; margin-top: 40px; color: #ccc; font-size: 11px;">
+            Powered by Bloom · bloomrdv.com
+          </p>
         </div>
       `,
     });

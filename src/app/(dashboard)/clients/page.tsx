@@ -38,13 +38,20 @@ export default async function ClientsPage() {
     .single();
   if (!provider) redirect("/onboarding");
 
-  // Aggregate clients from bookings
+  // Aggregate clients from bookings — join service price to calculate owed
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("client_name, client_email, client_phone, payment_amount_cents, created_at")
+    .select("client_name, client_email, client_phone, payment_amount_cents, created_at, services(price_cents)")
     .eq("provider_id", provider.id)
     .neq("status", "cancelled")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }) as { data: Array<{
+      client_name: string;
+      client_email: string;
+      client_phone: string | null;
+      payment_amount_cents: number;
+      created_at: string;
+      services: { price_cents: number } | null;
+    }> | null };
 
   // Group by email
   const clientMap = new Map<
@@ -55,15 +62,19 @@ export default async function ClientsPage() {
       phone: string | null;
       bookingCount: number;
       totalSpent: number;
+      totalOwed: number;
       lastVisit: string;
     }
   >();
 
   for (const b of bookings || []) {
+    const servicePriceCents = b.services?.price_cents || 0;
+    const owedThisBooking = Math.max(0, servicePriceCents - b.payment_amount_cents);
     const existing = clientMap.get(b.client_email);
     if (existing) {
       existing.bookingCount++;
       existing.totalSpent += b.payment_amount_cents;
+      existing.totalOwed += owedThisBooking;
     } else {
       clientMap.set(b.client_email, {
         name: b.client_name,
@@ -71,6 +82,7 @@ export default async function ClientsPage() {
         phone: b.client_phone,
         bookingCount: 1,
         totalSpent: b.payment_amount_cents,
+        totalOwed: owedThisBooking,
         lastVisit: b.created_at,
       });
     }
@@ -123,7 +135,8 @@ export default async function ClientsPage() {
                     <TableHead className="text-gray-400 font-medium">Email</TableHead>
                     <TableHead className="text-gray-400 font-medium">Phone</TableHead>
                     <TableHead className="text-right text-gray-400 font-medium">Bookings</TableHead>
-                    <TableHead className="text-right text-gray-400 font-medium">Total Spent</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">Deposits Paid</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">Due at Appt</TableHead>
                     <TableHead className="text-gray-400 font-medium">Last Visit</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -142,6 +155,9 @@ export default async function ClientsPage() {
                       </TableCell>
                       <TableCell className="text-right font-semibold text-gray-800">
                         {formatPrice(client.totalSpent)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-amber-600">
+                        {client.totalOwed > 0 ? formatPrice(client.totalOwed) : "—"}
                       </TableCell>
                       <TableCell className="text-gray-400">
                         {new Date(client.lastVisit).toLocaleDateString()}

@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const [serviceRes, providerRes] = await Promise.all([
       supabase
         .from("services")
-        .select("name, emoji, duration_minutes")
+        .select("name, emoji, duration_minutes, price_cents")
         .eq("id", metadata.service_id)
         .single(),
       supabase
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         .single(),
     ]);
 
-    const service = serviceRes.data as unknown as Pick<Service, "name" | "emoji" | "duration_minutes"> | null;
+    const service = serviceRes.data as unknown as Pick<Service, "name" | "emoji" | "duration_minutes" | "price_cents"> | null;
     const provider = providerRes.data as unknown as Pick<Provider, "business_name" | "currency" | "slug"> | null;
 
     // Send the confirmation email
@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       dateTime: booking.starts_at,
       duration: service?.duration_minutes || 60,
       priceCents: booking.payment_amount_cents,
+      servicePriceCents: service?.price_cents || 0,
       currency: provider?.currency || "USD",
       cancellationUrl,
     });
