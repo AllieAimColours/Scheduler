@@ -170,15 +170,10 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // If provider has Stripe Connect, use destination charges
+    // If provider has Stripe Connect, use destination charges.
+    // 0% platform fee — providers keep 100% (minus Stripe's own processing fee).
     if (provider.stripe_account_id && provider.stripe_onboarding_complete) {
-      const feePercent = Number(
-        process.env.STRIPE_PLATFORM_FEE_PERCENT || "5"
-      );
-      const applicationFee = Math.round(chargeAmount * (feePercent / 100));
-
       sessionConfig.payment_intent_data = {
-        application_fee_amount: applicationFee,
         transfer_data: {
           destination: provider.stripe_account_id,
         },

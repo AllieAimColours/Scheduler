@@ -95,10 +95,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (provider.stripe_account_id && provider.stripe_onboarding_complete) {
-      const feePercent = Number(process.env.STRIPE_PLATFORM_FEE_PERCENT || "5");
-      const applicationFee = Math.round(product.price_cents * (feePercent / 100));
       sessionConfig.payment_intent_data = {
-        application_fee_amount: applicationFee,
         transfer_data: {
           destination: provider.stripe_account_id,
         },
