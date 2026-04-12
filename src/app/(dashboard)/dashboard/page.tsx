@@ -1,5 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   CalendarDays,
   DollarSign,
@@ -7,81 +9,214 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
+  Download,
 } from "lucide-react";
 import { PeonyMark } from "@/components/peony-mark";
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+// ─── Types ───
 
-  const { data: provider } = await supabase
-    .from("providers")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-  if (!provider) redirect("/onboarding");
+type Period = "today" | "week" | "month" | "year";
 
-  // Fetch today's bookings
-  const today = new Date();
-  const startOfDay = new Date(today);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59, 999);
+interface Booking {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  client_name: string;
+  client_email: string;
+  status: string;
+  payment_amount_cents: number;
+  services: {
+    name: string;
+    emoji: string;
+    color: string;
+    duration_minutes: number;
+    price_cents: number;
+  } | null;
+}
 
-  const { data: todayBookings } = await supabase
-    .from("bookings")
-    .select("*, services(name, emoji, color, duration_minutes)")
-    .eq("provider_id", provider.id)
-    .gte("starts_at", startOfDay.toISOString())
-    .lte("starts_at", endOfDay.toISOString())
-    .neq("status", "cancelled")
-    .order("starts_at") as { data: any[] | null };
+// ─── Helpers ───
 
-  // Fetch this week's stats (Monday-based week)
-  const startOfWeek = new Date(today);
-  const dayOfWeek = today.getDay();
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  startOfWeek.setDate(today.getDate() + mondayOffset);
-  startOfWeek.setHours(0, 0, 0, 0);
+function startOfWeekMonday(d: Date): Date {
+  const result = new Date(d);
+  const day = result.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  result.setDate(result.getDate() + offset);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
 
-  const { data: weekBookings } = await supabase
-    .from("bookings")
-    .select("payment_amount_cents, services(price_cents)")
-    .eq("provider_id", provider.id)
-    .gte("starts_at", startOfWeek.toISOString())
-    .neq("status", "cancelled") as { data: Array<{
-      payment_amount_cents: number;
-      services: { price_cents: number } | null;
-    }> | null };
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
 
-  const { count: totalClients } = await supabase
-    .from("bookings")
-    .select("client_email", { count: "exact", head: true })
-    .eq("provider_id", provider.id)
-    .neq("status", "cancelled");
+function startOfYear(d: Date): Date {
+  return new Date(d.getFullYear(), 0, 1);
+}
 
-  const weekDeposits = (weekBookings || []).reduce(
-    (sum, b) => sum + (b.payment_amount_cents || 0),
-    0
-  );
-  const weekDueAtAppt = (weekBookings || []).reduce(
-    (sum, b) => {
-      const svcPrice = b.services?.price_cents || 0;
-      return sum + Math.max(0, svcPrice - (b.payment_amount_cents || 0));
-    },
-    0
-  );
-  const weekTotalRevenue = weekDeposits + weekDueAtAppt;
+function endOfDay(d: Date): Date {
+  const r = new Date(d);
+  r.setHours(23, 59, 59, 999);
+  return r;
+}
 
-  // Greeting based on time of day
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+function getPeriodRange(period: Period, now: Date): { start: Date; end: Date; label: string } {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const fmtShort = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const firstName = provider.business_name.split(" ")[0];
+  switch (period) {
+    case "today":
+      return { start: today, end: endOfDay(today), label: fmtShort(today) };
+    case "week": {
+      const s = startOfWeekMonday(today);
+      const e = new Date(s.getTime() + 6 * 86400000);
+      return { start: s, end: endOfDay(e), label: `${fmtShort(s)}–${fmtShort(e)}` };
+    }
+    case "month": {
+      const s = startOfMonth(today);
+      const e = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      return { start: s, end: endOfDay(e), label: today.toLocaleDateString("en-US", { month: "long", year: "numeric" }) };
+    }
+    case "year": {
+      const s = startOfYear(today);
+      const e = new Date(today.getFullYear(), 11, 31);
+      return { start: s, end: endOfDay(e), label: String(today.getFullYear()) };
+    }
+  }
+}
+
+function formatPrice(cents: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+}
+
+function toCsv(bookings: Booking[]): string {
+  const headers = ["Date", "Time", "Client", "Email", "Service", "Duration", "Service Price", "Deposit Paid", "Status"];
+  const rows = bookings.map((b) => {
+    const d = new Date(b.starts_at);
+    return [
+      d.toLocaleDateString(),
+      d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      b.client_name,
+      b.client_email,
+      b.services?.name || "",
+      b.services?.duration_minutes ? `${b.services.duration_minutes} min` : "",
+      b.services?.price_cents ? (b.services.price_cents / 100).toFixed(2) : "0.00",
+      (b.payment_amount_cents / 100).toFixed(2),
+      b.status,
+    ].map((c) => {
+      const s = String(c);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(",");
+  });
+  return [headers.join(","), ...rows].join("\r\n") + "\r\n";
+}
+
+// ─── Main ───
+
+export default function DashboardPage() {
+  const [provider, setProvider] = useState<{ id: string; business_name: string } | null>(null);
+  const [period, setPeriod] = useState<Period>("week");
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
+  const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
+  const [totalClients, setTotalClients] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const now = useMemo(() => new Date(), []);
+  const range = useMemo(() => getPeriodRange(period, now), [period, now]);
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: prov } = await supabase
+        .from("providers")
+        .select("id, business_name")
+        .eq("user_id", user.id)
+        .single();
+      if (!prov) return;
+      setProvider(prov);
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = endOfDay(todayStart);
+
+      const [todayRes, clientRes] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("*, services(name, emoji, color, duration_minutes, price_cents)")
+          .eq("provider_id", prov.id)
+          .gte("starts_at", todayStart.toISOString())
+          .lte("starts_at", todayEnd.toISOString())
+          .neq("status", "cancelled")
+          .order("starts_at"),
+        supabase
+          .from("bookings")
+          .select("client_email", { count: "exact", head: true })
+          .eq("provider_id", prov.id)
+          .neq("status", "cancelled"),
+      ]);
+
+      setTodayBookings((todayRes.data || []) as unknown as Booking[]);
+      setTotalClients(clientRes.count || 0);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  // Fetch period bookings whenever period changes
+  useEffect(() => {
+    if (!provider) return;
+    async function fetchPeriod() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("bookings")
+        .select("*, services(name, emoji, color, duration_minutes, price_cents)")
+        .eq("provider_id", provider!.id)
+        .gte("starts_at", range.start.toISOString())
+        .lte("starts_at", range.end.toISOString())
+        .neq("status", "cancelled")
+        .order("starts_at");
+      setAllBookings((data || []) as unknown as Booking[]);
+    }
+    fetchPeriod();
+  }, [provider, range]);
+
+  // Compute stats
+  const deposits = allBookings.reduce((s, b) => s + (b.payment_amount_cents || 0), 0);
+  const dueAtAppt = allBookings.reduce((s, b) => {
+    const svcPrice = b.services?.price_cents || 0;
+    return s + Math.max(0, svcPrice - (b.payment_amount_cents || 0));
+  }, 0);
+  const totalRevenue = deposits + dueAtAppt;
+  const uniqueEmails = new Set(allBookings.map((b) => b.client_email)).size;
+
+  // Export
+  function handleExport() {
+    const csv = toCsv(allBookings);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bloom-${period}-${range.label.replace(/[^a-zA-Z0-9]/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Greeting
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = provider?.business_name.split(" ")[0] || "";
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-gray-400 py-20 justify-center">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -94,7 +229,7 @@ export default async function DashboardPage() {
           </span>
         </h1>
         <p className="text-gray-400 mt-1">
-          {today.toLocaleDateString("en-US", {
+          {now.toLocaleDateString("en-US", {
             weekday: "long",
             month: "long",
             day: "numeric",
@@ -102,36 +237,70 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Period selector + export */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+          {(["today", "week", "month", "year"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
+                period === p
+                  ? "bg-white text-purple-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {p === "today" ? "Today" : p === "week" ? "This Week" : p === "month" ? "This Month" : "This Year"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">{range.label}</span>
+          <button
+            onClick={handleExport}
+            disabled={allBookings.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-purple-200 hover:text-purple-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </button>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "Today's Bookings",
-            value: todayBookings?.length || 0,
+            label: "Bookings",
+            value: allBookings.length,
             icon: CalendarDays,
             gradient: "from-violet-500 to-purple-600",
             bgGlow: "bg-violet-500/10",
           },
           {
-            label: `Revenue · ${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-            value: `$${(weekTotalRevenue / 100).toFixed(0)}`,
-            subtitle: weekDeposits > 0 || weekDueAtAppt > 0
-              ? `$${(weekDeposits / 100).toFixed(0)} deposits · $${(weekDueAtAppt / 100).toFixed(0)} at appt`
+            label: "Revenue",
+            value: `$${(totalRevenue / 100).toFixed(0)}`,
+            subtitle: deposits > 0 || dueAtAppt > 0
+              ? `$${(deposits / 100).toFixed(0)} deposits · $${(dueAtAppt / 100).toFixed(0)} at appt`
               : undefined,
             icon: DollarSign,
             gradient: "from-pink-500 to-rose-600",
             bgGlow: "bg-pink-500/10",
           },
           {
-            label: "Total Clients",
-            value: totalClients || 0,
+            label: "Clients",
+            value: period === "today" || period === "week" || period === "month" || period === "year"
+              ? uniqueEmails
+              : totalClients,
             icon: Users,
             gradient: "from-blue-500 to-cyan-500",
             bgGlow: "bg-blue-500/10",
           },
           {
-            label: "Bookings This Week",
-            value: weekBookings?.length || 0,
+            label: "Avg per Booking",
+            value: allBookings.length > 0
+              ? `$${(totalRevenue / allBookings.length / 100).toFixed(0)}`
+              : "$0",
             icon: TrendingUp,
             gradient: "from-amber-500 to-orange-500",
             bgGlow: "bg-amber-500/10",
@@ -172,7 +341,7 @@ export default async function DashboardPage() {
           </a>
         </div>
 
-        {!todayBookings || todayBookings.length === 0 ? (
+        {todayBookings.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-pink-50 to-rose-100 mb-4">
               <PeonyMark size={48} />
@@ -194,7 +363,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {todayBookings.map((booking: any) => {
+            {todayBookings.map((booking) => {
               const service = booking.services;
               const startTime = new Date(booking.starts_at).toLocaleTimeString(
                 "en-US",
