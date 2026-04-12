@@ -159,6 +159,95 @@ Friday Loom + 3 specific questions + take notes in `tester-feedback.md` + thank-
 
 ---
 
+## Client Accounts Architecture (locked 2026-04-11)
+
+Bloom has two audiences: providers (who run the business) and clients (who book appointments). The marketing landing at `bloomrdv.com` is for **providers**. Clients discover Bloom through a specific provider's booking page like `bloomrdv.com/petal-polish` shared on Instagram, a business card, or an appointment reminder email. Clients never visit the marketing landing in a healthy flow.
+
+### Scope decision: Global accounts, positioned as per-provider in v1
+
+- **Data model is global**: one `clients` row per unique email across all of Bloom
+- **Marketing in v1 is per-provider**: the login modal is themed to match the active provider, and clients don't think of themselves as "Bloom users," they think of themselves as "Anna's clients"
+- Enables future network effects (cross-provider search, Shop-style marketplace in Phase 6) without a painful migration
+- Matches how Fresha, Booksy, Vagaro, Mindbody all handle this
+
+### Auth mechanism: Magic links only
+
+- `supabase.auth.signInWithOtp({ email })` — no passwords, ever
+- Clients book a haircut 4×/year. They will not remember a password. Forcing one is the #1 conversion killer.
+- Passkey (WebAuthn) upgrade is a v2 option but not shipped in v1
+
+### Booking flow: Guest checkout stays, accounts are optional
+
+- A first-time booking never forces signup (Amazon-style guest checkout)
+- Before the final "Book" button, a small checkbox: "☐ Save my details for faster checkout next time"
+- If checked, server creates the `clients` row and sends a magic link alongside the confirmation email
+- Unchecked, nothing changes — the booking still works
+
+### Provider-side identity management (Phase 3)
+
+Because one human can book twice with different emails ("Alejandra" with `aleja@gmail.com`, then "Allie" with `allie@pm.me`), the stylist needs a way to unify them in her client list without merging the auth identities.
+
+Solution: **two-layer identity model**.
+
+- `clients` table — auth-side identity, one row per unique email, owned by Supabase Auth
+- `provider_clients` table — provider-side view, one row per (provider × human). Each has a `primary_display_name`, `primary_notes`, `merged_from uuid[]`, photos, color formulas, etc.
+- `provider_client_emails` table — the aliases (one provider_client can have many emails)
+- `bookings` has BOTH `client_id` (auth-side) AND `provider_client_id` (stylist-side)
+
+When a stylist merges two `provider_clients`:
+- She picks one as primary, the other gets marked as merged (soft-deleted)
+- All bookings that pointed to the secondary re-point to the primary
+- Notes are concatenated with `--- Merged from [other name] on [date] ---`
+- Aliases list grows
+- The two `clients.id` (auth-side) stay separate — Alejandra can never see Allie's bookings via her own login
+
+This is safe, undoable within a grace period, and matches how Salesforce, HubSpot, and Zoho handle contact merges.
+
+**Merge is Phase 3**, not v1. Trying to cram it into v1 bloats scope.
+
+### v1 must-haves (the first client accounts shipment, ~9.5 hours)
+
+1. **Migration**: `clients` table (id, email, name, phone, created_at, last_seen_at, email_preferences), RLS policies
+2. **Bookings extension**: add `client_id uuid references clients(id)` (nullable, legacy guest bookings keep null)
+3. **Magic link auth**: `signInWithOtp` wired up via Supabase Auth with a themed login modal on the provider's booking page
+4. **`/auth/callback`**: extended to handle client logins (currently only handles providers)
+5. **Checkout checkbox**: "Save my details for faster checkout next time" on `/book/[slug]/[serviceId]`
+6. **Auto-fill**: on the booking form, if the client is logged in, pre-fill name/email/phone
+7. **`/account` page**: unbranded (Bloom marketing aesthetic), shows "My bookings" across all providers this client has booked with
+8. **`/account/bookings/[id]`**: single booking detail with add-to-calendar, rebook, and cancel actions
+9. **Magic link email template**: Bloom-branded, sent via Resend
+
+### v1 explicitly NOT shipping
+
+- Passkey support (v2)
+- Cross-provider search / marketplace (Phase 6)
+- Color formula sharing with clients (Phase 3)
+- Loyalty dashboards (Phase 4)
+- Payment method saved in account (Phase 3)
+- Marketing email preferences UI (unsubscribe link only in v1)
+- Backfill: linking past guest bookings to a newly-created account (nice-to-have — add if time)
+
+### Routes
+
+| Route | Purpose | Auth |
+|---|---|---|
+| `/book/[slug]` | Provider's booking landing (existing) | Public |
+| `/book/[slug]/[serviceId]` | Booking form (existing) | Public with optional client session |
+| `/auth/callback` | Magic link target (existing, extend) | — |
+| `/account` | Global "my bookings" for clients | Client only |
+| `/account/bookings/[id]` | Single booking detail | Client (own bookings only) |
+
+### Marketing landing
+
+- Marketing landing at `bloomrdv.com` stays provider-focused
+- A small footer line directs confused clients: "Are you a client? Visit your provider's page directly — usually shared on their Instagram, business card, or appointment reminder."
+
+### Phase 6+: Shop
+
+Much later, when there are enough providers on Bloom, the `/account` page grows into a client-side marketplace — "discover service providers near you," ratings, categories, favorites. Like Shopify's Shop app for booking services. **Not on any short-term roadmap** — mentioned here only so architecture decisions don't foreclose it.
+
+---
+
 ## Debugging Deployment Errors
 
 **ALWAYS run `npm run build` first** when the deployed site shows errors. TypeScript build failures are the most common cause — not missing env vars. Don't send the user chasing environment variable issues until you've confirmed the build passes clean locally.

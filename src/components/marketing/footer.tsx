@@ -99,8 +99,24 @@ export function MarketingFooter() {
           </div>
         </div>
 
+        {/* Client note — for confused Googlers who landed here instead of
+            on their provider's page. Bloom's primary marketing audience is
+            providers; clients discover Bloom via a specific booking page. */}
+        <div className="mt-10 pt-6 border-t border-pink-100">
+          <div className="rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 border border-pink-100 px-5 py-4">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              <span className="font-semibold text-pink-700">Looking to book an appointment?</span>{" "}
+              Bloom is the platform your stylist, therapist, or beauty pro
+              uses to run their booking page. To book with a specific provider,
+              open the link they shared with you (usually on Instagram, a
+              business card, or an appointment reminder email). You&apos;ll be
+              able to create an account right from their page.
+            </p>
+          </div>
+        </div>
+
         {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-400">
             © {new Date().getFullYear()} Bloom · Rendez-vous. Made with care
             for the beauty &amp; wellness community.
