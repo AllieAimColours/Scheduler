@@ -31,6 +31,7 @@ export default function SettingsPage() {
     default_slot_minutes: 15 as 15 | 30 | 60,
     default_buffer_before_minutes: 0,
     default_buffer_after_minutes: 0,
+    min_booking_notice_hours: 0,
   });
 
   useEffect(() => {
@@ -65,6 +66,10 @@ export default function SettingsPage() {
           if (typeof v !== "number" || !Number.isFinite(v)) return 0;
           return Math.max(0, Math.min(120, Math.round(v)));
         };
+        const clampNotice = (v: unknown): number => {
+          if (typeof v !== "number" || !Number.isFinite(v)) return 0;
+          return Math.max(0, Math.min(720, Math.round(v)));
+        };
         setForm({
           business_name: data.business_name,
           description: data.description,
@@ -75,6 +80,7 @@ export default function SettingsPage() {
           default_slot_minutes: slotInterval,
           default_buffer_before_minutes: clampBuffer(branding.default_buffer_before_minutes),
           default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
+          min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
         });
       }
     }
@@ -93,6 +99,7 @@ export default function SettingsPage() {
       default_slot_minutes: form.default_slot_minutes,
       default_buffer_before_minutes: form.default_buffer_before_minutes,
       default_buffer_after_minutes: form.default_buffer_after_minutes,
+      min_booking_notice_hours: form.min_booking_notice_hours,
     };
     const { error } = await supabase
       .from("providers")
@@ -356,6 +363,36 @@ export default function SettingsPage() {
                 Cleanup / turnover time after every appointment.
               </p>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="min_notice" className="text-gray-800 font-medium">
+              Minimum booking notice
+            </Label>
+            <select
+              id="min_notice"
+              value={form.min_booking_notice_hours}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  min_booking_notice_hours: Number(e.target.value),
+                })
+              }
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20"
+            >
+              <option value={0}>No minimum — clients can book anytime</option>
+              <option value={1}>1 hour before</option>
+              <option value={2}>2 hours before</option>
+              <option value={4}>4 hours before</option>
+              <option value={12}>12 hours before</option>
+              <option value={24}>24 hours before (1 day)</option>
+              <option value={48}>48 hours before (2 days)</option>
+              <option value={72}>72 hours before (3 days)</option>
+              <option value={168}>1 week before</option>
+            </select>
+            <p className="text-[11px] text-gray-400">
+              How much advance notice clients need to book. Slots starting sooner than this won&apos;t appear on your booking page.
+            </p>
           </div>
 
           <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/50 rounded-xl p-4 border border-amber-100/60">

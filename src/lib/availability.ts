@@ -122,15 +122,19 @@ function parseBookingDefaults(branding: unknown): {
   slotInterval: number;
   defaultBufferBefore: number;
   defaultBufferAfter: number;
+  minNoticeHours: number;
 } {
   const b = (branding || {}) as Record<string, unknown>;
   const slot = typeof b.default_slot_minutes === "number" ? b.default_slot_minutes : 15;
   const before = typeof b.default_buffer_before_minutes === "number" ? b.default_buffer_before_minutes : 0;
   const after = typeof b.default_buffer_after_minutes === "number" ? b.default_buffer_after_minutes : 0;
+  const notice = typeof b.min_booking_notice_hours === "number" ? b.min_booking_notice_hours : 0;
   return {
     slotInterval: [15, 30, 60].includes(slot) ? slot : 15,
     defaultBufferBefore: Math.max(0, Math.min(120, before)),
     defaultBufferAfter: Math.max(0, Math.min(120, after)),
+    // Clamp 0..720 (one month max lead time)
+    minNoticeHours: Math.max(0, Math.min(720, notice)),
   };
 }
 
@@ -165,8 +169,12 @@ export async function getAvailableSlots(
   }
 
   const tz = provider.timezone;
-  const { slotInterval, defaultBufferBefore, defaultBufferAfter } =
+  const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(provider.branding);
+
+  // Earliest moment a client is allowed to book. Any slot starting before
+  // this instant gets filtered out at the end.
+  const earliestBookableMs = Date.now() + minNoticeHours * 60 * 60 * 1000;
 
   // Resolve the NEW booking's effective buffers (service override → provider default)
   const newBuffers = resolveBuffers(
@@ -330,10 +338,13 @@ export async function getAvailableSlots(
       const startUTC = fromZonedTime(startLocal, tz);
       const endUTC = fromZonedTime(endLocal, tz);
 
-      slots.push({
-        start: startUTC.toISOString(),
-        end: endUTC.toISOString(),
-      });
+      // Respect minimum booking notice — skip anything starting too soon
+      if (startUTC.getTime() >= earliestBookableMs) {
+        slots.push({
+          start: startUTC.toISOString(),
+          end: endUTC.toISOString(),
+        });
+      }
 
       cursor += slotInterval;
     }
@@ -439,8 +450,10 @@ export async function getAvailabilityCounts(
 
   const durationMinutes = serviceRes.data.duration_minutes;
   const tz = providerRes.data.timezone;
-  const { slotInterval, defaultBufferBefore, defaultBufferAfter } =
+  const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(providerRes.data.branding);
+
+  const earliestBookableMs = Date.now() + minNoticeHours * 60 * 60 * 1000;
 
   // NEW booking's effective buffers (per-service override → provider default → 0)
   const newBuffers = resolveBuffers(
@@ -601,6 +614,32 @@ export async function getAvailabilityCounts(
     if (skipDay) {
       result[dateStr] = { slots: 0, capacity: 0 };
       continue;
+    }
+
+    // Apply minimum booking notice — if this day starts before the
+    // earliest bookable moment, subtract the "too soon" portion from
+    // free windows. This keeps capacity + slots consistent so the
+    // month-view color coding reflects the real constraint.
+    if (minNoticeHours > 0) {
+      const dayStartMs = fromZonedTime(
+        new Date(`${dateStr}T00:00:00`),
+        tz
+      ).getTime();
+      const dayEndMs = dayStartMs + 24 * 60 * 60 * 1000;
+
+      if (dayEndMs <= earliestBookableMs) {
+        // Whole day is inside the notice window
+        result[dateStr] = { slots: 0, capacity: 0 };
+        continue;
+      }
+
+      if (dayStartMs < earliestBookableMs) {
+        // Partial — block midnight up to the earliest bookable minute
+        const blockedMinutes = Math.ceil(
+          (earliestBookableMs - dayStartMs) / 60000
+        );
+        free = subtractWindows(free, [{ start: 0, end: blockedMinutes }]);
+      }
     }
 
     // Capacity = slot count WITHOUT subtracting bookings
