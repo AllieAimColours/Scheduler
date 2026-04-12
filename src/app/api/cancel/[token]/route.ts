@@ -4,6 +4,7 @@ import {
   calculateRefund,
   parseCancellationPolicy,
 } from "@/lib/cancellation";
+import { getStripe } from "@/lib/stripe";
 import type { Booking, Service, Provider } from "@/types/database";
 
 export async function GET(
@@ -154,17 +155,29 @@ export async function POST(
     );
   }
 
-  // TODO: Process Stripe refund when Stripe is connected
-  // if (booking.stripe_payment_intent_id && refundAmountCents > 0) {
-  //   const stripe = getStripe();
-  //   await stripe.refunds.create({
-  //     payment_intent: booking.stripe_payment_intent_id,
-  //     amount: refundAmountCents,
-  //   });
-  // }
+  // Process the actual Stripe refund. For destination charges the
+  // platform owns the PaymentIntent so a normal refund reverses both
+  // the charge and the proportional transfer to the connected account.
+  let stripeRefundId: string | null = null;
+  if (booking.stripe_payment_intent_id && refundAmountCents > 0) {
+    try {
+      const stripe = getStripe();
+      const refund = await stripe.refunds.create({
+        payment_intent: booking.stripe_payment_intent_id,
+        amount: refundAmountCents,
+      });
+      stripeRefundId = refund.id;
+    } catch (stripeErr) {
+      // Log but don't fail the cancellation — the booking is already
+      // marked cancelled in the DB. The provider can manually refund
+      // via Stripe dashboard if the API call fails.
+      console.error("Stripe refund failed:", stripeErr);
+    }
+  }
 
   return NextResponse.json({
     success: true,
     refund_amount_cents: refundAmountCents,
+    stripe_refund_id: stripeRefundId,
   });
 }
