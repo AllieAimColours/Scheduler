@@ -409,24 +409,41 @@ export default function BookServicePage() {
                   <span>Service</span>
                   <span className="font-medium">{service.name}</span>
                 </div>
-                <div className={`flex justify-between font-semibold pt-2 border-t ${template.classes.heading}`}>
-                  <span>
-                    {(effectiveDeposit && effectiveDeposit.deposit_cents > 0)
-                      ? "Deposit due now"
+                {(() => {
+                  // Resolve what the client actually owes now vs at the appointment.
+                  // effectiveDeposit (from the policy) wins over the service's own
+                  // deposit_cents. If neither is set, there's no deposit.
+                  const depositCents =
+                    effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                      ? effectiveDeposit.deposit_cents
                       : service.deposit_cents > 0
-                      ? "Deposit due now"
-                      : "Total"}
-                  </span>
-                  <span>
-                    {formatPrice(
-                      effectiveDeposit && effectiveDeposit.deposit_cents > 0
-                        ? effectiveDeposit.deposit_cents
-                        : service.deposit_cents > 0
-                        ? service.deposit_cents
-                        : service.price_cents
-                    )}
-                  </span>
-                </div>
+                      ? service.deposit_cents
+                      : 0;
+                  const totalCents = service.price_cents;
+                  const remainderCents = Math.max(0, totalCents - depositCents);
+                  const hasDeposit = depositCents > 0 && depositCents < totalCents;
+
+                  return (
+                    <>
+                      <div className={`flex justify-between pt-2 border-t ${template.classes.heading}`}>
+                        <span className="font-semibold">Total</span>
+                        <span className="font-semibold">{formatPrice(totalCents)}</span>
+                      </div>
+                      {hasDeposit && (
+                        <>
+                          <div className="flex justify-between text-xs pt-1">
+                            <span className="opacity-70">Due now (deposit)</span>
+                            <span className="font-medium">{formatPrice(depositCents)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="opacity-70">Due at appointment</span>
+                            <span className="font-medium">{formatPrice(remainderCents)}</span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 

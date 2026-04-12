@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ShieldCheck, Plus, Trash2, Clock, Percent } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, Clock, Percent, Info } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import {
@@ -151,6 +151,22 @@ export function CancellationPolicyEditor({ provider, onUpdate }: Props) {
               <p className="text-sm text-gray-400">
                 Define how much clients get back based on when they cancel
               </p>
+
+              {/* Important explainer — what the refund percent actually applies to */}
+              <div className="flex gap-2.5 rounded-xl border border-amber-200/70 bg-amber-50/60 p-3">
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-gray-700 leading-relaxed space-y-1">
+                  <p>
+                    <span className="font-semibold">Refund percentages apply to what the client actually paid upfront</span> — not the full service price.
+                  </p>
+                  <p className="text-gray-600">
+                    If a service has a deposit, only the deposit was charged at checkout, so that&apos;s the amount you&apos;re refunding from. Example: a $150 service with a $20 deposit and a 100% refund rule = the client gets back $20. The $130 balance is only owed if they show up, so there&apos;s nothing to refund there.
+                  </p>
+                  <p className="text-gray-600">
+                    Services with no deposit charge the full price upfront — so the percentages apply to the full service price.
+                  </p>
+                </div>
+              </div>
 
               <div className="space-y-2">
                 {rules.map((rule, i) => (
