@@ -191,122 +191,98 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Payment Mode */}
+      {/* Business Info — identity first */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
-              <DollarSign className="h-4 w-4 text-white" />
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+              <Settings className="h-4 w-4 text-white" />
             </div>
-            Payment Mode
+            Business Information
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Choose how clients pay for your services
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3">
-            {([
-              {
-                id: "deposit_only" as const,
-                label: "Deposits only",
-                description: "Charge the deposit online, client pays the rest at the appointment. No deposit = no online payment.",
-              },
-              {
-                id: "full_upfront" as const,
-                label: "Full payment upfront",
-                description: "Charge the full service price at checkout. If a deposit is set, charge just the deposit instead.",
-              },
-              {
-                id: "at_appointment" as const,
-                label: "Always pay at appointment",
-                description: "Never charge online. Clients book freely, pay in person with cash, tap, or card.",
-              },
-            ]).map((opt) => {
-              const active = form.payment_mode === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setForm({ ...form, payment_mode: opt.id })}
-                  className={
-                    active
-                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
-                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
-                  }
-                >
-                  <div className={active ? "font-display font-bold text-purple-700" : "font-display font-bold text-gray-700"}>
-                    {opt.label}
-                  </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                    {opt.description}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cancellation Policy */}
-      <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
-
-      {/* Data Export */}
-      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-              <Download className="h-4 w-4 text-white" />
-            </div>
-            Data Export
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            Your data is yours. Download it any time — no questions asked.
+            The core info clients will see throughout your booking flow
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Primary action — one spreadsheet-ready file with everything */}
-          <ExportButton
-            type="all-csv"
-            label="Everything (CSV, spreadsheet-ready)"
-            description="Bookings, clients, services, and payments in one file — opens in Excel, Numbers, and Google Sheets"
-            icon={<FileText className="h-4 w-4" />}
-            prominent
-          />
-
-          {/* Per-table CSVs for when you only want one slice */}
-          <div>
-            <p className="text-xs text-gray-500 font-medium mb-2">Or download individual tables</p>
-            <div className="grid sm:grid-cols-2 gap-2">
-              <ExportButton type="bookings" label="Bookings" description="All appointments with client + payment details" icon={<FileText className="h-4 w-4" />} />
-              <ExportButton type="clients" label="Clients" description="Aggregated by email with visit history" icon={<FileText className="h-4 w-4" />} />
-              <ExportButton type="services" label="Services" description="Your service catalog" icon={<FileText className="h-4 w-4" />} />
-              <ExportButton type="payments" label="Payments" description="All paid + refunded transactions" icon={<FileText className="h-4 w-4" />} />
+          <div className="space-y-2">
+            <Label className="text-gray-800 font-medium">Business Name</Label>
+            <Input
+              value={form.business_name}
+              onChange={(e) => setForm({ ...form, business_name: e.target.value })}
+              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-800 font-medium">Description</Label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={3}
+              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-gray-800 font-medium">Phone</Label>
+              <Input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-800 font-medium">Website</Label>
+              <Input
+                value={form.website}
+                onChange={(e) => setForm({ ...form, website: e.target.value })}
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-800 font-medium">Currency</Label>
+              <select
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="MXN">MXN ($)</option>
+                <option value="BRL">BRL (R$)</option>
+                <option value="CHF">CHF</option>
+                <option value="JPY">JPY (¥)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
             </div>
           </div>
-
-          {/* Developer option — JSON */}
-          <div className="pt-2 border-t border-gray-100">
-            <p className="text-xs text-gray-500 font-medium mb-2 pt-2">Developer option</p>
-            <a
-              href="/api/export?type=all"
-              download
-              className="group inline-flex items-center gap-2 text-xs text-gray-500 hover:text-purple-600 transition-colors"
-            >
-              <FileJson className="h-3.5 w-3.5" />
-              <span className="underline underline-offset-2">Download everything as JSON</span>
-              <span className="text-gray-400">— structured format for importing back into Bloom or your own tools</span>
-            </a>
+          <div className="space-y-2">
+            <Label className="text-gray-800 font-medium">Address</Label>
+            <Input
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              placeholder="123 Main St, City, State"
+              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+            />
+            <p className="text-xs text-gray-400">
+              Shown on your booking page and in &quot;Get directions&quot; on the confirmation page
+            </p>
           </div>
 
-          <p className="text-xs text-gray-400 pt-1">
-            Files are generated on demand from your live data.
-          </p>
+          <div className="bg-gradient-to-r from-purple-50/80 to-pink-50/50 rounded-xl p-4 border border-purple-100/60">
+            <p className="text-sm text-gray-600">
+              <Globe className="h-4 w-4 inline mr-1.5 text-purple-500" />
+              Your booking page:{" "}
+              <span className="font-mono font-medium text-gray-800">
+                /book/{provider.slug}
+              </span>
+            </p>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Import from Bloom JSON export */}
-      <ImportCard />
 
       {/* Booking calendar range */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
@@ -505,98 +481,122 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Business Info */}
+      {/* Payment Mode */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2.5 text-gray-800">
-            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
-              <Settings className="h-4 w-4 text-white" />
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg">
+              <DollarSign className="h-4 w-4 text-white" />
             </div>
-            Business Information
+            Payment Mode
           </CardTitle>
           <CardDescription className="text-gray-400">
-            The core info clients will see throughout your booking flow
+            Choose how clients pay for your services
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Business Name</Label>
-            <Input
-              value={form.business_name}
-              onChange={(e) => setForm({ ...form, business_name: e.target.value })}
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Description</Label>
-            <Textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={3}
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-gray-800 font-medium">Phone</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-gray-800 font-medium">Website</Label>
-              <Input
-                value={form.website}
-                onChange={(e) => setForm({ ...form, website: e.target.value })}
-                className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-gray-800 font-medium">Currency</Label>
-              <select
-                value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="CAD">CAD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="AUD">AUD ($)</option>
-                <option value="MXN">MXN ($)</option>
-                <option value="BRL">BRL (R$)</option>
-                <option value="CHF">CHF</option>
-                <option value="JPY">JPY (¥)</option>
-                <option value="INR">INR (₹)</option>
-              </select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-800 font-medium">Address</Label>
-            <Input
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              placeholder="123 Main St, City, State"
-              className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
-            />
-            <p className="text-xs text-gray-400">
-              Shown on your booking page and in &quot;Get directions&quot; on the confirmation page
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-50/80 to-pink-50/50 rounded-xl p-4 border border-purple-100/60">
-            <p className="text-sm text-gray-600">
-              <Globe className="h-4 w-4 inline mr-1.5 text-purple-500" />
-              Your booking page:{" "}
-              <span className="font-mono font-medium text-gray-800">
-                /book/{provider.slug}
-              </span>
-            </p>
+        <CardContent>
+          <div className="grid gap-3">
+            {([
+              {
+                id: "deposit_only" as const,
+                label: "Deposits only",
+                description: "Charge the deposit online, client pays the rest at the appointment. No deposit = no online payment.",
+              },
+              {
+                id: "full_upfront" as const,
+                label: "Full payment upfront",
+                description: "Charge the full service price at checkout. If a deposit is set, charge just the deposit instead.",
+              },
+              {
+                id: "at_appointment" as const,
+                label: "Always pay at appointment",
+                description: "Never charge online. Clients book freely, pay in person with cash, tap, or card.",
+              },
+            ]).map((opt) => {
+              const active = form.payment_mode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, payment_mode: opt.id })}
+                  className={
+                    active
+                      ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
+                      : "p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30 text-left transition-all cursor-pointer"
+                  }
+                >
+                  <div className={active ? "font-display font-bold text-purple-700" : "font-display font-bold text-gray-700"}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                    {opt.description}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {/* Cancellation Policy */}
+      <CancellationPolicyEditor provider={provider} onUpdate={setProvider} />
+
+      {/* Data Export */}
+      <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5 text-gray-800">
+            <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+              <Download className="h-4 w-4 text-white" />
+            </div>
+            Data Export
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Your data is yours. Download it any time — no questions asked.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Primary action — one spreadsheet-ready file with everything */}
+          <ExportButton
+            type="all-csv"
+            label="Everything (CSV, spreadsheet-ready)"
+            description="Bookings, clients, services, and payments in one file — opens in Excel, Numbers, and Google Sheets"
+            icon={<FileText className="h-4 w-4" />}
+            prominent
+          />
+
+          {/* Per-table CSVs for when you only want one slice */}
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-2">Or download individual tables</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <ExportButton type="bookings" label="Bookings" description="All appointments with client + payment details" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="clients" label="Clients" description="Aggregated by email with visit history" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="services" label="Services" description="Your service catalog" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="payments" label="Payments" description="All paid + refunded transactions" icon={<FileText className="h-4 w-4" />} />
+            </div>
+          </div>
+
+          {/* Developer option — JSON */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 font-medium mb-2 pt-2">Developer option</p>
+            <a
+              href="/api/export?type=all"
+              download
+              className="group inline-flex items-center gap-2 text-xs text-gray-500 hover:text-purple-600 transition-colors"
+            >
+              <FileJson className="h-3.5 w-3.5" />
+              <span className="underline underline-offset-2">Download everything as JSON</span>
+              <span className="text-gray-400">— structured format for importing back into Bloom or your own tools</span>
+            </a>
+          </div>
+
+          <p className="text-xs text-gray-400 pt-1">
+            Files are generated on demand from your live data.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Import from Bloom JSON export */}
+      <ImportCard />
 
       {/* Autosave status — no manual save button needed */}
     </div>
