@@ -219,9 +219,9 @@ export default function CalendarPage() {
   }, [view, anchor]);
 
   // Block time
-  async function handleBlockTime(title: string, startH: number, endH: number, date: Date) {
-    const starts_at = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startH).toISOString();
-    const ends_at = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endH).toISOString();
+  async function handleBlockTime(title: string, startTime: string, endTime: string, dateStr: string) {
+    const starts_at = new Date(`${dateStr}T${startTime}:00`).toISOString();
+    const ends_at = new Date(`${dateStr}T${endTime}:00`).toISOString();
 
     const res = await fetch("/api/calendar/events", {
       method: "POST",
@@ -755,21 +755,20 @@ function BlockTimeDialog({
   onOpenChange: (o: boolean) => void;
   date: Date;
   defaultHour: number;
-  onSubmit: (title: string, startH: number, endH: number, date: Date) => void;
+  onSubmit: (title: string, startTime: string, endTime: string, dateStr: string) => void;
 }) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmtDateVal = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
   const [title, setTitle] = useState("Personal time");
-  const [startH, setStartH] = useState(defaultHour);
-  const [endH, setEndH] = useState(defaultHour + 1);
-  const [blockDate, setBlockDate] = useState(
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-  );
+  const [startTime, setStartTime] = useState(`${pad(defaultHour)}:00`);
+  const [endTime, setEndTime] = useState(`${pad(Math.min(defaultHour + 1, 23))}:00`);
+  const [blockDate, setBlockDate] = useState(fmtDateVal(date));
 
   useEffect(() => {
-    setStartH(defaultHour);
-    setEndH(Math.min(defaultHour + 1, 23));
-    setBlockDate(
-      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-    );
+    setStartTime(`${pad(defaultHour)}:00`);
+    setEndTime(`${pad(Math.min(defaultHour + 1, 23))}:00`);
+    setBlockDate(fmtDateVal(date));
   }, [date, defaultHour]);
 
   return (
@@ -803,37 +802,38 @@ function BlockTimeDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label className="text-gray-800 font-medium">Start</Label>
-              <select
-                value={startH}
+              <Input
+                type="time"
+                value={startTime}
                 onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setStartH(v);
-                  if (endH <= v) setEndH(v + 1);
+                  setStartTime(e.target.value);
+                  if (e.target.value >= endTime) {
+                    const [h, m] = e.target.value.split(":").map(Number);
+                    const newEnd = h * 60 + m + 60;
+                    setEndTime(`${pad(Math.min(Math.floor(newEnd / 60), 23))}:${pad(newEnd % 60)}`);
+                  }
                 }}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>{minutesToTime(i * 60)}</option>
-                ))}
-              </select>
+                className="border-gray-200"
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-gray-800 font-medium">End</Label>
-              <select
-                value={endH}
-                onChange={(e) => setEndH(Number(e.target.value))}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
-              >
-                {Array.from({ length: 24 - startH }, (_, i) => (
-                  <option key={i} value={startH + i + 1}>{minutesToTime((startH + i + 1) * 60)}</option>
-                ))}
-              </select>
+              <Input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                min={startTime}
+                className="border-gray-200"
+              />
             </div>
           </div>
           <Button
             onClick={() => {
-              const d = new Date(blockDate + "T12:00:00");
-              onSubmit(title || "Blocked", startH, endH, d);
+              if (endTime <= startTime) {
+                toast.error("End time must be after start time");
+                return;
+              }
+              onSubmit(title || "Blocked", startTime, endTime, blockDate);
             }}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
           >

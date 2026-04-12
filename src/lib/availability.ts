@@ -118,24 +118,38 @@ function resolveBuffers(
 /**
  * Parse the booking defaults from a provider's branding JSON.
  */
+/**
+ * Derive the best "nice" slot interval from a service's duration.
+ * Picks the largest of 15, 30, or 60 that divides evenly into the
+ * duration. Falls back to 15 if nothing divides cleanly (e.g. 45 min).
+ */
+function autoSlotInterval(durationMinutes: number): number {
+  if (durationMinutes >= 60 && durationMinutes % 60 === 0) return 60;
+  if (durationMinutes >= 30 && durationMinutes % 30 === 0) return 30;
+  return 15;
+}
+
 function parseBookingDefaults(branding: unknown): {
-  slotInterval: number;
+  slotIntervalRaw: number; // 0 = auto, 15/30/60 = fixed
   defaultBufferBefore: number;
   defaultBufferAfter: number;
   minNoticeHours: number;
 } {
   const b = (branding || {}) as Record<string, unknown>;
-  const slot = typeof b.default_slot_minutes === "number" ? b.default_slot_minutes : 15;
+  const slot = typeof b.default_slot_minutes === "number" ? b.default_slot_minutes : 0;
   const before = typeof b.default_buffer_before_minutes === "number" ? b.default_buffer_before_minutes : 0;
   const after = typeof b.default_buffer_after_minutes === "number" ? b.default_buffer_after_minutes : 0;
   const notice = typeof b.min_booking_notice_hours === "number" ? b.min_booking_notice_hours : 0;
   return {
-    slotInterval: [15, 30, 60].includes(slot) ? slot : 15,
+    slotIntervalRaw: [0, 15, 30, 60].includes(slot) ? slot : 0,
     defaultBufferBefore: Math.max(0, Math.min(120, before)),
     defaultBufferAfter: Math.max(0, Math.min(120, after)),
-    // Clamp 0..720 (one month max lead time)
     minNoticeHours: Math.max(0, Math.min(720, notice)),
   };
+}
+
+function resolveSlotInterval(raw: number, durationMinutes: number): number {
+  return raw === 0 ? autoSlotInterval(durationMinutes) : raw;
 }
 
 export async function getAvailableSlots(
@@ -171,8 +185,9 @@ export async function getAvailableSlots(
   }
 
   const tz = provider.timezone;
-  const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
+  const { slotIntervalRaw, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(provider.branding);
+  const slotInterval = resolveSlotInterval(slotIntervalRaw, durationMinutes);
 
   // Per-service minimum notice override. NULL = inherit provider default,
   // any number (including 0) is a hard override.
@@ -474,8 +489,9 @@ export async function getAvailabilityCounts(
 
   const durationMinutes = serviceRes.data.duration_minutes;
   const tz = providerRes.data.timezone;
-  const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
+  const { slotIntervalRaw, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(providerRes.data.branding);
+  const slotInterval = resolveSlotInterval(slotIntervalRaw, durationMinutes);
 
   // Per-service minimum notice override (same logic as getAvailableSlots)
   const effectiveMinNoticeHours =

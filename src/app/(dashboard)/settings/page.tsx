@@ -29,7 +29,7 @@ export default function SettingsPage() {
     website: "",
     address: "",
     booking_calendar_range: "month" as "week" | "2weeks" | "month" | "3months",
-    default_slot_minutes: 15 as 15 | 30 | 60,
+    default_slot_minutes: 0 as 0 | 15 | 30 | 60,
     default_buffer_before_minutes: 0,
     default_buffer_after_minutes: 0,
     min_booking_notice_hours: 0,
@@ -61,8 +61,8 @@ export default function SettingsPage() {
             ? rawRange
             : "month";
         const rawSlot = branding.default_slot_minutes;
-        const slotInterval: 15 | 30 | 60 =
-          rawSlot === 15 || rawSlot === 30 || rawSlot === 60 ? rawSlot : 15;
+        const slotInterval: 0 | 15 | 30 | 60 =
+          rawSlot === 0 || rawSlot === 15 || rawSlot === 30 || rawSlot === 60 ? rawSlot : 0;
         const clampBuffer = (v: unknown): number => {
           if (typeof v !== "number" || !Number.isFinite(v)) return 0;
           return Math.max(0, Math.min(120, Math.round(v)));
@@ -321,14 +321,19 @@ export default function SettingsPage() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label className="text-gray-800 font-medium">Slot interval</Label>
-            <div className="grid grid-cols-3 gap-3">
-              {([15, 30, 60] as const).map((n) => {
-                const active = form.default_slot_minutes === n;
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {([
+                { id: 0, label: "Automatic", hint: "Adapts to each service" },
+                { id: 15, label: "15 min", hint: "Tight scheduling" },
+                { id: 30, label: "30 min", hint: "Balanced" },
+                { id: 60, label: "1 hour", hint: "Therapy / consults" },
+              ] as const).map((opt) => {
+                const active = form.default_slot_minutes === opt.id;
                 return (
                   <button
-                    key={n}
+                    key={opt.id}
                     type="button"
-                    onClick={() => setForm({ ...form, default_slot_minutes: n })}
+                    onClick={() => setForm({ ...form, default_slot_minutes: opt.id })}
                     className={
                       active
                         ? "p-4 rounded-xl border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-md text-left transition-all cursor-pointer"
@@ -336,19 +341,19 @@ export default function SettingsPage() {
                     }
                   >
                     <div className={active ? "font-display text-lg font-bold text-purple-700" : "font-display text-lg font-bold text-gray-700"}>
-                      {n === 60 ? "1 hour" : `${n} min`}
+                      {opt.label}
                     </div>
                     <div className="text-[11px] text-gray-500 mt-0.5 leading-tight">
-                      {n === 15 && "Tight scheduling"}
-                      {n === 30 && "Most common"}
-                      {n === 60 && "Therapy / consults"}
+                      {opt.hint}
                     </div>
                   </button>
                 );
               })}
             </div>
             <p className="text-xs text-gray-400">
-              Clients only see bookable start times on this interval.
+              {form.default_slot_minutes === 0
+                ? "A 60-min service shows hourly slots, a 30-min shows half-hour slots, etc."
+                : "Clients only see bookable start times on this interval."}
             </p>
           </div>
 
