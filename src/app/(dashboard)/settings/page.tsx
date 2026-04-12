@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -162,29 +162,49 @@ export default function SettingsPage() {
             Your data is yours. Download it any time — no questions asked.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid sm:grid-cols-2 gap-2">
-            <ExportButton type="bookings" label="Bookings" description="All appointments with client + payment details" icon={<FileText className="h-4 w-4" />} />
-            <ExportButton type="clients" label="Clients" description="Aggregated by email with visit history" icon={<FileText className="h-4 w-4" />} />
-            <ExportButton type="services" label="Services" description="Your service catalog" icon={<FileText className="h-4 w-4" />} />
-            <ExportButton type="payments" label="Payments" description="All paid + refunded transactions" icon={<FileText className="h-4 w-4" />} />
+        <CardContent className="space-y-4">
+          {/* Primary action — one spreadsheet-ready file with everything */}
+          <ExportButton
+            type="all-csv"
+            label="Everything (CSV, spreadsheet-ready)"
+            description="Bookings, clients, services, and payments in one file — opens in Excel, Numbers, and Google Sheets"
+            icon={<FileText className="h-4 w-4" />}
+            prominent
+          />
+
+          {/* Per-table CSVs for when you only want one slice */}
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-2">Or download individual tables</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <ExportButton type="bookings" label="Bookings" description="All appointments with client + payment details" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="clients" label="Clients" description="Aggregated by email with visit history" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="services" label="Services" description="Your service catalog" icon={<FileText className="h-4 w-4" />} />
+              <ExportButton type="payments" label="Payments" description="All paid + refunded transactions" icon={<FileText className="h-4 w-4" />} />
+            </div>
           </div>
 
-          <div className="pt-2">
-            <ExportButton
-              type="all"
-              label="Everything (JSON)"
-              description="Full combined export — bookings, clients, services, payments — in one JSON file"
-              icon={<FileJson className="h-4 w-4" />}
-              prominent
-            />
+          {/* Developer option — JSON */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 font-medium mb-2 pt-2">Developer option</p>
+            <a
+              href="/api/export?type=all"
+              download
+              className="group inline-flex items-center gap-2 text-xs text-gray-500 hover:text-purple-600 transition-colors"
+            >
+              <FileJson className="h-3.5 w-3.5" />
+              <span className="underline underline-offset-2">Download everything as JSON</span>
+              <span className="text-gray-400">— structured format for importing back into Bloom or your own tools</span>
+            </a>
           </div>
 
-          <p className="text-xs text-gray-400 pt-2">
-            Files are generated on demand from your live data. CSV files work with Excel, Numbers, and Google Sheets.
+          <p className="text-xs text-gray-400 pt-1">
+            Files are generated on demand from your live data.
           </p>
         </CardContent>
       </Card>
+
+      {/* Import from Bloom JSON export */}
+      <ImportCard />
 
       {/* Booking calendar range */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
@@ -433,6 +453,93 @@ export default function SettingsPage() {
   );
 }
 
+// ─── Import card — upload a Bloom JSON export ───
+
+function ImportCard() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/import", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error || "Import failed");
+      } else {
+        const imported = json.imported ?? 0;
+        const skipped = json.skipped ?? 0;
+        if (imported > 0) {
+          toast.success(
+            skipped > 0
+              ? `Imported ${imported} service${imported === 1 ? "" : "s"} · ${skipped} skipped`
+              : `Imported ${imported} service${imported === 1 ? "" : "s"}`
+          );
+        } else {
+          toast.error(json.message || "Nothing imported");
+        }
+      }
+    } catch {
+      toast.error("Upload failed. Is the file under 5 MB?");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  return (
+    <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2.5 text-gray-800">
+          <div className="inline-flex p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg">
+            <Upload className="h-4 w-4 text-white" />
+          </div>
+          Import from Bloom
+        </CardTitle>
+        <CardDescription className="text-gray-400">
+          Already have a Bloom JSON export? Upload it here and we&apos;ll recreate your services.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
+          className="hidden"
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="group w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 border-2 border-sky-200 hover:border-sky-400 hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <div className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-md">
+            <Upload className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="text-sm font-semibold text-gray-800 group-hover:text-sky-700 transition-colors">
+              {uploading ? "Uploading..." : "Upload bloom-export-*.json"}
+            </div>
+            <div className="text-[11px] text-gray-500 leading-snug">
+              Recreates your services from the file. Existing services are kept as-is.
+            </div>
+          </div>
+        </button>
+        <p className="text-xs text-gray-400">
+          Only Bloom JSON exports for now. Switching from Acuity, Vagaro, or Calendly?
+          Let us know and we&apos;ll build an importer.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Data export button ───
 
 function ExportButton({
@@ -442,7 +549,7 @@ function ExportButton({
   icon,
   prominent = false,
 }: {
-  type: "bookings" | "clients" | "services" | "payments" | "all";
+  type: "bookings" | "clients" | "services" | "payments" | "all" | "all-csv";
   label: string;
   description: string;
   icon: React.ReactNode;

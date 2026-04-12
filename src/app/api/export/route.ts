@@ -5,8 +5,21 @@ import type { Booking, Service, Provider } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
-type ExportType = "bookings" | "clients" | "services" | "payments" | "all";
-const VALID_TYPES: ExportType[] = ["bookings", "clients", "services", "payments", "all"];
+type ExportType =
+  | "bookings"
+  | "clients"
+  | "services"
+  | "payments"
+  | "all"
+  | "all-csv";
+const VALID_TYPES: ExportType[] = [
+  "bookings",
+  "clients",
+  "services",
+  "payments",
+  "all",
+  "all-csv",
+];
 
 function todayStamp(): string {
   const d = new Date();
@@ -220,7 +233,34 @@ export async function GET(request: NextRequest) {
     return csvResponse(csv, `bloom-payments-${stamp}.csv`);
   }
 
-  // type === "all" — combined JSON dump
+  // type === "all-csv" — combined spreadsheet-ready dump
+  // Single CSV with section headers separating each table. Opens cleanly
+  // in Excel / Numbers / Google Sheets; power users can still grab
+  // individual tables from the per-table buttons.
+  if (type === "all-csv") {
+    const parts: string[] = [];
+    const banner = (title: string) =>
+      `# ${title.toUpperCase()} — ${provider.business_name} — exported ${new Date().toISOString()}\r\n`;
+
+    parts.push(banner("Bookings"));
+    parts.push(toCsv(bookingRows()));
+    parts.push("\r\n");
+
+    parts.push(banner("Clients"));
+    parts.push(toCsv(clientRows()));
+    parts.push("\r\n");
+
+    parts.push(banner("Services"));
+    parts.push(toCsv(serviceRowsShaped()));
+    parts.push("\r\n");
+
+    parts.push(banner("Payments"));
+    parts.push(toCsv(paymentRows()));
+
+    return csvResponse(parts.join(""), `bloom-everything-${stamp}.csv`);
+  }
+
+  // type === "all" — combined JSON dump (developer option)
   const combined = {
     export_metadata: {
       exported_at: new Date().toISOString(),
