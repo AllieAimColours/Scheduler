@@ -88,6 +88,8 @@ export interface Database {
           sort_order: number;
           buffer_before_minutes: number | null;
           buffer_after_minutes: number | null;
+          min_notice_hours: number | null;
+          max_per_day: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -106,6 +108,8 @@ export interface Database {
           sort_order?: number;
           buffer_before_minutes?: number | null;
           buffer_after_minutes?: number | null;
+          min_notice_hours?: number | null;
+          max_per_day?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -124,6 +128,8 @@ export interface Database {
           sort_order?: number;
           buffer_before_minutes?: number | null;
           buffer_after_minutes?: number | null;
+          min_notice_hours?: number | null;
+          max_per_day?: number | null;
           created_at?: string;
           updated_at?: string;
         };

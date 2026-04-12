@@ -147,7 +147,9 @@ export async function getAvailableSlots(
   // ------ 1. Fetch target service -------------------------------------------
   const { data: service, error: serviceErr } = await supabase
     .from("services")
-    .select("duration_minutes, buffer_before_minutes, buffer_after_minutes")
+    .select(
+      "duration_minutes, buffer_before_minutes, buffer_after_minutes, min_notice_hours, max_per_day"
+    )
     .eq("id", serviceId)
     .single();
 
@@ -172,9 +174,16 @@ export async function getAvailableSlots(
   const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(provider.branding);
 
+  // Per-service minimum notice override. NULL = inherit provider default,
+  // any number (including 0) is a hard override.
+  const effectiveMinNoticeHours =
+    service.min_notice_hours === null || service.min_notice_hours === undefined
+      ? minNoticeHours
+      : Math.max(0, Math.min(720, service.min_notice_hours));
+
   // Earliest moment a client is allowed to book. Any slot starting before
   // this instant gets filtered out at the end.
-  const earliestBookableMs = Date.now() + minNoticeHours * 60 * 60 * 1000;
+  const earliestBookableMs = Date.now() + effectiveMinNoticeHours * 60 * 60 * 1000;
 
   // Resolve the NEW booking's effective buffers (service override → provider default)
   const newBuffers = resolveBuffers(
@@ -273,6 +282,17 @@ export async function getAvailableSlots(
     .not("status", "in", '("cancelled")')
     .gte("starts_at", dayStartUTC)
     .lte("starts_at", dayEndUTC);
+
+  // Daily cap — if this service has a max_per_day and we're already at
+  // the limit, the whole day is closed regardless of free windows.
+  if (service.max_per_day !== null && service.max_per_day !== undefined) {
+    const todayCount = (bookings ?? []).filter(
+      (b) => b.service_id === serviceId
+    ).length;
+    if (todayCount >= service.max_per_day) {
+      return [];
+    }
+  }
 
   // Each existing booking gets PADDED by its own service's buffers, so the
   // "don't touch" zone fully encapsulates prep and cleanup time.
@@ -427,7 +447,9 @@ export async function getAvailabilityCounts(
   const [serviceRes, providerRes, allServicesRes] = await Promise.all([
     supabase
       .from("services")
-      .select("duration_minutes, buffer_before_minutes, buffer_after_minutes")
+      .select(
+        "duration_minutes, buffer_before_minutes, buffer_after_minutes, min_notice_hours, max_per_day"
+      )
       .eq("id", serviceId)
       .single(),
     supabase
@@ -453,7 +475,16 @@ export async function getAvailabilityCounts(
   const { slotInterval, defaultBufferBefore, defaultBufferAfter, minNoticeHours } =
     parseBookingDefaults(providerRes.data.branding);
 
-  const earliestBookableMs = Date.now() + minNoticeHours * 60 * 60 * 1000;
+  // Per-service minimum notice override (same logic as getAvailableSlots)
+  const effectiveMinNoticeHours =
+    serviceRes.data.min_notice_hours === null ||
+    serviceRes.data.min_notice_hours === undefined
+      ? minNoticeHours
+      : Math.max(0, Math.min(720, serviceRes.data.min_notice_hours));
+
+  const earliestBookableMs = Date.now() + effectiveMinNoticeHours * 60 * 60 * 1000;
+
+  const maxPerDay = serviceRes.data.max_per_day ?? null;
 
   // NEW booking's effective buffers (per-service override → provider default → 0)
   const newBuffers = resolveBuffers(
@@ -535,7 +566,10 @@ export async function getAvailabilityCounts(
 
   // Bucket bookings by local date — each booking padded by ITS OWN service's
   // buffer_before and buffer_after (resolved against provider defaults).
+  // We also count how many of the TARGET service are booked per day, so
+  // the daily cap (max_per_day) can close out a date entirely.
   const bookingsByDate = new Map<string, MinuteWindow[]>();
+  const targetServiceCountByDate = new Map<string, number>();
   for (const b of allBookings ?? []) {
     const localDate = formatLocalDate(parseISO(b.starts_at), tz);
     const list = bookingsByDate.get(localDate) ?? [];
@@ -550,6 +584,13 @@ export async function getAvailabilityCounts(
       end: isoToLocalMinutes(b.ends_at, tz) + bufs.after,
     });
     bookingsByDate.set(localDate, list);
+
+    if (b.service_id === serviceId) {
+      targetServiceCountByDate.set(
+        localDate,
+        (targetServiceCountByDate.get(localDate) ?? 0) + 1
+      );
+    }
   }
 
   // ── 5. Fetch external busy times in range ────────────────────────────────
@@ -612,6 +653,16 @@ export async function getAvailabilityCounts(
     }
 
     if (skipDay) {
+      result[dateStr] = { slots: 0, capacity: 0 };
+      continue;
+    }
+
+    // Daily cap — if this service has a max_per_day and today is at
+    // or over that limit, close the day entirely for slots AND capacity.
+    if (
+      maxPerDay !== null &&
+      (targetServiceCountByDate.get(dateStr) ?? 0) >= maxPerDay
+    ) {
       result[dateStr] = { slots: 0, capacity: 0 };
       continue;
     }

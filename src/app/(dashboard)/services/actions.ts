@@ -19,10 +19,17 @@ const serviceSchema = z.object({
   buffer_after_minutes: z
     .union([z.coerce.number().int().min(0).max(120), z.null()])
     .default(null),
+  min_notice_hours: z
+    .union([z.coerce.number().int().min(0).max(720), z.null()])
+    .default(null),
+  max_per_day: z
+    .union([z.coerce.number().int().min(1).max(100), z.null()])
+    .default(null),
 });
 
-// Form fields come in as strings; "" means "inherit provider default"
-function parseBufferField(v: FormDataEntryValue | null): number | null {
+// Form fields come in as strings; "" means "inherit provider default /
+// unlimited" depending on the field's meaning.
+function parseOptionalNumber(v: FormDataEntryValue | null): number | null {
   if (v === null) return null;
   const s = String(v).trim();
   if (s === "") return null;
@@ -59,8 +66,10 @@ export async function createService(formData: FormData) {
     category: formData.get("category"),
     color: formData.get("color"),
     emoji: formData.get("emoji"),
-    buffer_before_minutes: parseBufferField(formData.get("buffer_before_minutes")),
-    buffer_after_minutes: parseBufferField(formData.get("buffer_after_minutes")),
+    buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
+    buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
+    min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
+    max_per_day: parseOptionalNumber(formData.get("max_per_day")),
   });
 
   const { error } = await supabase.from("services").insert({
@@ -85,8 +94,10 @@ export async function updateService(id: string, formData: FormData) {
     category: formData.get("category"),
     color: formData.get("color"),
     emoji: formData.get("emoji"),
-    buffer_before_minutes: parseBufferField(formData.get("buffer_before_minutes")),
-    buffer_after_minutes: parseBufferField(formData.get("buffer_after_minutes")),
+    buffer_before_minutes: parseOptionalNumber(formData.get("buffer_before_minutes")),
+    buffer_after_minutes: parseOptionalNumber(formData.get("buffer_after_minutes")),
+    min_notice_hours: parseOptionalNumber(formData.get("min_notice_hours")),
+    max_per_day: parseOptionalNumber(formData.get("max_per_day")),
   });
 
   const { error } = await supabase

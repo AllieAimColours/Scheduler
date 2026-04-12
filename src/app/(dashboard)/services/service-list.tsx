@@ -60,6 +60,12 @@ function ServiceForm({
     service?.buffer_before_minutes !== null && service?.buffer_before_minutes !== undefined
       || service?.buffer_after_minutes !== null && service?.buffer_after_minutes !== undefined
   );
+  const [overrideMinNotice, setOverrideMinNotice] = useState(
+    service?.min_notice_hours !== null && service?.min_notice_hours !== undefined
+  );
+  const [overrideMaxPerDay, setOverrideMaxPerDay] = useState(
+    service?.max_per_day !== null && service?.max_per_day !== undefined
+  );
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
@@ -70,6 +76,12 @@ function ServiceForm({
     if (!overrideBuffers) {
       formData.set("buffer_before_minutes", "");
       formData.set("buffer_after_minutes", "");
+    }
+    if (!overrideMinNotice) {
+      formData.set("min_notice_hours", "");
+    }
+    if (!overrideMaxPerDay) {
+      formData.set("max_per_day", "");
     }
     try {
       if (service) {
@@ -302,6 +314,86 @@ function ServiceForm({
                 className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
               />
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Per-service minimum booking notice override */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-gray-800 font-medium">Minimum booking notice</Label>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              How much advance notice this specific service needs. Default comes from Settings.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOverrideMinNotice(!overrideMinNotice)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+              overrideMinNotice
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {overrideMinNotice ? "Using override" : "Using default"}
+          </button>
+        </div>
+        {overrideMinNotice && (
+          <select
+            name="min_notice_hours"
+            defaultValue={service?.min_notice_hours ?? 0}
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20"
+          >
+            <option value={0}>No minimum — clients can book anytime</option>
+            <option value={1}>1 hour before</option>
+            <option value={2}>2 hours before</option>
+            <option value={4}>4 hours before</option>
+            <option value={12}>12 hours before</option>
+            <option value={24}>24 hours before (1 day)</option>
+            <option value={48}>48 hours before (2 days)</option>
+            <option value={72}>72 hours before (3 days)</option>
+            <option value={168}>1 week before</option>
+          </select>
+        )}
+      </div>
+
+      {/* Per-service daily cap (max bookings of this service per day) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-gray-800 font-medium">Daily limit</Label>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Close the day once this many bookings of this service exist. Useful for exhausting services like hair color.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOverrideMaxPerDay(!overrideMaxPerDay)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+              overrideMaxPerDay
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {overrideMaxPerDay ? "Limited" : "Unlimited"}
+          </button>
+        </div>
+        {overrideMaxPerDay && (
+          <div className="flex items-center gap-2">
+            <Input
+              id="max_per_day"
+              name="max_per_day"
+              type="number"
+              min={1}
+              max={100}
+              step={1}
+              defaultValue={service?.max_per_day ?? 1}
+              className="w-24 border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 text-center"
+            />
+            <span className="text-sm text-gray-500">
+              {(service?.max_per_day ?? 1) === 1 ? "booking" : "bookings"} per day maximum
+            </span>
           </div>
         )}
       </div>
