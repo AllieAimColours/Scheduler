@@ -46,7 +46,14 @@ export function ImageUpload({
 
     if (error) {
       console.error("Upload failed:", error);
-      alert("Upload failed. Make sure the storage bucket exists in Supabase.");
+      const msg = error.message || "Unknown error";
+      if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("bucket")) {
+        alert("Upload failed: storage bucket 'page-assets' not found in Supabase.");
+      } else if (msg.toLowerCase().includes("policy") || msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("unauthorized")) {
+        alert("Upload failed: missing storage policy. Run the page-assets RLS policies in Supabase SQL editor (see migration 00003).");
+      } else {
+        alert(`Upload failed: ${msg}`);
+      }
       setUploading(false);
       return;
     }
