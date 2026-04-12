@@ -33,6 +33,7 @@ export default function SettingsPage() {
     default_buffer_before_minutes: 0,
     default_buffer_after_minutes: 0,
     min_booking_notice_hours: 0,
+    currency: "USD",
   });
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export default function SettingsPage() {
           default_buffer_before_minutes: clampBuffer(branding.default_buffer_before_minutes),
           default_buffer_after_minutes: clampBuffer(branding.default_buffer_after_minutes),
           min_booking_notice_hours: clampNotice(branding.min_booking_notice_hours),
+          currency: data.currency || "USD",
         });
         // Mark as loaded AFTER state is set, via a microtask, so the
         // autosave effect doesn't fire for the initial hydration.
@@ -111,6 +113,7 @@ export default function SettingsPage() {
         description: currentForm.description,
         phone: currentForm.phone || null,
         website: currentForm.website || null,
+        currency: currentForm.currency,
         branding: newBranding,
       })
       .eq("id", currentProvider.id);
@@ -127,6 +130,7 @@ export default function SettingsPage() {
         description: currentForm.description,
         phone: currentForm.phone || null,
         website: currentForm.website || null,
+        currency: currentForm.currency,
         branding: newBranding,
       });
     }
@@ -479,7 +483,7 @@ export default function SettingsPage() {
               className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-800 font-medium">Phone</Label>
               <Input
@@ -495,6 +499,25 @@ export default function SettingsPage() {
                 onChange={(e) => setForm({ ...form, website: e.target.value })}
                 className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-800 font-medium">Currency</Label>
+              <select
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="MXN">MXN ($)</option>
+                <option value="BRL">BRL (R$)</option>
+                <option value="CHF">CHF</option>
+                <option value="JPY">JPY (¥)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
             </div>
           </div>
           <div className="space-y-2">
