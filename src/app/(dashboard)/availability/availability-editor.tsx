@@ -315,6 +315,8 @@ function OverrideForm({ onClose }: { onClose: () => void }) {
   const [isBlocked, setIsBlocked] = useState(true);
   const [allDay, setAllDay] = useState(true);
   const [pending, setPending] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
@@ -326,19 +328,64 @@ function OverrideForm({ onClose }: { onClose: () => void }) {
     try {
       await addOverride(formData);
       onClose();
-      toast.success("Override added!");
-    } catch {
-      toast.error("Failed to add override");
+      // Friendly success message: distinguish single-day vs range
+      const isRange = endDate && endDate !== startDate;
+      toast.success(isRange ? "Date range blocked!" : "Date override added!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to add override"
+      );
       setPending(false);
     }
   }
 
   return (
     <form action={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="date" className="text-gray-800 font-medium">Date</Label>
-        <Input id="date" name="date" type="date" required className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="date" className="text-gray-800 font-medium">
+            Start date
+          </Label>
+          <Input
+            id="date"
+            name="date"
+            type="date"
+            required
+            value={startDate}
+            onChange={(e) => {
+              const v = e.target.value;
+              setStartDate(v);
+              // If the current end date is now before the new start, bump it
+              if (!endDate || endDate < v) setEndDate(v);
+            }}
+            className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="end_date" className="text-gray-800 font-medium">
+            End date{" "}
+            <span className="text-xs font-normal text-gray-400">
+              (same day if blank)
+            </span>
+          </Label>
+          <Input
+            id="end_date"
+            name="end_date"
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="(optional)"
+            className="border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+          />
+        </div>
       </div>
+      {startDate && endDate && endDate > startDate && (
+        <div className="text-xs text-purple-600 font-medium flex items-center gap-1.5 -mt-1">
+          <CalendarOff className="h-3 w-3" />
+          {countDaysInclusive(startDate, endDate)} days will be blocked
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button
@@ -435,4 +482,11 @@ function OverrideForm({ onClose }: { onClose: () => void }) {
       </div>
     </form>
   );
+}
+
+/** Count days inclusive between two YYYY-MM-DD strings (1 for same day). */
+function countDaysInclusive(startYmd: string, endYmd: string): number {
+  const start = new Date(startYmd + "T00:00:00Z").getTime();
+  const end = new Date(endYmd + "T00:00:00Z").getTime();
+  return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
 }
