@@ -252,34 +252,26 @@ Much later, when there are enough providers on Bloom, the `/account` page grows 
 
 After shipping trust layer + data export + themed availability calendar + booking polish, Allie tested the product end-to-end and surfaced a concrete list of gaps. Some are fast fixes, some are real features, some are "queue it for later."
 
-### Fast fixes (shipping in this session)
+### Fast fixes (shipped 2026-04-12)
 
-**1. Date override as a range, not a single day**
-The current `/availability` UI only lets the provider block ONE day at a time. A week-long vacation = 7 separate clicks. Fix: accept `start_date` + `end_date` (default end = start so single-day still works). On save, expand the range into N rows in the `availability_overrides` table — one row per day. Adjacent blocked rows with the same reason get visually grouped in the list as "Oct 10–17 · Vacation" so the user still sees it as a unit, but each day stays independently editable (important for "I'm back a day early").
+All four shipped in one session and are live on main.
 
-**2. Slot increments + per-service buffer time**
-The `SLOT_INTERVAL = 15` constant in `src/lib/availability.ts` was a shortcut and needs to become a real setting. Every professional stylist needs three dials:
-- **Slot interval** — the booking-page calendar shows 15 / 30 / 60 min increments
-- **Default buffer before** — time reserved before every appointment for prep (e.g. 10 min)
-- **Default buffer after** — time reserved after every appointment for cleanup (e.g. 15 min)
-- **Per-service override** — a hair color might need a 30 min buffer after because of extra cleanup, even though a cut only needs 5
+**1. Date override as a range** ✅ (commit `fc97ad5`)
+`/availability` override form now accepts a start + end date, defaults end to same day for single-day use, guards against backwards ranges and year-plus ranges, and expands the range into one row per day in `availability_overrides` so each day stays independently editable.
 
-Data model:
-- `providers.branding.default_slot_minutes` (15 | 30 | 60, default 15)
-- `providers.branding.default_buffer_before_minutes` (default 0)
-- `providers.branding.default_buffer_after_minutes` (default 0)
-- `services.buffer_before_minutes` (nullable, overrides provider default if set)
-- `services.buffer_after_minutes` (nullable, overrides provider default if set)
+**2. Slot increments + per-service buffer time** ✅ (commit `f92eb1e`, migration `00005_service_buffers.sql`)
+The hardcoded `SLOT_INTERVAL = 15` is gone. Three real dials:
+- Settings → **Booking Defaults** card: slot interval pill picker (15 / 30 / 60) + provider-wide buffer before/after inputs. Stored in `providers.branding.default_slot_minutes`, `default_buffer_before_minutes`, `default_buffer_after_minutes`.
+- Services form → **"Using default / Using override"** toggle that reveals per-service `buffer_before_minutes` / `buffer_after_minutes` inputs. NULL = inherit provider default; any number (including 0) is a hard override.
+- Availability algorithm pads every existing booking by ITS OWN service's buffers (fetched via a `servicesById` lookup), and new candidate slots must have `newBuffers.before` prep time and `newBuffers.after` cleanup time inside the same free window. `getAvailabilityCounts` does the same math so the month-view capacity colors stay honest.
 
-The availability algorithm treats each booking as consuming `buffer_before + duration + buffer_after` minutes. Capacity math in `getAvailabilityCounts` has to include buffers or the color-coded calendar will lie about how many slots are free.
+**3. Data export: CSV prominence swap** ✅ (commit `490188e`)
+New `type=all-csv` export returns a single spreadsheet-ready CSV with four sections (Bookings / Clients / Services / Payments) separated by `# SECTION` banners. Settings card reworked: CSV "Everything" is the hero button, per-table CSVs are secondary, JSON is demoted to a small "Developer option" link.
 
-**3. Data export: CSV prominence swap**
-The current Settings → Data Export card has 4 CSV buttons in a grid + one big JSON "Everything" button. Most users don't know what JSON is. Swap the prominence so **"Everything (CSV, spreadsheet-ready)"** is the big button and JSON becomes a small "Developer option" below. 5-minute fix.
+**4. JSON import** ✅ (commit `490188e`)
+New POST `/api/import` accepts a multipart `bloom-export-*.json` upload, validates it's a Bloom export (`export_metadata` key + zod schema per row), and imports **services only**. Malformed rows skip with a count rather than aborting. 5 MB cap. Bookings/clients/payments import deferred because the original `service_id` won't match the newly-created rows — that's its own future task.
 
-**4. JSON import**
-A data-portability promise means nothing without import too. Ship a simple **upload a Bloom JSON export → validate → insert** flow in the Data Export card. Only supports our own export format for now — third-party importers (Acuity, Vagaro, Calendly) come later once we have real users telling us which platforms they're switching from.
-
-### Queued for later sessions
+### Still queued for later sessions
 
 **5. Google Places API auto-fill for business info (own session)**
 Stylists are lazy about typing their business name, address, phone, website. Let them paste a Google Maps link or search by business name, and auto-fill everything. Requires Google Cloud billing setup (free within the $200/mo credit for our scale, ~11k lookups), API key rotation, and proper UX design (autocomplete vs paste URL vs search modal). Not a 5-minute task — deserves its own session with focused design thinking.
@@ -352,11 +344,16 @@ npx shadcn add X     # Add a shadcn/ui component
 
 ## Database
 
-9 tables: providers, services, availability_rules, availability_overrides, bookings, personal_events, calendar_connections, external_busy_times, notifications.
+Core tables: `providers`, `services`, `availability_rules`, `availability_overrides`, `bookings`, `personal_events`, `calendar_connections`, `external_busy_times`, `notifications`, `digital_products`, `digital_product_sales`.
 
-Migration at `supabase/migrations/00001_initial_schema.sql`. All tables have RLS, UUID PKs, created_at/updated_at timestamps.
+All tables have RLS, UUID PKs, `created_at`/`updated_at` timestamps. Migrations are numbered and additive — run them in order on a fresh Supabase project:
 
-Provider branding stored as JSON: `{ template: "bloom", primary_color: "#hex" }`
+- `00001_initial_schema.sql` — base schema, RLS, indexes
+- `00002_cancellation_policies.sql` — `bookings.cancellation_token`, `cancelled_at`, `cancellation_reason`, `refund_amount_cents`
+- `00003_page_builder.sql` — `digital_products` + `digital_product_sales` tables, `page-assets` + `digital-products` storage buckets
+- `00005_service_buffers.sql` — nullable `buffer_before_minutes` / `buffer_after_minutes` on `services` (NULL = inherit provider default)
+
+`providers.branding` is an extensible JSONB bag. Keys currently in use: `template`, `primary_color`, `address`, `booking_calendar_range`, `default_slot_minutes`, `default_buffer_before_minutes`, `default_buffer_after_minutes`, `page_blocks`. Adding new knobs here does NOT need a migration.
 
 ## Environment Variables
 
@@ -375,61 +372,17 @@ Copy `.env.example` to `.env.local` and fill in:
 - **Landing Page**: Redesigned with gradient hero, floating orbs, template showcase
 - **Cancellation System**: Policy editor in settings, cancellation token generation, client-facing cancel page (`/cancel/[token]`), refund calculation logic
 
-### In Progress: "Your Page" — Widget-Based Page Builder
-**Concept**: Replace the simple landing-page settings with a full page builder. Provider picks a template at the top, then drags widget blocks (Hero, About, Gallery, Services, Quote, Link, Contact, Digital Product) onto their public booking page. Each widget is themed via `useTemplate()` and inherits the active template's fonts/colors/animations.
+### Shipped since Phase 1 kickoff
+- **Your Page widget builder** — 8 widgets (Hero, About, Gallery, Services, Quote, Link, Contact, Digital Product), drag-and-drop, live iframe preview via postMessage, template bar. Blocks stored in `providers.branding.page_blocks`. Digital products have signed-URL downloads with 7-day expiry.
+- **Trust layer, data export, themed availability calendar, booking polish**
+- **Date override ranges, slot interval + per-service buffers, CSV Everything export, JSON import** (2026-04-12 tester-finding fast fixes)
 
-**v1 widgets (8 essentials)**:
-1. **Hero** — image, name, tagline, welcome message, CTA
-2. **About** — bio + photo, optional credentials
-3. **Image Gallery** — grid of photos (portfolio)
-4. **Services** — inline service cards
-5. **Quote / Testimonial** — client review with name + photo
-6. **Link Card** — external link with thumbnail (Linktree-style)
-7. **Contact** — phone, email, address
-8. **Digital Product** — sell e-books/guides with cover, preview, Stripe checkout
-
-**v2 widgets** (after Task 9 social feed): Instagram feed, TikTok feed, YouTube, Article/Blog, Before/After slider, Embed, Spacer/Divider
-
-**Architecture**:
-- New sidebar item "Your Page" replaces template picker + landing editor in Settings
-- Top bar: 6 templates as horizontal pills, click to switch instantly
-- Two-column layout: block library/list (left) + live iframe preview (right)
-- Drag-and-drop reordering via `@dnd-kit/core` + `@dnd-kit/sortable`
-- Block config stored in `providers.branding.page_blocks` JSONB array
-- Each block = `{ id, type, config }` rendered by template-aware components
-- Image uploads → Supabase Storage bucket `page-assets`
-- Digital products → new `digital_products` table
-
-**Digital product delivery (option C)**:
-- After Stripe checkout: redirect to download page + email signed link
-- Signed URLs expire in 7 days
-- Sales tracked in `digital_product_sales` table
-
-**Files to create**:
-- `supabase/migrations/00003_page_builder.sql` — digital_products + digital_product_sales tables, page-assets storage bucket
-- `src/app/(dashboard)/your-page/page.tsx` — main builder UI
-- `src/components/your-page/template-bar.tsx` — top template picker
-- `src/components/your-page/block-library.tsx` — sidebar of available blocks
-- `src/components/your-page/block-list.tsx` — sortable list of current blocks
-- `src/components/your-page/preview-pane.tsx` — iframe live preview
-- `src/components/your-page/blocks/*.tsx` — editor for each block type
-- `src/components/booking/blocks/*.tsx` — public renderers for each block (themed)
-- `src/lib/page-builder/types.ts` — block type definitions
-- `src/lib/page-builder/defaults.ts` — default config for each block type
-- `src/app/api/digital-products/checkout/route.ts` — Stripe checkout for products
-- `src/app/api/digital-products/webhook/route.ts` — fulfillment on payment
-- `src/app/download/[token]/page.tsx` — download landing page
-
-**Files to modify**:
-- `src/app/book/[slug]/page.tsx` — render blocks from `branding.page_blocks` instead of fixed LandingHero
-- `src/components/dashboard/app-sidebar.tsx` — add "Your Page" nav item
-- `src/app/(dashboard)/settings/page.tsx` — remove template picker + landing editor
-- `src/types/database.ts` — add digital_products table types
-
-### Other Outstanding Work (paused while building Your Page)
-- **Email confirmations**: `sendBookingConfirmation()` exists in `src/lib/resend.ts` but is **never called** — needs wiring into webhook + free booking path
-- **Stripe refunds**: Cancellation calculates refund amount but **doesn't call Stripe API** — commented-out code in cancel route
-- **Cancellation policy save**: User reports save fails — likely migration `00002_cancellation_policies.sql` not run on Supabase yet (user is running it manually now)
+### Current "not done yet" list
+- **Email confirmations**: `sendBookingConfirmation()` exists in `src/lib/resend.ts` but is **never called**. Needs wiring into the Stripe webhook (after booking insert) and the free-booking checkout path. Also needs the cancellation token in the email body.
+- **Stripe refunds**: `src/app/api/cancel/[token]/route.ts` calculates `refund_amount_cents` but the actual `stripe.refunds.create()` call is commented out. Needs uncommenting + handling Connect destination charges.
+- **Analytics**: No tracking wired up yet. PostHog or Plausible — pick one and ship it before the tester checkpoint or we're flying blind.
+- **OG share preview + QR code**: Phase 1 Task 8. Branded share cards via Next.js `ImageResponse`, plus a dashboard QR generator.
+- **Tester checkpoint**: hand the live deploy to Allie's hairstylist + therapist after the above three ship. Pause feature work and fix whatever they find before touching Phase 2.
 
 ### Planned Roadmap (full details in `~/.claude/plans/velvety-jingling-yeti.md`)
 
