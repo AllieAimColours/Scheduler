@@ -432,13 +432,13 @@ export default function BookServicePage() {
 
             {/* Cancellation policy notice */}
             {cancellationPolicy?.enabled && (
-              <div className="rounded-xl border border-gray-200/60 bg-gray-50/50 p-3 space-y-2">
-                <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                  <ShieldCheck className="h-4 w-4 text-purple-400" />
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <ShieldCheck className="h-4 w-4 text-[var(--accent-color,#a78bfa)]" />
                   Cancellation Policy
                 </div>
                 {cancellationPolicy.policy_text ? (
-                  <p className="text-xs text-gray-500 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {cancellationPolicy.policy_text}
                   </p>
                 ) : (
@@ -446,14 +446,14 @@ export default function BookServicePage() {
                     {[...cancellationPolicy.rules]
                       .sort((a, b) => b.hours_before - a.hours_before)
                       .map((rule, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
+                        <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${
                               rule.refund_percent === 100
-                                ? "bg-green-400"
+                                ? "bg-emerald-500"
                                 : rule.refund_percent > 0
-                                ? "bg-amber-400"
-                                : "bg-red-400"
+                                ? "bg-amber-500"
+                                : "bg-rose-500"
                             }`}
                           />
                           {rule.hours_before === 0
@@ -464,7 +464,7 @@ export default function BookServicePage() {
                       ))}
                   </div>
                 )}
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-muted-foreground/80">
                   By booking, you agree to this cancellation policy.
                 </p>
               </div>
