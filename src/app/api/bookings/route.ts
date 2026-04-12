@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const { data: provider } = await supabase
       .from("providers")
-      .select("id, cancellation_policy, branding")
+      .select("id, cancellation_policy, branding, stripe_account_id, stripe_onboarding_complete")
       .eq("slug", slug)
       .single();
 
@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       service,
       providerId: provider.id,
       calendarRange,
+      paymentsEnabled: !!(provider.stripe_account_id && provider.stripe_onboarding_complete),
       cancellationPolicy: policy.enabled
         ? { enabled: true, rules: policy.rules, policy_text: policy.policy_text }
         : null,

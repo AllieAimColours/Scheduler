@@ -83,6 +83,8 @@ export default function BookServicePage() {
   const [calendarRange, setCalendarRange] = useState<CalendarRange>("month");
   const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicyInfo | null>(null);
   const [effectiveDeposit, setEffectiveDeposit] = useState<DepositInfo | null>(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(true);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Fetch service info
@@ -104,6 +106,9 @@ export default function BookServicePage() {
           }
           if (data.effectiveDeposit) {
             setEffectiveDeposit(data.effectiveDeposit);
+          }
+          if (data.paymentsEnabled !== undefined) {
+            setPaymentsEnabled(data.paymentsEnabled);
           }
         } else {
           const errorData = await res.json().catch(() => ({}));
@@ -165,10 +170,11 @@ export default function BookServicePage() {
       if (url) {
         window.location.href = url;
       } else {
-        // Free service — booking created directly
         router.push(`/book/${slug}/confirmation`);
       }
     } else {
+      const errBody = await res.json().catch(() => ({}));
+      setBookingError(errBody.error || "Something went wrong. Please try again.");
       setSubmitting(false);
     }
   }
@@ -460,25 +466,35 @@ export default function BookServicePage() {
                   </p>
                 ) : (
                   <div className="space-y-1">
-                    {[...cancellationPolicy.rules]
-                      .sort((a, b) => b.hours_before - a.hours_before)
-                      .map((rule, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              rule.refund_percent === 100
-                                ? "bg-emerald-500"
-                                : rule.refund_percent > 0
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
-                            }`}
-                          />
-                          {rule.hours_before === 0
-                            ? "Same-day cancellation"
-                            : `${rule.hours_before}+ hrs before`}
-                          : {rule.refund_percent}% refund
-                        </div>
-                      ))}
+                    {(() => {
+                      const depositCents =
+                        effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                          ? effectiveDeposit.deposit_cents
+                          : service.deposit_cents > 0
+                          ? service.deposit_cents
+                          : 0;
+                      const hasDeposit = depositCents > 0 && depositCents < service.price_cents;
+                      const refundLabel = hasDeposit ? "deposit refund" : "refund";
+                      return [...cancellationPolicy.rules]
+                        .sort((a, b) => b.hours_before - a.hours_before)
+                        .map((rule, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                rule.refund_percent === 100
+                                  ? "bg-emerald-500"
+                                  : rule.refund_percent > 0
+                                  ? "bg-amber-500"
+                                  : "bg-rose-500"
+                              }`}
+                            />
+                            {rule.hours_before === 0
+                              ? "Same-day cancellation"
+                              : `${rule.hours_before}+ hrs before`}
+                            : {rule.refund_percent}% {refundLabel}
+                          </div>
+                        ));
+                    })()}
                   </div>
                 )}
                 <p className="text-[11px] text-muted-foreground/80">
@@ -487,23 +503,40 @@ export default function BookServicePage() {
               </div>
             )}
 
-            <ThemedButton
-              type="submit"
-              className="w-full"
-              disabled={submitting}
-            >
-              {submitting
-                ? "Processing..."
-                : service.price_cents === 0
-                ? "Confirm Booking"
-                : `Book & Pay ${formatPrice(
-                    effectiveDeposit && effectiveDeposit.deposit_cents > 0
-                      ? effectiveDeposit.deposit_cents
-                      : service.deposit_cents > 0
-                      ? service.deposit_cents
-                      : service.price_cents
-                  )}`}
-            </ThemedButton>
+            {bookingError && (
+              <div className="rounded-xl border border-rose-300/60 bg-rose-50/40 p-3 text-center">
+                <p className="text-xs text-rose-600">{bookingError}</p>
+              </div>
+            )}
+
+            {service.price_cents > 0 && !paymentsEnabled ? (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-center space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Online booking isn&apos;t available yet
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Contact the provider directly to book this service.
+                </p>
+              </div>
+            ) : (
+              <ThemedButton
+                type="submit"
+                className="w-full"
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Processing..."
+                  : service.price_cents === 0
+                  ? "Confirm Booking"
+                  : `Book & Pay ${formatPrice(
+                      effectiveDeposit && effectiveDeposit.deposit_cents > 0
+                        ? effectiveDeposit.deposit_cents
+                        : service.deposit_cents > 0
+                        ? service.deposit_cents
+                        : service.price_cents
+                    )}`}
+              </ThemedButton>
+            )}
           </form>
         </ThemedCard>
       )}
