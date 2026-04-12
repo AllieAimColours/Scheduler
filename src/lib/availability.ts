@@ -193,9 +193,11 @@ export async function getAvailableSlots(
   );
 
   // ------ 3. Day of week ----------------------------------------------------
-  // parseISO gives us midnight UTC for the date string.  We need the
-  // day-of-week *in the provider's timezone*.
-  const dateObj = parseISO(date);
+  // Use noon UTC to avoid the midnight-rollback problem: parseISO("2026-04-13")
+  // gives midnight UTC, which in western timezones (e.g. America/New_York at
+  // UTC-4) converts to April 12 at 8pm — wrong day. Noon UTC stays on the
+  // correct calendar date for every timezone from UTC-12 to UTC+12.
+  const dateObj = parseISO(`${date}T12:00:00Z`);
   const zonedDate = toZonedTime(dateObj, tz);
   const dayOfWeek = getDay(zonedDate); // 0 = Sunday
 
