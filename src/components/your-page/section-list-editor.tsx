@@ -539,7 +539,7 @@ function ColumnDropZone({
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-2xl border-2 border-dashed transition-all min-h-[100px] p-2 space-y-2",
+        "relative rounded-2xl border-2 border-dashed transition-all min-h-[100px] p-2 space-y-2",
         isOver
           ? "border-purple-400 bg-purple-50/60"
           : "border-gray-200 hover:border-purple-300"
@@ -576,27 +576,37 @@ function ColumnDropZone({
         </button>
       )}
 
+      {/* Block library popup — absolute so it floats over the layout
+          instead of pushing the column taller (which was causing overlap
+          with the "Add a section" button below). */}
       {showLibrary && (
-        <div className="rounded-xl bg-white border border-purple-200 shadow-lg p-3 animate-in slide-in-from-top-1 duration-200">
-          <div className="grid grid-cols-2 gap-1.5">
-            {BLOCK_LIBRARY.map((meta) => {
-              const Icon = BLOCK_ICONS[meta.type] || Sparkles;
-              return (
-                <button
-                  key={meta.type}
-                  onClick={() => {
-                    onAddBlock(meta.type);
-                    setShowLibrary(false);
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-purple-50 text-left transition-colors cursor-pointer"
-                >
-                  <Icon className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                  <span className="text-xs font-medium text-gray-700">{meta.label}</span>
-                </button>
-              );
-            })}
+        <>
+          {/* Backdrop to close on outside click */}
+          <div
+            onClick={() => setShowLibrary(false)}
+            className="fixed inset-0 z-40"
+          />
+          <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl bg-white border border-purple-200 shadow-xl p-3 animate-in slide-in-from-top-1 duration-200">
+            <div className="grid grid-cols-2 gap-1.5">
+              {BLOCK_LIBRARY.map((meta) => {
+                const Icon = BLOCK_ICONS[meta.type] || Sparkles;
+                return (
+                  <button
+                    key={meta.type}
+                    onClick={() => {
+                      onAddBlock(meta.type);
+                      setShowLibrary(false);
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-purple-50 text-left transition-colors cursor-pointer"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                    <span className="text-xs font-medium text-gray-700">{meta.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
