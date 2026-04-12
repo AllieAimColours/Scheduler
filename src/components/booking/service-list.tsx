@@ -50,23 +50,39 @@ export function ServiceList({ services, slug }: ServiceListProps) {
         <Link
           key={service.id}
           href={`/book/${slug}/${service.id}`}
-          className="block group"
+          className="block group animate-in fade-in-0 slide-in-from-bottom-3 duration-700"
+          style={{
+            animationDelay: `${i * 120}ms`,
+            animationFillMode: "both",
+          }}
         >
           <ThemedCard
             index={i}
-            className="relative overflow-hidden cursor-pointer"
+            className={cn(
+              "relative overflow-hidden cursor-pointer transition-all duration-500",
+              // Lift + shadow glow on hover (in addition to whatever the template does)
+              "group-hover:-translate-y-1 group-hover:shadow-2xl"
+            )}
           >
             {/* Color accent stripe */}
             <div
-              className="absolute left-0 top-0 w-1.5 h-full"
+              className="absolute left-0 top-0 w-1.5 h-full transition-all duration-500 group-hover:w-2"
               style={{ backgroundColor: service.color }}
             />
 
-            {/* Soft glow on hover */}
+            {/* Sweeping gradient on hover — appears from the top-left and fades out */}
             <div
-              className="absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              className="absolute -inset-px rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
               style={{
-                background: `radial-gradient(circle at 50% 0%, ${service.color}15 0%, transparent 70%)`,
+                background: `radial-gradient(circle at 20% 0%, ${service.color}22 0%, transparent 60%)`,
+              }}
+            />
+
+            {/* Slightly-brighter edge highlight on hover */}
+            <div
+              className="absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                boxShadow: `inset 0 1px 0 0 ${service.color}30`,
               }}
             />
 
@@ -74,7 +90,7 @@ export function ServiceList({ services, slug }: ServiceListProps) {
               {/* Emoji bubble */}
               {service.emoji && (
                 <div
-                  className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-3xl md:text-4xl shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                  className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-3xl md:text-4xl shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3"
                   style={{
                     backgroundColor: `${service.color}15`,
                     boxShadow: `0 4px 16px ${service.color}20`,
@@ -89,7 +105,7 @@ export function ServiceList({ services, slug }: ServiceListProps) {
                 <h3
                   className={cn(
                     template.classes.heading,
-                    "text-xl md:text-2xl mb-1"
+                    "text-xl md:text-2xl mb-1 transition-colors duration-300"
                   )}
                 >
                   {service.name}
@@ -118,7 +134,7 @@ export function ServiceList({ services, slug }: ServiceListProps) {
                   <div
                     className={cn(
                       template.classes.heading,
-                      "text-2xl md:text-3xl"
+                      "text-2xl md:text-3xl transition-transform duration-500 group-hover:scale-105"
                     )}
                   >
                     {formatPrice(service.price_cents)}
