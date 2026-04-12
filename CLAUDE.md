@@ -248,6 +248,96 @@ Much later, when there are enough providers on Bloom, the `/account` page grows 
 
 ---
 
+## Tester Findings 2026-04-12 (Allie's first full walkthrough)
+
+After shipping trust layer + data export + themed availability calendar + booking polish, Allie tested the product end-to-end and surfaced a concrete list of gaps. Some are fast fixes, some are real features, some are "queue it for later."
+
+### Fast fixes (shipping in this session)
+
+**1. Date override as a range, not a single day**
+The current `/availability` UI only lets the provider block ONE day at a time. A week-long vacation = 7 separate clicks. Fix: accept `start_date` + `end_date` (default end = start so single-day still works). On save, expand the range into N rows in the `availability_overrides` table — one row per day. Adjacent blocked rows with the same reason get visually grouped in the list as "Oct 10–17 · Vacation" so the user still sees it as a unit, but each day stays independently editable (important for "I'm back a day early").
+
+**2. Slot increments + per-service buffer time**
+The `SLOT_INTERVAL = 15` constant in `src/lib/availability.ts` was a shortcut and needs to become a real setting. Every professional stylist needs three dials:
+- **Slot interval** — the booking-page calendar shows 15 / 30 / 60 min increments
+- **Default buffer before** — time reserved before every appointment for prep (e.g. 10 min)
+- **Default buffer after** — time reserved after every appointment for cleanup (e.g. 15 min)
+- **Per-service override** — a hair color might need a 30 min buffer after because of extra cleanup, even though a cut only needs 5
+
+Data model:
+- `providers.branding.default_slot_minutes` (15 | 30 | 60, default 15)
+- `providers.branding.default_buffer_before_minutes` (default 0)
+- `providers.branding.default_buffer_after_minutes` (default 0)
+- `services.buffer_before_minutes` (nullable, overrides provider default if set)
+- `services.buffer_after_minutes` (nullable, overrides provider default if set)
+
+The availability algorithm treats each booking as consuming `buffer_before + duration + buffer_after` minutes. Capacity math in `getAvailabilityCounts` has to include buffers or the color-coded calendar will lie about how many slots are free.
+
+**3. Data export: CSV prominence swap**
+The current Settings → Data Export card has 4 CSV buttons in a grid + one big JSON "Everything" button. Most users don't know what JSON is. Swap the prominence so **"Everything (CSV, spreadsheet-ready)"** is the big button and JSON becomes a small "Developer option" below. 5-minute fix.
+
+**4. JSON import**
+A data-portability promise means nothing without import too. Ship a simple **upload a Bloom JSON export → validate → insert** flow in the Data Export card. Only supports our own export format for now — third-party importers (Acuity, Vagaro, Calendly) come later once we have real users telling us which platforms they're switching from.
+
+### Queued for later sessions
+
+**5. Google Places API auto-fill for business info (own session)**
+Stylists are lazy about typing their business name, address, phone, website. Let them paste a Google Maps link or search by business name, and auto-fill everything. Requires Google Cloud billing setup (free within the $200/mo credit for our scale, ~11k lookups), API key rotation, and proper UX design (autocomplete vs paste URL vs search modal). Not a 5-minute task — deserves its own session with focused design thinking.
+
+**Alternative lazy-onboarding paths** (lower friction for us, worth brainstorming alongside):
+- Paste Instagram handle → pre-fill bio + hero image from IG Basic Display API (free)
+- Paste existing Calendly / Acuity / Vagaro URL → parse the page
+
+**6. Template Personality Pass (own session or two)**
+The gap between the gorgeous marketing landing and the booking templates is real. P2.5 closed the fast 80%. The Template Personality Pass is the remaining 20% + the per-template signature wow moments. Scope:
+
+**Typography micro-adjustments** (tiny code, huge visual impact):
+- Letter spacing (tight / normal / loose) for headings AND body
+- Line height (compact / normal / relaxed)
+- Font weight (regular / semibold / bold / extrabold)
+- Text transform (none / uppercase / small-caps)
+- Text shadow glow intensity (0-100%)
+- Drop cap on first letter of About / Quote blocks
+
+**Layout micro-adjustments**:
+- Block padding density (compact / comfortable / spacious)
+- Finer border radius control (0 / 4 / 8 / 12 / 16 / 24 / 32 / full)
+- Card shadow intensity (none / subtle / normal / dramatic)
+- Section spacing between blocks (compact / normal / roomy)
+
+**Color micro-adjustments**:
+- Saturation of the template accent (muted / normal / vivid)
+- Contrast dial for accessibility (low / normal / high)
+- Gradient angle for the background (0-360°)
+- Mesh gradient density
+
+**Motion**:
+- Animation duration multiplier (0.5x / 1x / 1.5x / 2x)
+- Hover lift amount (none / subtle / dramatic)
+- Parallax strength on images (none / subtle / strong)
+
+**Decorations**:
+- Signature particle count (0-100%)
+- Signature particle speed (slow / normal / fast)
+- Cursor effect opacity (0-100%)
+
+**Images**:
+- Image border radius (independent of template radius)
+- Image filter (none / warm / cool / B&W / vintage / soft)
+- Image border (none / thin / thick / gradient)
+
+**Per-template signature wow moments**:
+- Rose → falling peony petals by default
+- Aura → fireflies and shimmer
+- Edge → subtle grid pulse
+- Pop → confetti on first scroll
+- Studio → clean reveal animations
+- Luxe → gold shimmer
+
+Each template should feel like an identity the first second the page loads, not just a color scheme. Budget: 1-2 focused sessions.
+
+---
+
 ## Debugging Deployment Errors
 
 **ALWAYS run `npm run build` first** when the deployed site shows errors. TypeScript build failures are the most common cause — not missing env vars. Don't send the user chasing environment variable issues until you've confirmed the build passes clean locally.
