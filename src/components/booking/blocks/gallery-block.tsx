@@ -93,6 +93,7 @@ function GridLayout({
 function CarouselLayout({ images }: { images: { url: string; caption?: string }[] }) {
   const [idx, setIdx] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
+  const didMount = useRef(false);
 
   function go(direction: 1 | -1) {
     const next = Math.max(0, Math.min(images.length - 1, idx + direction));
@@ -100,10 +101,20 @@ function CarouselLayout({ images }: { images: { url: string; caption?: string }[
   }
 
   useEffect(() => {
+    // Skip the scroll on initial mount — block: "nearest" was scrolling
+    // the whole booking page to the gallery on first load.
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
     if (!trackRef.current) return;
     const child = trackRef.current.children[idx] as HTMLElement | undefined;
     if (child) {
-      child.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      // Use scrollLeft directly instead of scrollIntoView — that way the
+      // page doesn't scroll, only the horizontal carousel track does.
+      const childOffset = child.offsetLeft - trackRef.current.offsetLeft;
+      const centerOffset = childOffset - (trackRef.current.clientWidth - child.clientWidth) / 2;
+      trackRef.current.scrollTo({ left: centerOffset, behavior: "smooth" });
     }
   }, [idx]);
 
