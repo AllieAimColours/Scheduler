@@ -401,7 +401,8 @@ Copy `.env.example` to `.env.local` and fill in:
 - **CHECKPOINT**: Hand to Allie's hairstylist + therapist for end-to-end testing. Pause feature work and fix what they find.
 
 **📅 Phase 2 — The calendar hero + power features**
-- **Task 10** 🔥 **PROMOTED**: Gorgeous color-coded calendar (week/day/month, drag-to-reschedule). The dashboard's most important screen.
+- **Task 10** 🔥 **PROMOTED**: Gorgeous color-coded calendar (week/day/month, drag-to-reschedule). The dashboard's most important screen. ✅ DONE (2026-04-12, shipped as part of session before tester checkpoint).
+- **Recurring bookings** ⭐ **NEW PRIORITY** (requested 2026-04-13): clients can book "every Wednesday at noon" as a series. Per-service toggle. Frequency (weekly / bi-weekly / monthly) + end condition (N occurrences / until date / ongoing). Conflict handling: skip occurrences that collide with existing bookings or overrides, show summary at checkout. Deposit charged once upfront for the whole series. New `booking_series` parent table + `series_id` column on bookings. Cancellation UX: "cancel this one" vs "cancel this and all future". Availability-override changes that land on a series occurrence should auto-cancel + email both sides. FOLLOW-UP: waitlist-for-extension — when provider opens a new month, recurring clients get a notification asking if they want to extend. This is the #1 unsolicited request from Allie, so it's the top Phase 2 build after the tester checkpoint.
 - **Task 11** ⭐ **PROMOTED**: SMS via Twilio (older clients prefer texts)
 - Task 12: Smart reminders (re-booking nudges)
 - Task 13: Pre-appointment reminders (24h/1h)
