@@ -339,6 +339,11 @@ export interface Database {
           external_calendar_id: string | null;
           is_read_enabled: boolean;
           is_write_enabled: boolean;
+          is_primary: boolean;
+          account_email: string | null;
+          sync_error: string | null;
+          webhook_channel_id: string | null;
+          webhook_expires_at: string | null;
           last_synced_at: string | null;
           created_at: string;
           updated_at: string;
@@ -357,6 +362,11 @@ export interface Database {
           external_calendar_id?: string | null;
           is_read_enabled?: boolean;
           is_write_enabled?: boolean;
+          is_primary?: boolean;
+          account_email?: string | null;
+          sync_error?: string | null;
+          webhook_channel_id?: string | null;
+          webhook_expires_at?: string | null;
           last_synced_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -375,6 +385,11 @@ export interface Database {
           external_calendar_id?: string | null;
           is_read_enabled?: boolean;
           is_write_enabled?: boolean;
+          is_primary?: boolean;
+          account_email?: string | null;
+          sync_error?: string | null;
+          webhook_channel_id?: string | null;
+          webhook_expires_at?: string | null;
           last_synced_at?: string | null;
           created_at?: string;
           updated_at?: string;

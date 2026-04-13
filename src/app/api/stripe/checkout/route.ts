@@ -9,6 +9,7 @@ import {
 } from "@/lib/cancellation";
 import { sendBookingConfirmation } from "@/lib/resend";
 import { logNotification } from "@/lib/notifications";
+import { pushBookingToPrimary } from "@/lib/calendar/sync";
 import type { Booking } from "@/types/database";
 
 const checkoutSchema = z.object({
@@ -163,6 +164,39 @@ export async function POST(request: NextRequest) {
         status: result.ok ? "sent" : "failed",
         errorMessage: result.error,
       });
+
+      // Push to primary calendar (best-effort)
+      try {
+        const pushResult = await pushBookingToPrimary(
+          supabase,
+          booking.provider_id,
+          {
+            id: booking.id,
+            client_name: booking.client_name,
+            client_email: booking.client_email,
+            starts_at: booking.starts_at,
+            ends_at: booking.ends_at,
+            timezone: booking.timezone,
+          },
+          {
+            serviceName: service.name,
+            providerName: provider.business_name,
+            clientPhone: booking.client_phone || undefined,
+            notes: booking.client_notes || undefined,
+          }
+        );
+        if (pushResult) {
+          await supabase
+            .from("bookings")
+            .update({
+              calendar_event_id: pushResult.eventId,
+              calendar_provider: pushResult.calendarType,
+            })
+            .eq("id", booking.id);
+        }
+      } catch (e) {
+        console.error("Calendar push failed (non-fatal):", e);
+      }
 
       return NextResponse.json({ url: null }); // Signals direct confirmation
     }

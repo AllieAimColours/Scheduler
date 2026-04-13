@@ -5,6 +5,7 @@ import {
   parseCancellationPolicy,
 } from "@/lib/cancellation";
 import { getStripe } from "@/lib/stripe";
+import { deleteBookingFromCalendar } from "@/lib/calendar/sync";
 import type { Booking, Service, Provider } from "@/types/database";
 
 export async function GET(
@@ -153,6 +154,28 @@ export async function POST(
       { error: "Failed to cancel booking" },
       { status: 500 }
     );
+  }
+
+  // Delete the event from the provider's calendar (best-effort)
+  if (booking.calendar_event_id) {
+    try {
+      // Find the primary connection to delete from
+      const { data: primaryConn } = await supabase
+        .from("calendar_connections")
+        .select("id")
+        .eq("provider_id", booking.provider_id)
+        .eq("is_primary", true)
+        .maybeSingle();
+      if (primaryConn) {
+        await deleteBookingFromCalendar(
+          supabase,
+          (primaryConn as { id: string }).id,
+          booking.calendar_event_id
+        );
+      }
+    } catch (e) {
+      console.error("Calendar delete failed (non-fatal):", e);
+    }
   }
 
   // Process the actual Stripe refund. For destination charges the
