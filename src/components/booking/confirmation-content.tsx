@@ -67,11 +67,23 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
           <h1 className={cn(template.classes.heading, "text-3xl mb-3")}>
             {customHeading || "Booking confirmed!"}
           </h1>
-          <p className={cn(template.classes.body, "text-base")}>
+          <p className={cn(template.classes.body, "text-base mb-6")}>
             {customMessage
               ? customMessage.replace(/\{name\}/gi, "")
               : "Check your email for the details. We'll see you soon."}
           </p>
+          {provider && (
+            <a
+              href={`/book/${provider.slug}`}
+              className={cn(
+                template.classes.body,
+                "inline-flex items-center gap-2 text-sm font-medium hover:opacity-100 opacity-80 transition-opacity"
+              )}
+              style={{ color: "var(--template-accent)" }}
+            >
+              ← Back to {provider.business_name}
+            </a>
+          )}
         </ThemedCard>
       </div>
     );
@@ -378,18 +390,28 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
 
           {/* Footer */}
           <div className="mt-8 pt-6 space-y-3" style={{ borderTop: "1px solid var(--border)" }}>
-            <button
-              onClick={handleShare}
+            <a
+              href={`/book/${provider.slug}`}
               className={cn(
                 template.classes.body,
-                "inline-flex items-center gap-2 text-xs hover:opacity-100 opacity-60 transition-opacity"
+                "inline-flex items-center gap-2 text-sm font-medium hover:opacity-100 opacity-80 transition-opacity"
               )}
+              style={{ color: "var(--template-accent)" }}
             >
-              <Share2 className="h-3 w-3" />
-              Share with a friend
-            </button>
-            {booking.cancellation_token && (
-              <div>
+              ← Back to {provider.business_name}
+            </a>
+            <div className="flex items-center gap-4 flex-wrap">
+              <button
+                onClick={handleShare}
+                className={cn(
+                  template.classes.body,
+                  "inline-flex items-center gap-2 text-xs hover:opacity-100 opacity-60 transition-opacity"
+                )}
+              >
+                <Share2 className="h-3 w-3" />
+                Share with a friend
+              </button>
+              {booking.cancellation_token && (
                 <a
                   href={`/cancel/${booking.cancellation_token}`}
                   className={cn(
@@ -399,8 +421,8 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
                 >
                   Need to cancel or reschedule?
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </ThemedCard>
       </div>
