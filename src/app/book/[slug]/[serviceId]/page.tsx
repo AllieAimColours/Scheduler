@@ -170,11 +170,14 @@ export default function BookServicePage() {
     });
 
     if (res.ok) {
-      const { url } = await res.json();
+      const { url, bookingToken } = await res.json();
       if (url) {
         window.location.href = url;
       } else {
-        router.push(`/book/${slug}/confirmation`);
+        const path = bookingToken
+          ? `/book/${slug}/confirmation?token=${bookingToken}`
+          : `/book/${slug}/confirmation`;
+        router.push(path);
       }
     } else {
       const errBody = await res.json().catch(() => ({}));

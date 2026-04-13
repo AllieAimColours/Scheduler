@@ -198,7 +198,12 @@ export async function POST(request: NextRequest) {
         console.error("Calendar push failed (non-fatal):", e);
       }
 
-      return NextResponse.json({ url: null }); // Signals direct confirmation
+      // Return the cancellation token as a lookup key so the confirmation
+      // page can fetch the real booking (and substitute {name} etc)
+      return NextResponse.json({
+        url: null,
+        bookingToken: cancellationToken,
+      });
     }
 
     // Create Stripe Checkout Session

@@ -133,11 +133,12 @@ export async function sendBookingConfirmation({
           <div style="text-align: center; margin-bottom: 32px;">
             <div style="font-size: 56px; line-height: 1; margin-bottom: 12px;">${emoji}</div>
             <h1 style="font-size: 28px; color: #1a1a1a; margin: 0 0 8px; font-weight: 700;">${customHeading || "You're booked!"}</h1>
-            <p style="color: #888; font-size: 15px; margin: 0;">${
-              customMessage
-                ? customMessage.replace(/\{name\}/gi, clientName)
-                : `We'll see you soon, ${clientName}.`
-            }</p>
+            <p style="color: #888; font-size: 15px; margin: 0;">${(() => {
+              const firstName = clientName.trim().split(/\s+/)[0];
+              return customMessage
+                ? customMessage.replace(/\{name\}/gi, firstName)
+                : `We'll see you soon, ${firstName}.`;
+            })()}</p>
           </div>
 
           <div style="background: linear-gradient(135deg, #f8f4ff 0%, #fdf2f8 100%); border-radius: 16px; padding: 24px; margin: 24px 0;">

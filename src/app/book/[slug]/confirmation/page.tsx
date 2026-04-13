@@ -6,12 +6,12 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; token?: string }>;
 }
 
 export default async function ConfirmationPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const { session_id } = await searchParams;
+  const { session_id, token } = await searchParams;
   const supabase = createAdminClient();
 
   // Always fetch the provider so we can show their name + address
@@ -23,8 +23,9 @@ export default async function ConfirmationPage({ params, searchParams }: PagePro
 
   const provider = providerData as unknown as Provider | null;
 
-  // Try to find the booking by Stripe session ID (paid path)
-  // or fall back to the most recent booking for this provider (free path)
+  // Try to find the booking by:
+  // 1. Stripe session_id (paid path — set by Stripe's success redirect)
+  // 2. Cancellation token (free path — passed as ?token= by the checkout route)
   let booking: Booking | null = null;
   let service: Service | null = null;
 
@@ -34,6 +35,13 @@ export default async function ConfirmationPage({ params, searchParams }: PagePro
         .from("bookings")
         .select("*")
         .eq("stripe_checkout_session_id", session_id)
+        .single();
+      booking = (data as unknown as Booking) || null;
+    } else if (token) {
+      const { data } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("cancellation_token", token)
         .single();
       booking = (data as unknown as Booking) || null;
     }

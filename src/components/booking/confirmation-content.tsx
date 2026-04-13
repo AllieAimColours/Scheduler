@@ -216,9 +216,12 @@ export function ConfirmationContent({ booking, service, provider }: Props) {
             {customHeading || "You're booked!"}
           </h1>
           <p className={cn(template.classes.body, "text-base md:text-lg mb-8")}>
-            {customMessage
-              ? customMessage.replace(/\{name\}/gi, booking.client_name)
-              : `We'll see you soon, ${booking.client_name}.`}
+            {(() => {
+              const firstName = booking.client_name.trim().split(/\s+/)[0];
+              return customMessage
+                ? customMessage.replace(/\{name\}/gi, firstName)
+                : `We'll see you soon, ${firstName}.`;
+            })()}
           </p>
 
           <div className={cn(template.classes.accentBar, "mx-auto mb-8")} />
