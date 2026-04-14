@@ -16,6 +16,7 @@ import {
   X,
   Eye,
   Wand2,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
@@ -129,9 +130,7 @@ export function AppSidebar({ provider, userEmail }: AppSidebarProps) {
                 <item.icon className={`h-4 w-4 ${isActive ? "text-white" : ""}`} />
                 <span>{item.title}</span>
                 {item.accent && !isActive && (
-                  <span className="ml-auto text-[10px] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full font-bold">
-                    NEW
-                  </span>
+                  <Sparkles className="ml-auto h-3.5 w-3.5 text-pink-500 animate-pulse" />
                 )}
               </a>
               {showSeparator && (
