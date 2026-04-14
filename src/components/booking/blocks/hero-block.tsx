@@ -5,7 +5,54 @@ import { ArrowRight, Calendar } from "lucide-react";
 import { useTemplate } from "@/lib/templates/context";
 import { getTemplate } from "@/lib/templates/index";
 import { cn } from "@/lib/utils";
-import type { HeroBlock } from "@/lib/page-builder/types";
+import type { HeroBlock, HeroImageShape, HeroImageSize } from "@/lib/page-builder/types";
+
+// ─── Hero image sizing lookup ────────────────────────────────
+//
+//  Each (shape, size) combo maps to concrete Tailwind classes.
+//  Shapes:
+//    circle     → square aspect, fully rounded (avatar style)
+//    square     → square aspect with rounded corners (polaroid)
+//    landscape  → 16:9 aspect (banner / wide promo shot)
+//    portrait   → 3:4 aspect (editorial / full-body)
+//
+//  Sizes stack responsively: base = mobile, md: = tablet/desktop.
+
+const SHAPE_CLASSES: Record<HeroImageShape, string> = {
+  circle: "rounded-full",
+  square: "rounded-[2rem]",
+  landscape: "rounded-[2rem]",
+  portrait: "rounded-[2rem]",
+};
+
+const SIZE_CLASSES: Record<HeroImageShape, Record<HeroImageSize, string>> = {
+  circle: {
+    S: "w-24 h-24 md:w-32 md:h-32",
+    M: "w-32 h-32 md:w-44 md:h-44",
+    L: "w-40 h-40 md:w-56 md:h-56",
+    XL: "w-48 h-48 md:w-72 md:h-72",
+  },
+  square: {
+    S: "w-32 h-32 md:w-40 md:h-40",
+    M: "w-44 h-44 md:w-56 md:h-56",
+    L: "w-56 h-56 md:w-72 md:h-72",
+    XL: "w-64 h-64 md:w-96 md:h-96",
+  },
+  landscape: {
+    // 16:9 aspect — width + auto height via aspect-video
+    S: "w-64 aspect-video md:w-80",
+    M: "w-80 aspect-video md:w-[28rem]",
+    L: "w-full max-w-lg aspect-video md:max-w-2xl",
+    XL: "w-full max-w-xl aspect-video md:max-w-4xl",
+  },
+  portrait: {
+    // 3:4 aspect
+    S: "w-36 aspect-[3/4] md:w-48",
+    M: "w-44 aspect-[3/4] md:w-60",
+    L: "w-56 aspect-[3/4] md:w-72",
+    XL: "w-64 aspect-[3/4] md:w-96",
+  },
+};
 
 interface Props {
   block: HeroBlock;
@@ -28,13 +75,19 @@ export function HeroBlockView({ block, provider, index }: Props) {
   const welcomeMessage = block.config.welcome_message || provider.description;
   const ctaLabel = block.config.cta_label || "Book an appointment";
   const showCta = block.config.show_cta !== false;
+  const imageShape: HeroImageShape = block.config.image_shape || "circle";
+  const imageSize: HeroImageSize = block.config.image_size || "M";
+  const shapeClass = SHAPE_CLASSES[imageShape];
+  const sizeClass = SIZE_CLASSES[imageShape][imageSize];
+  // Glow halo should match the image shape so it looks right
+  const glowRadius = imageShape === "circle" ? "rounded-full" : "rounded-[2rem]";
 
   return (
     <section
       className="relative flex flex-col items-center justify-center text-center px-6 pt-20 pb-14 md:pt-28 md:pb-20"
       style={{ animationDelay: `${index * 100}ms`, animationFillMode: "both" }}
     >
-      {/* Avatar with double-layer glow halo */}
+      {/* Hero image with double-layer glow halo */}
       {heroImage && (
         <div
           className="mb-10 relative animate-in fade-in-0 zoom-in-95 duration-1000"
@@ -42,18 +95,23 @@ export function HeroBlockView({ block, provider, index }: Props) {
         >
           {/* Outer soft glow */}
           <div
-            className="absolute -inset-8 rounded-full blur-3xl opacity-40 -z-10 animate-pulse"
+            className={cn("absolute -inset-8 blur-3xl opacity-40 -z-10 animate-pulse", glowRadius)}
             style={{ background: "var(--template-glow)" }}
           />
           {/* Inner tighter glow */}
           <div
-            className="absolute -inset-3 rounded-full blur-xl opacity-60 -z-10"
+            className={cn("absolute -inset-3 blur-xl opacity-60 -z-10", glowRadius)}
             style={{ background: "var(--template-glow)" }}
           />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={heroImage}
             alt={headline}
-            className="w-36 h-36 md:w-52 md:h-52 rounded-full object-cover shadow-2xl ring-4 ring-white/40"
+            className={cn(
+              sizeClass,
+              shapeClass,
+              "object-cover shadow-2xl ring-4 ring-white/40 mx-auto"
+            )}
           />
         </div>
       )}

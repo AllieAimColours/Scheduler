@@ -19,10 +19,15 @@ export interface BaseBlock {
 }
 
 // ───── Hero ─────
+export type HeroImageShape = "circle" | "square" | "landscape" | "portrait";
+export type HeroImageSize = "S" | "M" | "L" | "XL";
+
 export interface HeroBlock extends BaseBlock {
   type: "hero";
   config: {
     image_url?: string;
+    image_shape?: HeroImageShape;
+    image_size?: HeroImageSize;
     headline?: string;
     tagline?: string;
     welcome_message?: string;
