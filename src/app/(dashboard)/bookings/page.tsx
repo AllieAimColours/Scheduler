@@ -1,5 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { CalendarHeart } from "lucide-react";
 import Link from "next/link";
@@ -35,10 +37,6 @@ interface BookingRow {
   } | null;
 }
 
-/**
- * Group bookings by calendar date (YYYY-MM-DD) preserving the order they
- * came in (which is chronological desc from the query).
- */
 function groupByDate(bookings: BookingRow[]): Array<{ date: string; items: BookingRow[] }> {
   const groups = new Map<string, BookingRow[]>();
   for (const b of bookings) {
@@ -77,32 +75,71 @@ function formatDateLabel(isoString: string): { main: string; sub: string } {
   };
 }
 
-export default async function BookingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+type Tab = "upcoming" | "past";
 
-  const { data: provider } = await supabase
-    .from("providers")
-    .select("id, timezone")
-    .eq("user_id", user.id)
-    .single();
-  if (!provider) redirect("/onboarding");
+export default function BookingsPage() {
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("upcoming");
 
-  const { data } = await supabase
-    .from("bookings")
-    .select("*, services(name, emoji, color, duration_minutes)")
-    .eq("provider_id", provider.id)
-    .order("starts_at", { ascending: false })
-    .limit(100);
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
-  const bookings = (data || []) as unknown as BookingRow[];
-  const groups = groupByDate(bookings);
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      if (!provider) return;
+
+      const { data } = await supabase
+        .from("bookings")
+        .select("*, services(name, emoji, color, duration_minutes)")
+        .eq("provider_id", provider.id)
+        .order("starts_at", { ascending: true });
+
+      setBookings((data || []) as unknown as BookingRow[]);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  // Split into upcoming (today and future) and past.
+  // "Today" includes bookings that haven't ended yet — so a booking
+  // happening right now still shows under Upcoming until it ends.
+  const { upcoming, past } = useMemo(() => {
+    const now = new Date();
+    const upcomingItems: BookingRow[] = [];
+    const pastItems: BookingRow[] = [];
+    for (const b of bookings) {
+      const endsAt = new Date(b.ends_at);
+      if (endsAt >= now && b.status !== "cancelled") {
+        upcomingItems.push(b);
+      } else {
+        pastItems.push(b);
+      }
+    }
+    // Upcoming: ascending (today first, then tomorrow, then later)
+    upcomingItems.sort(
+      (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
+    );
+    // Past: descending (most recent first, oldest last)
+    pastItems.sort(
+      (a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()
+    );
+    return { upcoming: upcomingItems, past: pastItems };
+  }, [bookings]);
+
+  const activeList = tab === "upcoming" ? upcoming : past;
+  const groups = groupByDate(activeList);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
           Bookings
@@ -112,14 +149,61 @@ export default async function BookingsPage() {
         </p>
       </div>
 
-      {bookings.length === 0 ? (
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setTab("upcoming")}
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+            tab === "upcoming"
+              ? "bg-white text-purple-700 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Upcoming
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+              tab === "upcoming" ? "bg-purple-100 text-purple-700" : "bg-gray-200 text-gray-500"
+            }`}
+          >
+            {upcoming.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setTab("past")}
+          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+            tab === "past"
+              ? "bg-white text-purple-700 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Past
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+              tab === "past" ? "bg-purple-100 text-purple-700" : "bg-gray-200 text-gray-500"
+            }`}
+          >
+            {past.length}
+          </span>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-gray-400 py-12 justify-center">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+          Loading…
+        </div>
+      ) : activeList.length === 0 ? (
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col items-center justify-center py-16 text-center">
           <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg mb-6">
             <CalendarHeart className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Your schedule is wide open</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            {tab === "upcoming" ? "Your schedule is wide open" : "No past bookings yet"}
+          </h3>
           <p className="text-gray-400 max-w-sm">
-            Share your booking link with clients and watch the appointments roll in!
+            {tab === "upcoming"
+              ? "Share your booking link with clients and watch the appointments roll in!"
+              : "Once you have completed appointments, they'll show up here."}
           </p>
         </div>
       ) : (
@@ -136,7 +220,6 @@ export default async function BookingsPage() {
                   <p className="text-sm text-gray-400 mt-1">{label.sub}</p>
                 </div>
 
-                {/* Bookings for this date */}
                 <div className="space-y-2">
                   {group.items.map((booking) => {
                     const service = booking.services;
@@ -154,10 +237,7 @@ export default async function BookingsPage() {
                         href={`/bookings/${booking.id}`}
                         className="block group"
                       >
-                        <div
-                          className="relative flex items-center gap-5 p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 hover:border-purple-200 transition-all duration-300 overflow-hidden"
-                        >
-                          {/* Colored left accent */}
+                        <div className="relative flex items-center gap-5 p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 hover:border-purple-200 transition-all duration-300 overflow-hidden">
                           {service && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-1"
@@ -165,7 +245,6 @@ export default async function BookingsPage() {
                             />
                           )}
 
-                          {/* BIG time */}
                           <div className="shrink-0 w-28 text-right pl-2">
                             <div className="font-display text-2xl md:text-3xl font-bold text-gray-800 leading-none tracking-tight">
                               {startTime}
@@ -175,10 +254,8 @@ export default async function BookingsPage() {
                             </div>
                           </div>
 
-                          {/* Divider */}
                           <div className="h-14 w-px bg-gray-100 shrink-0" />
 
-                          {/* Client (primary) + service (secondary) */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-lg text-gray-800 truncate">
@@ -200,7 +277,6 @@ export default async function BookingsPage() {
                             </div>
                           </div>
 
-                          {/* Payment */}
                           <div className="shrink-0 text-right">
                             <div className="font-semibold text-gray-800">
                               {formatPrice(booking.payment_amount_cents)}
