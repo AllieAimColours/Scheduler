@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         .order("starts_at"),
       supabase
         .from("services")
-        .select("id, name, emoji, color, duration_minutes")
+        .select("id, name, emoji, color, duration_minutes, price_cents")
         .eq("provider_id", provider.id),
       supabase
         .from("availability_rules")
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   const personalEvents = (eventsRes.data || []) as unknown as PersonalEvent[];
   const services = (servicesRes.data || []) as unknown as Pick<
     Service,
-    "id" | "name" | "emoji" | "color" | "duration_minutes"
+    "id" | "name" | "emoji" | "color" | "duration_minutes" | "price_cents"
   >[];
 
   const serviceMap = Object.fromEntries(services.map((s) => [s.id, s]));

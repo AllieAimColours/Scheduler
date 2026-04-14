@@ -34,6 +34,7 @@ interface BookingRow {
     emoji: string;
     color: string;
     duration_minutes: number;
+    price_cents: number;
   } | null;
 }
 
@@ -99,7 +100,7 @@ export default function BookingsPage() {
 
       const { data } = await supabase
         .from("bookings")
-        .select("*, services(name, emoji, color, duration_minutes)")
+        .select("*, services(name, emoji, color, duration_minutes, price_cents)")
         .eq("provider_id", provider.id)
         .order("starts_at", { ascending: true });
 
@@ -277,13 +278,35 @@ export default function BookingsPage() {
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-right">
-                            <div className="font-semibold text-gray-800">
-                              {formatPrice(booking.payment_amount_cents)}
-                            </div>
-                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">
-                              {booking.payment_status}
-                            </div>
+                          <div className="shrink-0 text-right space-y-0.5 min-w-[120px]">
+                            {(() => {
+                              const svcPrice = service?.price_cents || 0;
+                              const paid = booking.payment_amount_cents;
+                              const owed = Math.max(0, svcPrice - paid);
+                              return (
+                                <>
+                                  {paid > 0 && (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <span className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">Paid</span>
+                                      <span className="font-semibold text-emerald-700 text-sm">
+                                        {formatPrice(paid)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {owed > 0 && (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <span className="text-[10px] text-amber-600 font-medium uppercase tracking-wider">Due</span>
+                                      <span className="font-semibold text-amber-700 text-sm">
+                                        {formatPrice(owed)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {paid === 0 && owed === 0 && (
+                                    <div className="text-xs text-gray-400 italic">Free</div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </Link>
