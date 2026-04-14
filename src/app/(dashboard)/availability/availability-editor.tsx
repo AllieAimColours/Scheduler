@@ -96,7 +96,7 @@ export function AvailabilityEditor({
       <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500">
         <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-blue-200/30 to-indigo-200/30 blur-3xl pointer-events-none" />
 
-        <div className="relative p-8 md:p-10">
+        <div className="relative p-5 sm:p-8 md:p-10">
           <div className="flex items-start justify-between mb-8">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-3">
@@ -134,7 +134,7 @@ export function AvailabilityEditor({
                 <button
                   type="button"
                   onClick={() => updateDay(index, { enabled: !schedule[index].enabled })}
-                  className={`w-32 text-left font-display text-xl transition-all ${
+                  className={`w-20 sm:w-32 shrink-0 text-left font-display text-lg sm:text-xl transition-all ${
                     schedule[index].enabled ? "text-gray-800" : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
@@ -143,22 +143,22 @@ export function AvailabilityEditor({
 
                 {/* Times or placeholder */}
                 {schedule[index].enabled ? (
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="relative flex-1 max-w-[140px]">
+                  <div className="flex items-center gap-1.5 sm:gap-3 flex-1 min-w-0">
+                    <div className="relative flex-1 min-w-0 max-w-[140px]">
                       <Input
                         type="time"
                         value={schedule[index].start_time}
                         onChange={(e) => updateDay(index, { start_time: e.target.value })}
-                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl"
+                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl px-2 sm:px-3"
                       />
                     </div>
-                    <span className="text-gray-300 font-light text-lg">→</span>
-                    <div className="relative flex-1 max-w-[140px]">
+                    <span className="text-gray-300 font-light text-lg shrink-0">→</span>
+                    <div className="relative flex-1 min-w-0 max-w-[140px]">
                       <Input
                         type="time"
                         value={schedule[index].end_time}
                         onChange={(e) => updateDay(index, { end_time: e.target.value })}
-                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl"
+                        className="bg-white border-purple-200 text-gray-800 font-medium focus:border-purple-400 focus:ring-purple-400/20 rounded-xl px-2 sm:px-3"
                       />
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export function AvailabilityEditor({
       <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500">
         <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-gradient-to-br from-amber-200/30 to-orange-200/30 blur-3xl pointer-events-none" />
 
-        <div className="relative p-8 md:p-10">
+        <div className="relative p-5 sm:p-8 md:p-10">
           <div className="flex items-start justify-between mb-8">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 mb-3">
@@ -341,7 +341,7 @@ function OverrideForm({ onClose }: { onClose: () => void }) {
 
   return (
     <form action={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="date" className="text-gray-800 font-medium">
             Start date

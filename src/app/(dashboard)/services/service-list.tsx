@@ -99,7 +99,7 @@ function ServiceForm({
 
   return (
     <form action={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-[1fr_auto] gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-800 font-medium">Service Name</Label>
           <Input
@@ -113,7 +113,7 @@ function ServiceForm({
         </div>
         <div className="space-y-2">
           <Label className="text-gray-800 font-medium">Emoji</Label>
-          <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+          <div className="flex flex-wrap gap-1.5 max-w-full sm:max-w-[220px]">
             {/* None option */}
             <button
               type="button"
@@ -165,7 +165,7 @@ function ServiceForm({
               onChange={(e) => setEmoji(e.target.value.slice(0, 4))}
               placeholder="Paste or type any emoji"
               maxLength={4}
-              className="w-[200px] text-lg text-center border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
+              className="w-full sm:w-[200px] text-lg text-center border-gray-200 focus:border-purple-400 focus:ring-purple-400/20"
               autoFocus={showCustomEmoji && !emoji}
             />
           )}
@@ -584,7 +584,7 @@ export function ServiceList({
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border-gray-100">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border-gray-100">
           <DialogHeader>
             <DialogTitle className="text-xl text-gray-800">
               {editingService ? "Edit Service" : "Add New Service"}

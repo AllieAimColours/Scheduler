@@ -163,7 +163,7 @@ export default async function ClientDetailPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
           label="Total Visits"
           value={totalBookings}

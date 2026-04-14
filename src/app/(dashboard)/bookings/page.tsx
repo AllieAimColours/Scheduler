@@ -239,7 +239,7 @@ export default function BookingsPage() {
                         href={`/bookings/${booking.id}`}
                         className="block group"
                       >
-                        <div className="relative flex items-center gap-5 p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 hover:border-purple-200 transition-all duration-300 overflow-hidden">
+                        <div className="relative flex items-center gap-3 sm:gap-5 p-4 sm:p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 hover:border-purple-200 transition-all duration-300 overflow-hidden">
                           {service && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-1"
@@ -247,8 +247,8 @@ export default function BookingsPage() {
                             />
                           )}
 
-                          <div className="shrink-0 w-28 text-right pl-2">
-                            <div className="font-display text-2xl md:text-3xl font-bold text-gray-800 leading-none tracking-tight">
+                          <div className="shrink-0 w-20 sm:w-28 text-right pl-2">
+                            <div className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 leading-none tracking-tight">
                               {startTime}
                             </div>
                             <div className="text-[11px] text-gray-400 mt-1">
@@ -256,7 +256,7 @@ export default function BookingsPage() {
                             </div>
                           </div>
 
-                          <div className="h-14 w-px bg-gray-100 shrink-0" />
+                          <div className="h-14 w-px bg-gray-100 shrink-0 hidden sm:block" />
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function BookingsPage() {
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-right space-y-0.5 min-w-[140px]">
+                          <div className="shrink-0 text-right space-y-0.5">
                             {(() => {
                               const svcPrice = service?.price_cents || 0;
                               const online = booking.payment_amount_cents;

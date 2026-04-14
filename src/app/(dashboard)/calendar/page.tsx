@@ -483,6 +483,8 @@ function TimeGrid({
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+     <div className={isDay ? "" : "overflow-x-auto"}>
+      <div className={isDay ? "" : "min-w-[640px]"}>
       {/* Day headers */}
       <div className={`grid border-b border-gray-100 ${isDay ? "grid-cols-[60px_1fr]" : "grid-cols-[60px_repeat(7,1fr)]"}`}>
         <div className="p-2" />
@@ -678,6 +680,8 @@ function TimeGrid({
           );
         })}
       </div>
+     </div>
+     </div>
     </div>
   );
 }
@@ -744,14 +748,14 @@ function MonthView({
               key={i}
               type="button"
               onClick={() => onDayClick(d)}
-              className={`h-24 border-t border-l border-gray-100 p-2 text-left hover:bg-purple-50/30 transition-colors cursor-pointer ${
+              className={`h-16 sm:h-24 border-t border-l border-gray-100 p-1 sm:p-2 text-left hover:bg-purple-50/30 transition-colors cursor-pointer overflow-hidden ${
                 !working ? "bg-gray-50/50" : ""
               }`}
             >
               <div
-                className={`text-sm font-medium ${
+                className={`text-xs sm:text-sm font-medium ${
                   isToday
-                    ? "bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center"
+                    ? "bg-purple-600 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center"
                     : "text-gray-700"
                 }`}
               >
@@ -759,17 +763,19 @@ function MonthView({
               </div>
               {counts.bookings > 0 && (
                 <div className="mt-1 flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  <span className="text-[10px] text-purple-600 font-medium">
-                    {counts.bookings} booking{counts.bookings > 1 ? "s" : ""}
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                  <span className="text-[10px] text-purple-600 font-medium truncate">
+                    <span className="sm:hidden">{counts.bookings}</span>
+                    <span className="hidden sm:inline">{counts.bookings} booking{counts.bookings > 1 ? "s" : ""}</span>
                   </span>
                 </div>
               )}
               {counts.events > 0 && (
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                  <span className="text-[10px] text-gray-500">
-                    {counts.events} blocked
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                  <span className="text-[10px] text-gray-500 truncate">
+                    <span className="sm:hidden">{counts.events}</span>
+                    <span className="hidden sm:inline">{counts.events} blocked</span>
                   </span>
                 </div>
               )}

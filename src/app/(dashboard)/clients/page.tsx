@@ -142,7 +142,7 @@ export default async function ClientsPage() {
               </p>
             </div>
           ) : (
-            <div className="rounded-xl overflow-hidden border border-gray-100">
+            <div className="rounded-xl overflow-x-auto border border-gray-100">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
