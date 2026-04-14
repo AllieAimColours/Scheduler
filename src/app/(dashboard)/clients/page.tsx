@@ -15,7 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Heart } from "lucide-react";
+import { Users, Heart, AlertTriangle, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 function formatPrice(cents: number) {
   return new Intl.NumberFormat("en-US", {
@@ -38,17 +39,18 @@ export default async function ClientsPage() {
     .single();
   if (!provider) redirect("/onboarding");
 
-  // Aggregate clients from bookings — join service price to calculate owed
+  // Include ALL bookings (including cancelled and no_show) so we can count them
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("client_name, client_email, client_phone, payment_amount_cents, created_at, services(price_cents)")
+    .select("client_name, client_email, client_phone, payment_amount_cents, status, starts_at, created_at, services(price_cents)")
     .eq("provider_id", provider.id)
-    .neq("status", "cancelled")
     .order("created_at", { ascending: false }) as { data: Array<{
       client_name: string;
       client_email: string;
       client_phone: string | null;
       payment_amount_cents: number;
+      status: string;
+      starts_at: string;
       created_at: string;
       services: { price_cents: number } | null;
     }> | null };
@@ -61,6 +63,8 @@ export default async function ClientsPage() {
       email: string;
       phone: string | null;
       bookingCount: number;
+      noShowCount: number;
+      cancelledCount: number;
       totalSpent: number;
       totalOwed: number;
       lastVisit: string;
@@ -69,10 +73,14 @@ export default async function ClientsPage() {
 
   for (const b of bookings || []) {
     const servicePriceCents = b.services?.price_cents || 0;
-    const owedThisBooking = Math.max(0, servicePriceCents - b.payment_amount_cents);
+    const owedThisBooking = b.status === "completed" || b.status === "confirmed"
+      ? Math.max(0, servicePriceCents - b.payment_amount_cents)
+      : 0;
     const existing = clientMap.get(b.client_email);
     if (existing) {
       existing.bookingCount++;
+      if (b.status === "no_show") existing.noShowCount++;
+      if (b.status === "cancelled") existing.cancelledCount++;
       existing.totalSpent += b.payment_amount_cents;
       existing.totalOwed += owedThisBooking;
     } else {
@@ -81,16 +89,23 @@ export default async function ClientsPage() {
         email: b.client_email,
         phone: b.client_phone,
         bookingCount: 1,
+        noShowCount: b.status === "no_show" ? 1 : 0,
+        cancelledCount: b.status === "cancelled" ? 1 : 0,
         totalSpent: b.payment_amount_cents,
         totalOwed: owedThisBooking,
-        lastVisit: b.created_at,
+        lastVisit: b.starts_at,
       });
     }
   }
 
-  const clients = Array.from(clientMap.values()).sort(
-    (a, b) => b.totalSpent - a.totalSpent
-  );
+  const clients = Array.from(clientMap.values()).sort((a, b) => {
+    // Flagged clients (3+ no-shows) bubble to the top
+    const aFlagged = a.noShowCount >= 3;
+    const bFlagged = b.noShowCount >= 3;
+    if (aFlagged && !bFlagged) return -1;
+    if (!aFlagged && bFlagged) return 1;
+    return b.totalSpent - a.totalSpent;
+  });
 
   return (
     <div className="space-y-6">
@@ -99,7 +114,7 @@ export default async function ClientsPage() {
           Clients
         </h1>
         <p className="text-gray-400">
-          Your client list, auto-built from bookings
+          Click a client to see their full history, notes, and attendance
         </p>
       </div>
 
@@ -133,37 +148,106 @@ export default async function ClientsPage() {
                   <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
                     <TableHead className="text-gray-400 font-medium">Name</TableHead>
                     <TableHead className="text-gray-400 font-medium">Email</TableHead>
-                    <TableHead className="text-gray-400 font-medium">Phone</TableHead>
-                    <TableHead className="text-right text-gray-400 font-medium">Bookings</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">Visits</TableHead>
+                    <TableHead className="text-right text-gray-400 font-medium">No-shows</TableHead>
                     <TableHead className="text-right text-gray-400 font-medium">Deposits Paid</TableHead>
                     <TableHead className="text-right text-gray-400 font-medium">Due at Appt</TableHead>
                     <TableHead className="text-gray-400 font-medium">Last Visit</TableHead>
+                    <TableHead className="w-8" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((client) => (
-                    <TableRow key={client.email} className="hover:bg-purple-50/30 transition-colors">
-                      <TableCell className="font-medium text-gray-800">
-                        {client.name}
-                      </TableCell>
-                      <TableCell className="text-gray-600">{client.email}</TableCell>
-                      <TableCell className="text-gray-400">{client.phone || "—"}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge className="rounded-full bg-blue-50 text-blue-600 border-0">
-                          {client.bookingCount}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-gray-800">
-                        {formatPrice(client.totalSpent)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-amber-600">
-                        {client.totalOwed > 0 ? formatPrice(client.totalOwed) : "—"}
-                      </TableCell>
-                      <TableCell className="text-gray-400">
-                        {new Date(client.lastVisit).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {clients.map((client) => {
+                    const flagged = client.noShowCount >= 3;
+                    return (
+                      <TableRow
+                        key={client.email}
+                        className="hover:bg-purple-50/30 transition-colors cursor-pointer"
+                      >
+                        <TableCell className="font-medium text-gray-800">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="flex items-center gap-2"
+                          >
+                            {flagged && (
+                              <AlertTriangle className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                            )}
+                            {client.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-gray-600">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            {client.email}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            <Badge className="rounded-full bg-blue-50 text-blue-600 border-0">
+                              {client.bookingCount}
+                            </Badge>
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            {client.noShowCount > 0 ? (
+                              <Badge
+                                className={`rounded-full border-0 font-semibold ${
+                                  flagged
+                                    ? "bg-rose-100 text-rose-700"
+                                    : "bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                {client.noShowCount}
+                              </Badge>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-gray-800">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            {formatPrice(client.totalSpent)}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-amber-600">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            {client.totalOwed > 0 ? formatPrice(client.totalOwed) : "—"}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-gray-400">
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block"
+                          >
+                            {new Date(client.lastVisit).toLocaleDateString()}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/clients/${encodeURIComponent(client.email)}`}
+                            className="block text-gray-300 hover:text-purple-600 transition-colors"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
