@@ -191,6 +191,9 @@ export default async function BookingDetailPage({
             bookingId={booking.id}
             currentStatus={booking.status}
             currentNotes={booking.provider_notes}
+            servicePriceCents={service?.price_cents || 0}
+            paymentAmountCents={booking.payment_amount_cents || 0}
+            amountCollectedInPersonCents={booking.amount_collected_in_person_cents || 0}
           />
         </CardContent>
       </Card>

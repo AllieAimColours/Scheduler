@@ -213,6 +213,7 @@ export interface Database {
           provider_notes: string;
           payment_status: "unpaid" | "deposit_paid" | "paid" | "refunded";
           payment_amount_cents: number;
+          amount_collected_in_person_cents: number;
           stripe_payment_intent_id: string | null;
           stripe_checkout_session_id: string | null;
           calendar_event_id: string | null;
@@ -240,6 +241,7 @@ export interface Database {
           provider_notes?: string;
           payment_status?: "unpaid" | "deposit_paid" | "paid" | "refunded";
           payment_amount_cents?: number;
+          amount_collected_in_person_cents?: number;
           stripe_payment_intent_id?: string | null;
           stripe_checkout_session_id?: string | null;
           calendar_event_id?: string | null;
@@ -267,6 +269,7 @@ export interface Database {
           provider_notes?: string;
           payment_status?: "unpaid" | "deposit_paid" | "paid" | "refunded";
           payment_amount_cents?: number;
+          amount_collected_in_person_cents?: number;
           stripe_payment_intent_id?: string | null;
           stripe_checkout_session_id?: string | null;
           calendar_event_id?: string | null;

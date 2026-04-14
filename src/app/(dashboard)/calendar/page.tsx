@@ -39,6 +39,7 @@ interface CalBooking {
   status: string;
   payment_status: string;
   payment_amount_cents: number;
+  amount_collected_in_person_cents: number;
   client_notes: string;
   provider_notes: string;
   service: {
@@ -391,16 +392,24 @@ export default function CalendarPage() {
                 )}
                 {(() => {
                   const svcPrice = selectedBooking.service?.price_cents || 0;
-                  const paid = selectedBooking.payment_amount_cents;
-                  const owed = Math.max(0, svcPrice - paid);
+                  const online = selectedBooking.payment_amount_cents;
+                  const inPerson = selectedBooking.amount_collected_in_person_cents || 0;
+                  const collected = online + inPerson;
+                  const owed = Math.max(0, svcPrice - collected);
                   return (
                     <div className="flex items-start gap-2 text-gray-600">
                       <DollarSign className="h-4 w-4 text-gray-400 mt-0.5" />
                       <div className="flex-1 space-y-1">
-                        {paid > 0 && (
+                        {online > 0 && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Paid in Bloom</span>
-                            <span className="font-semibold text-emerald-700">{formatPrice(paid)}</span>
+                            <span className="font-semibold text-emerald-700">{formatPrice(online)}</span>
+                          </div>
+                        )}
+                        {inPerson > 0 && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Paid in person</span>
+                            <span className="font-semibold text-emerald-700">{formatPrice(inPerson)}</span>
                           </div>
                         )}
                         {owed > 0 && (
@@ -409,7 +418,7 @@ export default function CalendarPage() {
                             <span className="font-semibold text-amber-700">{formatPrice(owed)}</span>
                           </div>
                         )}
-                        {paid === 0 && owed === 0 && (
+                        {collected === 0 && owed === 0 && (
                           <span className="text-xs text-gray-400 italic">Free</span>
                         )}
                       </div>
@@ -609,12 +618,13 @@ function TimeGrid({
                       )}
                       {height > 52 && (() => {
                         const svcPrice = b.service?.price_cents || 0;
-                        const owed = Math.max(0, svcPrice - b.payment_amount_cents);
+                        const collected = b.payment_amount_cents + (b.amount_collected_in_person_cents || 0);
+                        const owed = Math.max(0, svcPrice - collected);
                         return owed > 0 ? (
                           <div className="text-[10px] font-bold text-amber-600">
                             Due ${(owed / 100).toFixed(0)}
                           </div>
-                        ) : b.payment_amount_cents > 0 ? (
+                        ) : collected > 0 ? (
                           <div className="text-[10px] font-bold text-emerald-600">
                             Paid
                           </div>

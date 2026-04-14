@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
       status: b.status,
       payment_status: b.payment_status,
       payment_amount_cents: b.payment_amount_cents,
+      amount_collected_in_person_cents: b.amount_collected_in_person_cents,
       client_notes: b.client_notes,
       provider_notes: b.provider_notes,
       service: serviceMap[b.service_id] || null,

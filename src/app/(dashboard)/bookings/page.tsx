@@ -28,6 +28,7 @@ interface BookingRow {
   ends_at: string;
   status: string;
   payment_amount_cents: number;
+  amount_collected_in_person_cents: number;
   payment_status: string;
   services: {
     name: string;
@@ -278,18 +279,23 @@ export default function BookingsPage() {
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-right space-y-0.5 min-w-[120px]">
+                          <div className="shrink-0 text-right space-y-0.5 min-w-[140px]">
                             {(() => {
                               const svcPrice = service?.price_cents || 0;
-                              const paid = booking.payment_amount_cents;
-                              const owed = Math.max(0, svcPrice - paid);
+                              const online = booking.payment_amount_cents;
+                              const inPerson = booking.amount_collected_in_person_cents || 0;
+                              const collected = online + inPerson;
+                              const owed = Math.max(0, svcPrice - collected);
+                              if (svcPrice === 0 && collected === 0) {
+                                return <div className="text-xs text-gray-400 italic">Free</div>;
+                              }
                               return (
                                 <>
-                                  {paid > 0 && (
+                                  {collected > 0 && (
                                     <div className="flex items-center justify-end gap-1.5">
                                       <span className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">Paid</span>
                                       <span className="font-semibold text-emerald-700 text-sm">
-                                        {formatPrice(paid)}
+                                        {formatPrice(collected)}
                                       </span>
                                     </div>
                                   )}
@@ -300,9 +306,6 @@ export default function BookingsPage() {
                                         {formatPrice(owed)}
                                       </span>
                                     </div>
-                                  )}
-                                  {paid === 0 && owed === 0 && (
-                                    <div className="text-xs text-gray-400 italic">Free</div>
                                   )}
                                 </>
                               );

@@ -25,6 +25,7 @@ interface Booking {
   client_email: string;
   status: string;
   payment_amount_cents: number;
+  amount_collected_in_person_cents: number;
   services: {
     name: string;
     emoji: string;
@@ -90,9 +91,25 @@ function formatPrice(cents: number) {
 }
 
 function toCsv(bookings: Booking[]): string {
-  const headers = ["Date", "Time", "Client", "Email", "Service", "Duration", "Service Price", "Deposit Paid", "Status"];
+  const headers = [
+    "Date",
+    "Time",
+    "Client",
+    "Email",
+    "Service",
+    "Duration",
+    "Service Price",
+    "Paid Online",
+    "Paid in Person",
+    "Still Owed",
+    "Status",
+  ];
   const rows = bookings.map((b) => {
     const d = new Date(b.starts_at);
+    const svcPrice = b.services?.price_cents || 0;
+    const online = b.payment_amount_cents || 0;
+    const inPerson = b.amount_collected_in_person_cents || 0;
+    const owed = Math.max(0, svcPrice - online - inPerson);
     return [
       d.toLocaleDateString(),
       d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
@@ -100,8 +117,10 @@ function toCsv(bookings: Booking[]): string {
       b.client_email,
       b.services?.name || "",
       b.services?.duration_minutes ? `${b.services.duration_minutes} min` : "",
-      b.services?.price_cents ? (b.services.price_cents / 100).toFixed(2) : "0.00",
-      (b.payment_amount_cents / 100).toFixed(2),
+      (svcPrice / 100).toFixed(2),
+      (online / 100).toFixed(2),
+      (inPerson / 100).toFixed(2),
+      (owed / 100).toFixed(2),
       b.status,
     ].map((c) => {
       const s = String(c);
@@ -184,12 +203,17 @@ export default function DashboardPage() {
   }, [provider, range]);
 
   // Compute stats
-  const deposits = allBookings.reduce((s, b) => s + (b.payment_amount_cents || 0), 0);
-  const dueAtAppt = allBookings.reduce((s, b) => {
+  // "Collected" = money actually in hand (online deposit + paid in person)
+  // "Projected" = what the client still owes (service price - collected)
+  const collectedOnline = allBookings.reduce((s, b) => s + (b.payment_amount_cents || 0), 0);
+  const collectedInPerson = allBookings.reduce((s, b) => s + (b.amount_collected_in_person_cents || 0), 0);
+  const collected = collectedOnline + collectedInPerson;
+  const stillOwed = allBookings.reduce((s, b) => {
     const svcPrice = b.services?.price_cents || 0;
-    return s + Math.max(0, svcPrice - (b.payment_amount_cents || 0));
+    const paid = (b.payment_amount_cents || 0) + (b.amount_collected_in_person_cents || 0);
+    return s + Math.max(0, svcPrice - paid);
   }, 0);
-  const totalRevenue = deposits + dueAtAppt;
+  const totalRevenue = collected + stillOwed;
   const uniqueEmails = new Set(allBookings.map((b) => b.client_email)).size;
 
   // Export
@@ -284,10 +308,12 @@ export default function DashboardPage() {
             bgGlow: "bg-violet-500/10",
           },
           {
-            label: "Revenue",
-            value: `$${(totalRevenue / 100).toFixed(0)}`,
-            subtitle: deposits > 0 || dueAtAppt > 0
-              ? `$${(deposits / 100).toFixed(0)} deposits · $${(dueAtAppt / 100).toFixed(0)} at appt`
+            label: "Collected",
+            value: `$${(collected / 100).toFixed(0)}`,
+            subtitle: stillOwed > 0
+              ? `$${(collectedOnline / 100).toFixed(0)} online · $${(collectedInPerson / 100).toFixed(0)} in person · $${(stillOwed / 100).toFixed(0)} still owed`
+              : collected > 0
+              ? `$${(collectedOnline / 100).toFixed(0)} online · $${(collectedInPerson / 100).toFixed(0)} in person`
               : undefined,
             icon: DollarSign,
             gradient: "from-pink-500 to-rose-600",
@@ -305,7 +331,7 @@ export default function DashboardPage() {
           {
             label: "Avg per Booking",
             value: allBookings.length > 0
-              ? `$${(totalRevenue / allBookings.length / 100).toFixed(0)}`
+              ? `$${(collected / allBookings.length / 100).toFixed(0)}`
               : "$0",
             icon: TrendingUp,
             gradient: "from-amber-500 to-orange-500",
