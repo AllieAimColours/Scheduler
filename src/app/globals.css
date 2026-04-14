@@ -130,12 +130,23 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
     font-size: 16px;
+    /* Prevent iOS Safari from auto-resizing text on rotation. */
+    -webkit-text-size-adjust: 100%;
+    /* Clip any accidental horizontal overflow so iOS Safari
+       doesn't pan-zoom to "fit" it. */
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Same on body — iOS needs it on both html and body to
+       reliably clip horizontal overflow. */
+    overflow-x: hidden;
+    /* Stop iOS from rubber-banding past the top/bottom of the
+       page, which feels unstable in a PWA. */
+    overscroll-behavior-y: contain;
   }
 }
 
