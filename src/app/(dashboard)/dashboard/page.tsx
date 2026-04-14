@@ -331,7 +331,7 @@ export default function DashboardPage() {
           {
             label: "Avg per Booking",
             value: allBookings.length > 0
-              ? `$${(collected / allBookings.length / 100).toFixed(0)}`
+              ? `$${(totalRevenue / allBookings.length / 100).toFixed(0)}`
               : "$0",
             icon: TrendingUp,
             gradient: "from-amber-500 to-orange-500",
