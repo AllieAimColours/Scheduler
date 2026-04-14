@@ -135,15 +135,14 @@
     font-size: 16px;
     /* Prevent iOS Safari from auto-resizing text on rotation. */
     -webkit-text-size-adjust: 100%;
-    /* Clip any accidental horizontal overflow so iOS Safari
-       doesn't pan-zoom to "fit" it. */
-    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground;
-    /* Same on body — iOS needs it on both html and body to
-       reliably clip horizontal overflow. */
-    overflow-x: hidden;
+    /* Clip any accidental horizontal overflow so iOS Safari
+       doesn't pan-zoom to "fit" it. `clip` (unlike `hidden`)
+       does NOT create a new scroll container, so vertical
+       trackpad / wheel scrolling still works on desktop. */
+    overflow-x: clip;
     /* Stop iOS from rubber-banding past the top/bottom of the
        page, which feels unstable in a PWA. */
     overscroll-behavior-y: contain;
