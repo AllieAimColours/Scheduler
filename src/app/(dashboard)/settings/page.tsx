@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload, DollarSign, Copy, ExternalLink, Check } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload, DollarSign, Copy, ExternalLink, Check, Pencil, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -22,7 +22,6 @@ export default function SettingsPage() {
   const loaded = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef<string>("");
-  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
     business_name: "",
     description: "",
@@ -193,68 +192,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Booking link — most important thing to copy/share */}
-      {(() => {
-        const origin = typeof window !== "undefined" ? window.location.origin : "https://bloomrdv.com";
-        const fullUrl = `${origin}/book/${provider.slug}`;
-        async function copyLink() {
-          try {
-            await navigator.clipboard.writeText(fullUrl);
-            setCopied(true);
-            toast.success("Booking link copied");
-            setTimeout(() => setCopied(false), 2000);
-          } catch {
-            toast.error("Could not copy — try manually selecting");
-          }
-        }
-        return (
-          <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/60 p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="inline-flex p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm">
-                <Globe className="h-3.5 w-3.5 text-white" />
-              </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-purple-700">
-                Your booking link
-              </h2>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="flex-1 min-w-0 rounded-xl bg-white border border-gray-200 px-4 py-3 font-mono text-sm text-gray-800 truncate select-all">
-                {fullUrl}
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium shadow-sm transition-all cursor-pointer"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      Copy
-                    </>
-                  )}
-                </button>
-                <a
-                  href={fullUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 text-sm font-medium transition-all"
-                  title="Open in new tab"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </div>
-            </div>
-            <p className="text-[11px] text-gray-500 mt-2">
-              Share this link anywhere — Instagram bio, business card, WhatsApp. Clients click it and book directly.
-            </p>
-          </div>
-        );
-      })()}
+      <BookingLinkCard provider={provider} onUpdate={setProvider} />
 
       {/* Business Info — identity first */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
@@ -654,6 +592,200 @@ export default function SettingsPage() {
       <ImportCard />
 
       {/* Autosave status — no manual save button needed */}
+    </div>
+  );
+}
+
+// ─── Booking link card — copy + change slug ───
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .substring(0, 50);
+}
+
+function BookingLinkCard({
+  provider,
+  onUpdate,
+}: {
+  provider: Provider;
+  onUpdate: (p: Provider) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftSlug, setDraftSlug] = useState(provider.slug);
+  const [saving, setSaving] = useState(false);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bloomrdv.com";
+  const fullUrl = `${origin}/book/${provider.slug}`;
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      toast.success("Booking link copied");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy — try manually selecting");
+    }
+  }
+
+  function startEditing() {
+    setDraftSlug(provider.slug);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraftSlug(provider.slug);
+    setEditing(false);
+  }
+
+  async function saveSlug() {
+    const clean = slugify(draftSlug);
+    if (!clean) {
+      toast.error("URL must include at least one letter or number");
+      return;
+    }
+    if (clean.length < 3) {
+      toast.error("URL must be at least 3 characters");
+      return;
+    }
+    if (clean === provider.slug) {
+      setEditing(false);
+      return;
+    }
+    if (
+      !confirm(
+        `Change your booking URL to bloomrdv.com/book/${clean}?\n\nYour old URL will stop working. Anyone who saved the old link, or has it in their calendar invite, will need the new one.`
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("providers")
+      .update({ slug: clean })
+      .eq("id", provider.id);
+
+    if (error) {
+      if (error.code === "23505") {
+        toast.error(`"${clean}" is already taken. Try another.`);
+      } else {
+        toast.error(`Could not update: ${error.message}`);
+      }
+      setSaving(false);
+      return;
+    }
+
+    toast.success("Booking URL updated");
+    onUpdate({ ...provider, slug: clean });
+    setEditing(false);
+    setSaving(false);
+  }
+
+  return (
+    <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/60 p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="inline-flex p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm">
+          <Globe className="h-3.5 w-3.5 text-white" />
+        </div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-purple-700">
+          Your booking link
+        </h2>
+      </div>
+
+      {editing ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-1 rounded-xl bg-white border border-purple-300 ring-2 ring-purple-300/20 px-4 py-3 font-mono text-sm">
+            <span className="text-gray-400 shrink-0">{origin}/book/</span>
+            <input
+              type="text"
+              autoFocus
+              value={draftSlug}
+              onChange={(e) => setDraftSlug(slugify(e.target.value))}
+              placeholder="your-name"
+              className="flex-1 min-w-0 bg-transparent outline-none text-gray-800 font-semibold"
+            />
+          </div>
+          <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-800 leading-relaxed">
+              Changing your URL breaks any old links you&apos;ve already shared. Update your Instagram bio, business card, and any confirmation emails you sent before this change.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={saveSlug}
+              disabled={saving || slugify(draftSlug) === provider.slug || !slugify(draftSlug)}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium shadow-sm transition-all cursor-pointer"
+            >
+              <Check className="h-4 w-4" />
+              {saving ? "Saving…" : "Save new URL"}
+            </button>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-gray-300 text-sm font-medium transition-all cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex-1 min-w-0 rounded-xl bg-white border border-gray-200 px-4 py-3 font-mono text-sm text-gray-800 truncate select-all">
+              {fullUrl}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={copyLink}
+                className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium shadow-sm transition-all cursor-pointer"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={startEditing}
+                className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 text-sm font-medium transition-all cursor-pointer"
+                title="Change URL"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <a
+                href={fullUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 text-sm font-medium transition-all"
+                title="Open in new tab"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-500 mt-2">
+            Share this link anywhere — Instagram bio, business card, WhatsApp. Clients click it and book directly.
+          </p>
+        </>
+      )}
     </div>
   );
 }
