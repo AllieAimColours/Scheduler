@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload, DollarSign } from "lucide-react";
+import { Settings, Globe, Wand2, Download, FileText, FileJson, CalendarDays, Timer, Upload, DollarSign, Copy, ExternalLink, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { Provider } from "@/types/database";
 import { CancellationPolicyEditor } from "./cancellation-policy-editor";
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const loaded = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef<string>("");
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
     business_name: "",
     description: "",
@@ -191,6 +192,70 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* Booking link — most important thing to copy/share */}
+      {(() => {
+        const origin = typeof window !== "undefined" ? window.location.origin : "https://bloomrdv.com";
+        const fullUrl = `${origin}/book/${provider.slug}`;
+        async function copyLink() {
+          try {
+            await navigator.clipboard.writeText(fullUrl);
+            setCopied(true);
+            toast.success("Booking link copied");
+            setTimeout(() => setCopied(false), 2000);
+          } catch {
+            toast.error("Could not copy — try manually selecting");
+          }
+        }
+        return (
+          <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/60 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="inline-flex p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm">
+                <Globe className="h-3.5 w-3.5 text-white" />
+              </div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-purple-700">
+                Your booking link
+              </h2>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex-1 min-w-0 rounded-xl bg-white border border-gray-200 px-4 py-3 font-mono text-sm text-gray-800 truncate select-all">
+                {fullUrl}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium shadow-sm transition-all cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </>
+                  )}
+                </button>
+                <a
+                  href={fullUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 text-sm font-medium transition-all"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 mt-2">
+              Share this link anywhere — Instagram bio, business card, WhatsApp. Clients click it and book directly.
+            </p>
+          </div>
+        );
+      })()}
+
       {/* Business Info — identity first */}
       <Card className="rounded-2xl border-gray-100 hover:shadow-lg transition-all duration-300">
         <CardHeader>
@@ -269,16 +334,6 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-400">
               Shown on your booking page and in &quot;Get directions&quot; on the confirmation page
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-50/80 to-pink-50/50 rounded-xl p-4 border border-purple-100/60">
-            <p className="text-sm text-gray-600">
-              <Globe className="h-4 w-4 inline mr-1.5 text-purple-500" />
-              Your booking page:{" "}
-              <span className="font-mono font-medium text-gray-800">
-                /book/{provider.slug}
-              </span>
             </p>
           </div>
         </CardContent>
